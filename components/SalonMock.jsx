@@ -1,0 +1,946 @@
+"use client";
+
+import { useState } from "react";
+
+// â”€â”€â”€ Sample Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const INITIAL_PRODUCTS = [
+  { id: 1, name: "ã‚¤ãƒ«ãƒŸãƒŠã‚«ãƒ©ãƒ¼ ã‚ªãƒ¼ã‚·ãƒ£ãƒ³ 6", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", manufacturer: "ã‚¦ã‚¨ãƒ©", defaultOrderQty: 2, reorderPoint: 3, isActive: true },
+  { id: 2, name: "ã‚¢ãƒ‡ã‚£ã‚¯ã‚·ãƒ¼ ã‚°ãƒ¬ãƒ¼ãƒ‘ãƒ¼ãƒ« 7", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", manufacturer: "ãƒŸãƒ«ãƒœãƒ³", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
+  { id: 3, name: "ã‚ªãƒ«ãƒ‡ã‚£ãƒ¼ãƒ– ã‚·ãƒ¼ãƒ‡ã‚£ãƒ« C-8", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸­æ®µ", manufacturer: "ãƒŸãƒ«ãƒœãƒ³", defaultOrderQty: 3, reorderPoint: 3, isActive: true },
+  { id: 4, name: "ã‚ªã‚­ã‚· 6% 2å‰¤ 1000ml", category: "2å‰¤", location: "æ£šB", manufacturer: "ã‚¦ã‚¨ãƒ©", defaultOrderQty: 1, reorderPoint: 2, isActive: true },
+  { id: 5, name: "ãƒ•ã‚¡ã‚¤ãƒãƒ¼ãƒ—ãƒ¬ãƒƒã‚¯ã‚¹ No.1", category: "ãƒˆãƒªãƒ¼ãƒˆãƒ¡ãƒ³ãƒˆ", location: "ãƒ¯ã‚´ãƒ³", manufacturer: "ã‚·ãƒ¥ãƒ¯ãƒ«ãƒ„ã‚³ãƒ•", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
+  { id: 6, name: "ã‚¹ãƒ­ã‚¦ã‚«ãƒ©ãƒ¼ ãƒ¢ãƒŽãƒˆãƒ¼ãƒ³ MT/08", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸‹æ®µ", manufacturer: "ãƒ“ãƒ¥ãƒ¼ãƒ†ã‚£ãƒ¼ã‚¨ã‚¯ã‚¹ãƒšãƒªã‚¨ãƒ³ã‚¹", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
+  { id: 7, name: "ãƒ—ãƒ­ãƒžã‚¹ã‚¿ãƒ¼ ã‚¹ã‚¦ã‚£ãƒ¼ãƒ„ PK-7", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸­æ®µ", manufacturer: "ãƒ›ãƒ¼ãƒ¦ãƒ¼", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
+  { id: 8, name: "THROWã‚·ãƒ£ãƒ³ãƒ—ãƒ¼ 500ml", category: "ã‚·ãƒ£ãƒ³ãƒ—ãƒ¼", location: "æ£šC", manufacturer: "ãƒ“ãƒ¥ãƒ¼ãƒ†ã‚£ãƒ¼ã‚¨ã‚¯ã‚¹ãƒšãƒªã‚¨ãƒ³ã‚¹", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
+  { id: 9, name: "ãƒˆãƒ©ãƒƒã‚¯ã‚ªã‚¤ãƒ« No.3", category: "ã‚¹ã‚¿ã‚¤ãƒªãƒ³ã‚°", location: "ãƒ¯ã‚´ãƒ³", manufacturer: "ãƒŠãƒ—ãƒ©", defaultOrderQty: 2, reorderPoint: 1, isActive: true },
+  { id: 10, name: "N. ãƒãƒªãƒƒã‚·ãƒ¥ã‚ªã‚¤ãƒ« 150ml", category: "ã‚¹ã‚¿ã‚¤ãƒªãƒ³ã‚°", location: "ãƒ¯ã‚´ãƒ³", manufacturer: "ãƒŠãƒ—ãƒ©", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
+];
+
+const CATEGORIES = ["ã‚«ãƒ©ãƒ¼å‰¤", "2å‰¤", "ãƒ‘ãƒ¼ãƒžå‰¤", "ãƒˆãƒªãƒ¼ãƒˆãƒ¡ãƒ³ãƒˆ", "ã‚·ãƒ£ãƒ³ãƒ—ãƒ¼", "ã‚¹ã‚¿ã‚¤ãƒªãƒ³ã‚°", "ãã®ä»–"];
+const LOCATIONS = ["æ£šAä¸Šæ®µ", "æ£šAä¸­æ®µ", "æ£šAä¸‹æ®µ", "æ£šB", "æ£šC", "ãƒ¯ã‚´ãƒ³", "ãƒãƒƒã‚¯ãƒ¤ãƒ¼ãƒ‰"];
+
+// â”€â”€â”€ Color Tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const C = {
+  primary: "#2563eb",
+  primaryLight: "#eff6ff",
+  primaryBorder: "#bfdbfe",
+  danger: "#dc2626",
+  dangerLight: "#fef2f2",
+  dangerBorder: "#fecaca",
+  success: "#059669",
+  successLight: "#f0fdf4",
+  successBorder: "#bbf7d0",
+  successDark: "#166534",
+  line: "#06c755",
+  warn: "#f59e0b",
+  warnLight: "#fefce8",
+  warnBorder: "#fde68a",
+  warnDark: "#92400e",
+  bg: "#f8fafc",
+  card: "#fff",
+  border: "#e5e7eb",
+  text: "#1a1a2e",
+  textSub: "#6b7280",
+  textMuted: "#9ca3af",
+};
+
+// â”€â”€â”€ Shared Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function Badge({ count, color }) {
+  if (!count) return null;
+  return (
+    <span style={{
+      minWidth: 22, height: 22, borderRadius: 11, background: color, color: "#fff",
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      fontSize: 12, fontWeight: 700, flexShrink: 0, padding: "0 6px",
+    }}>{count}</span>
+  );
+}
+
+function QuantityStepper({ value, onChange, min = 1, max = 99 }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 0,
+      border: `1.5px solid ${C.border}`, borderRadius: 10, overflow: "hidden",
+      background: C.card, flexShrink: 0,
+    }}>
+      <button
+        onClick={(e) => { e.stopPropagation(); onChange(Math.max(min, value - 1)); }}
+        style={{
+          width: 36, height: 36, border: "none", background: "transparent",
+          fontSize: 18, fontWeight: 700, color: value <= min ? C.textMuted : C.primary,
+          cursor: value <= min ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >âˆ’</button>
+      <div style={{
+        width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 15, fontWeight: 700, color: C.text,
+        borderLeft: `1px solid ${C.border}`, borderRight: `1px solid ${C.border}`,
+      }}>{value}</div>
+      <button
+        onClick={(e) => { e.stopPropagation(); onChange(Math.min(max, value + 1)); }}
+        style={{
+          width: 36, height: 36, border: "none", background: "transparent",
+          fontSize: 18, fontWeight: 700, color: value >= max ? C.textMuted : C.primary,
+          cursor: value >= max ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >+</button>
+    </div>
+  );
+}
+
+function EmptyState({ icon, message }) {
+  return (
+    <div style={{ padding: 32, textAlign: "center", color: C.textSub, fontSize: 14, background: C.bg, borderRadius: 12 }}>
+      <div style={{ fontSize: 36, marginBottom: 8 }}>{icon}</div>
+      {message}
+    </div>
+  );
+}
+
+// â”€â”€â”€ Top Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
+  return (
+    <div style={{ padding: "0 20px" }}>
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <div style={{ fontSize: 40, marginBottom: 6 }}>ðŸ·ï¸</div>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: "0 0 4px" }}>QRã‚ªãƒ¼ãƒ€ãƒ¼</h2>
+        <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>ç¾Žå®¹å®¤å‘ã‘ç™ºæ³¨ç®¡ç†</p>
+      </div>
+
+      {/* Main 3 actions */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {[
+          { id: "scan", icon: "ðŸ“·", label: "QRã‚¹ã‚­ãƒ£ãƒ³", desc: "ã‚¿ã‚°ã‚’èª­ã¿å–ã£ã¦ç™ºæ³¨ãƒªã‚¹ãƒˆã«è¿½åŠ ", color: C.primary },
+          { id: "order", icon: "ðŸ“‹", label: "ç™ºæ³¨ãƒªã‚¹ãƒˆ", desc: "æœªç™ºæ³¨ã®å•†å“ã‚’ç¢ºèªãƒ»ç™ºæ³¨å‡¦ç†", color: C.danger, badge: orderCount },
+          { id: "receive", icon: "ðŸ“¦", label: "å—å–å¾…ã¡", desc: "å±Šã„ãŸå•†å“ã®ã‚¿ã‚°ã‚’ã‚¹ã‚­ãƒ£ãƒ³ã—ã¦å®Œäº†", color: C.success, badge: receiveCount },
+        ].map((btn) => (
+          <button
+            key={btn.id}
+            onClick={() => onNavigate(btn.id)}
+            style={{
+              display: "flex", alignItems: "center", gap: 14, padding: "16px 18px",
+              background: C.card, border: `1.5px solid ${btn.color}18`, borderRadius: 14,
+              cursor: "pointer", textAlign: "left", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            }}
+          >
+            <span style={{ fontSize: 30, flexShrink: 0 }}>{btn.icon}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{btn.label}</div>
+              <div style={{ fontSize: 11, color: C.textSub, marginTop: 2 }}>{btn.desc}</div>
+            </div>
+            <Badge count={btn.badge} color={btn.color} />
+          </button>
+        ))}
+      </div>
+
+      {/* Product Management Card */}
+      <button
+        onClick={() => onNavigate("products")}
+        style={{
+          width: "100%", marginTop: 16, padding: "14px 18px",
+          background: C.card, border: `1px solid ${C.border}`, borderRadius: 14,
+          cursor: "pointer", textAlign: "left",
+          display: "flex", alignItems: "center", gap: 14,
+          boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+        }}
+      >
+        <span style={{ fontSize: 28 }}>âš™ï¸</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>å•†å“ç®¡ç†</div>
+          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>å•†å“ã®ç™»éŒ²ãƒ»ç·¨é›†ãƒ»QRã‚¿ã‚°ç´ä»˜ã‘</div>
+        </div>
+        <div style={{ fontSize: 13, color: C.textSub }}>{productCount}å“</div>
+        <span style={{ color: C.textMuted, fontSize: 16 }}>â€º</span>
+      </button>
+
+      {/* Summary */}
+      <div style={{ marginTop: 20, padding: 14, background: C.bg, borderRadius: 12, border: `1px solid ${C.border}` }}>
+        <div style={{ fontSize: 11, color: C.textSub, marginBottom: 8, fontWeight: 600 }}>ä»Šæœˆã®ã‚µãƒžãƒªãƒ¼</div>
+        <div style={{ display: "flex", justifyContent: "space-around" }}>
+          {[
+            { label: "ç™ºæ³¨å›žæ•°", value: "8å›ž", color: C.primary },
+            { label: "ç®¡ç†SKU", value: `${productCount}å“`, color: C.success },
+            { label: "åœ¨åº«åˆ‡ã‚Œ", value: "1å›ž", color: C.danger },
+          ].map((s, i) => (
+            <div key={i} style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Stockout button */}
+      <div style={{ marginTop: 16 }}>
+        <StockoutButton />
+      </div>
+    </div>
+  );
+}
+
+// â”€â”€â”€ Scan Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function ScanScreen({ onNavigate, products, onAddOrderItem }) {
+  const [scanning, setScanning] = useState(false);
+  const [scanned, setScanned] = useState([]);
+  const [showResult, setShowResult] = useState(false);
+  const [scanIndex, setScanIndex] = useState(0);
+
+  const scanTargets = products.filter((p) => p.isActive).slice(0, 5);
+
+  const simulateScan = () => {
+    if (scanTargets.length === 0) return;
+    setScanning(true);
+    setTimeout(() => {
+      setScanning(false);
+      setShowResult(true);
+      const target = scanTargets[scanIndex % scanTargets.length];
+      const item = {
+        ...target,
+        time: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
+      };
+      setScanned((prev) => [...prev, item]);
+      onAddOrderItem(target);
+      setScanIndex((i) => i + 1);
+      setTimeout(() => setShowResult(false), 1800);
+    }, 1000);
+  };
+
+  return (
+    <div style={{ padding: "0 20px" }}>
+      {/* Camera area */}
+      <div style={{
+        width: "100%", aspectRatio: "1", maxHeight: 260,
+        background: scanning ? "#1a1a2e" : "#111827", borderRadius: 16,
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        overflow: "hidden", marginBottom: 14, position: "relative",
+      }}>
+        {scanning ? (
+          <>
+            <div style={{ width: 170, height: 170, border: "3px solid #2563eb", borderRadius: 12, position: "relative" }}>
+              <div style={{
+                position: "absolute", top: 0, left: 0, right: 0, height: 3,
+                background: "#2563eb", animation: "scanLine 1.2s ease-in-out infinite",
+              }} />
+            </div>
+            <style>{`@keyframes scanLine { 0%{top:0} 50%{top:calc(100% - 3px)} 100%{top:0} }`}</style>
+            <p style={{ color: "#fff", fontSize: 13, marginTop: 14 }}>ã‚¹ã‚­ãƒ£ãƒ³ä¸­...</p>
+          </>
+        ) : showResult ? (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 44, marginBottom: 6 }}>âœ…</div>
+            <p style={{ color: "#4ade80", fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>èª­ã¿å–ã‚Šå®Œäº†ï¼</p>
+            <p style={{ color: "#fff", fontSize: 13, margin: 0 }}>{scanned[scanned.length - 1]?.name}</p>
+          </div>
+        ) : (
+          <>
+            <div style={{
+              width: 170, height: 170, border: "2px dashed #4b5563", borderRadius: 12,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>QRã‚’ã“ã“ã«åˆã‚ã›ã‚‹</span>
+            </div>
+            <p style={{ color: "#9ca3af", fontSize: 12, marginTop: 10 }}>ã‚«ã‚´ã«è²¯ã‚ãŸã‚¿ã‚°ã‚’ã¾ã¨ã‚ã¦ã‚¹ã‚­ãƒ£ãƒ³</p>
+          </>
+        )}
+      </div>
+
+      <button onClick={simulateScan} disabled={scanning} style={{
+        width: "100%", padding: "14px", border: "none", borderRadius: 12,
+        background: scanning ? "#94a3b8" : C.primary, color: "#fff",
+        fontSize: 15, fontWeight: 700, cursor: scanning ? "default" : "pointer", marginBottom: 18,
+      }}>
+        {scanning ? "èª­ã¿å–ã‚Šä¸­..." : "ðŸ“· ã‚¹ã‚­ãƒ£ãƒ³ã™ã‚‹ï¼ˆãƒ‡ãƒ¢ï¼‰"}
+      </button>
+
+      {scanned.length > 0 && (
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: C.textSub, marginBottom: 8 }}>
+            ä»Šå›žã‚¹ã‚­ãƒ£ãƒ³ã—ãŸå•†å“ï¼ˆ{scanned.length}ä»¶ï¼‰
+          </div>
+          {scanned.map((item, i) => (
+            <div key={i} style={{
+              display: "flex", alignItems: "center", gap: 10, padding: "11px 14px",
+              background: C.successLight, borderRadius: 10, marginBottom: 5,
+              border: `1px solid ${C.successBorder}`,
+            }}>
+              <span style={{ fontSize: 18 }}>âœ…</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
+                <div style={{ fontSize: 10, color: C.textSub }}>{item.category} Â· {item.location}</div>
+              </div>
+              <div style={{ fontSize: 10, color: C.textSub }}>{item.time}</div>
+            </div>
+          ))}
+          <button onClick={() => onNavigate("order")} style={{
+            width: "100%", padding: "13px", border: `1.5px solid ${C.primary}`,
+            borderRadius: 12, background: C.primaryLight, color: C.primary,
+            fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 10,
+          }}>
+            ðŸ“‹ ç™ºæ³¨ãƒªã‚¹ãƒˆã‚’ç¢ºèªã™ã‚‹ â†’
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// â”€â”€â”€ Order Screen (with quantity) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems }) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [lastOrderedCount, setLastOrderedCount] = useState(0);
+  const [showLinePopup, setShowLinePopup] = useState(false);
+
+  const pending = orderItems.filter((i) => i.status === "scanned");
+  const checkedCount = pending.filter((i) => i.checked).length;
+
+  const toggleCheck = (id) => {
+    setOrderItems((prev) => prev.map((i) => i.id === id ? { ...i, checked: !i.checked } : i));
+  };
+
+  const updateQty = (id, qty) => {
+    setOrderItems((prev) => prev.map((i) => i.id === id ? { ...i, quantity: qty } : i));
+  };
+
+  const handleOrder = () => {
+    const toOrder = pending.filter((i) => i.checked).map((i) => ({
+      ...i, status: "ordered", orderedAt: new Date().toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" }),
+    }));
+    setLastOrderedCount(toOrder.length);
+    setOrderedItems((prev) => [...prev, ...toOrder]);
+    setOrderItems((prev) => prev.filter((i) => !i.checked));
+    setShowConfirm(true);
+    setTimeout(() => setShowConfirm(false), 3000);
+  };
+
+  const generateLineText = () => {
+    const lines = pending.map((i, idx) => `${idx + 1}. ${i.name} Ã— ${i.quantity}å€‹`);
+    return `ã€ç™ºæ³¨ãƒªã‚¹ãƒˆã€‘${new Date().toLocaleDateString("ja-JP")}\n\n${lines.join("\n")}\n\nåˆè¨ˆ ${pending.length}å“ç›® / ${pending.reduce((s, i) => s + i.quantity, 0)}å€‹\nã‚ˆã‚ã—ããŠé¡˜ã„ã„ãŸã—ã¾ã™ã€‚`;
+  };
+
+  return (
+    <div style={{ padding: "0 20px" }}>
+      {showConfirm && (
+        <div style={{
+          padding: "11px 14px", background: "#dcfce7", borderRadius: 10,
+          border: "1px solid #86efac", marginBottom: 14,
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <span style={{ fontSize: 18 }}>âœ…</span>
+          <span style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>
+            {lastOrderedCount}ä»¶ã‚’ç™ºæ³¨å‡¦ç†ã—ã¾ã—ãŸ
+          </span>
+        </div>
+      )}
+
+      {/* Pending items */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>æœªç™ºæ³¨</span>
+            <span style={{ fontSize: 12, color: C.textSub, marginLeft: 8 }}>{pending.length}ä»¶</span>
+          </div>
+          {pending.length > 0 && (
+            <button
+              onClick={() => setOrderItems((prev) => prev.map((i) => i.status === "scanned" ? { ...i, checked: !pending.every((x) => x.checked) } : i))}
+              style={{ fontSize: 11, color: C.primary, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}
+            >
+              {pending.every((i) => i.checked) ? "é¸æŠžè§£é™¤" : "ã™ã¹ã¦é¸æŠž"}
+            </button>
+          )}
+        </div>
+
+        {pending.length === 0 ? (
+          <EmptyState icon="ðŸŽ‰" message="æœªç™ºæ³¨ã®å•†å“ã¯ã‚ã‚Šã¾ã›ã‚“" />
+        ) : (
+          pending.map((item) => (
+            <div key={item.id} style={{
+              display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
+              background: item.checked ? C.primaryLight : C.card, borderRadius: 10, marginBottom: 6,
+              border: item.checked ? `1.5px solid ${C.primary}` : `1px solid ${C.border}`,
+              cursor: "pointer",
+            }} onClick={() => toggleCheck(item.id)}>
+              <div style={{
+                width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+                border: item.checked ? "none" : "2px solid #d1d5db",
+                background: item.checked ? C.primary : C.card,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                {item.checked && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>âœ“</span>}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
+                <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
+                  {item.category} Â· {item.location} Â· {item.scannedAt}
+                </div>
+              </div>
+              <QuantityStepper value={item.quantity} onChange={(v) => updateQty(item.id, v)} />
+            </div>
+          ))
+        )}
+
+        <button onClick={handleOrder} disabled={checkedCount === 0} style={{
+            width: "100%", padding: "14px", border: "none", borderRadius: 12,
+            background: checkedCount > 0 ? C.danger : "#d1d5db", color: "#fff", fontSize: 14, fontWeight: 700,
+            cursor: checkedCount > 0 ? "pointer" : "default", marginTop: 10,
+          }}>
+            âœ… {checkedCount > 0 ? `é¸æŠžã—ãŸ${checkedCount}ä»¶ã‚’ç™ºæ³¨æ¸ˆã¿ã«ã™ã‚‹` : "ç™ºæ³¨ã™ã‚‹å•†å“ã‚’é¸æŠžã—ã¦ãã ã•ã„"}
+          </button>
+      </div>
+
+      {/* LINE send */}
+      <button onClick={() => setShowLinePopup(true)} style={{
+        width: "100%", padding: "14px", border: "none", borderRadius: 12,
+        background: C.line, color: "#fff", fontSize: 14, fontWeight: 700,
+        cursor: "pointer", marginBottom: 20,
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+      }}>
+        <span style={{ fontSize: 18 }}>ðŸ’¬</span>LINEã§ç™ºæ³¨ãƒªã‚¹ãƒˆã‚’é€ä¿¡
+      </button>
+
+      {/* LINE popup */}
+      {showLinePopup && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100 }}
+          onClick={() => setShowLinePopup(false)}>
+          <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "20px 20px 0 0", padding: "20px 20px 28px" }}
+            onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>ðŸ’¬ LINEé€ä¿¡ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼</h3>
+              <button onClick={() => setShowLinePopup(false)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>âœ•</button>
+            </div>
+            <div style={{
+              padding: 14, background: C.bg, borderRadius: 12,
+              fontFamily: "monospace", fontSize: 12, lineHeight: 1.8,
+              whiteSpace: "pre-wrap", color: "#333", maxHeight: 240, overflowY: "auto",
+            }}>
+              {generateLineText()}
+            </div>
+            <button onClick={() => setShowLinePopup(false)} style={{
+              width: "100%", padding: "14px", border: "none", borderRadius: 12,
+              background: C.line, color: "#fff", fontSize: 14, fontWeight: 700,
+              cursor: "pointer", marginTop: 14,
+            }}>
+              LINEã«é€ä¿¡ã™ã‚‹
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// â”€â”€â”€ Receive Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function ReceiveScreen({ orderedItems, setOrderedItems }) {
+  const [scanning, setScanning] = useState(false);
+  const [lastReceived, setLastReceived] = useState(null);
+
+  const unreceived = orderedItems.filter((i) => i.status === "ordered");
+  const received = orderedItems.filter((i) => i.status === "received");
+
+  const simulateReceive = () => {
+    const target = unreceived[0];
+    if (!target) return;
+    setScanning(true);
+    setTimeout(() => {
+      setScanning(false);
+      setOrderedItems((prev) => prev.map((i) => i.id === target.id ? { ...i, status: "received" } : i));
+      setLastReceived(target.name);
+      setTimeout(() => setLastReceived(null), 3000);
+    }, 1000);
+  };
+
+  return (
+    <div style={{ padding: "0 20px" }}>
+      {lastReceived && (
+        <div style={{
+          padding: "11px 14px", background: "#dcfce7", borderRadius: 10,
+          border: "1px solid #86efac", marginBottom: 14,
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <span style={{ fontSize: 18 }}>ðŸ“¦</span>
+          <div>
+            <div style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>å—å–å®Œäº†ï¼</div>
+            <div style={{ fontSize: 11, color: C.successDark }}>{lastReceived}</div>
+            <div style={{ fontSize: 10, color: "#15803d", marginTop: 2 }}>â†’ ã‚¿ã‚°ã‚’æ–°ã—ã„åœ¨åº«ã«ä»˜ã‘ç›´ã—ã¦ãã ã•ã„</div>
+          </div>
+        </div>
+      )}
+
+      <button onClick={simulateReceive} disabled={scanning || unreceived.length === 0} style={{
+        width: "100%", padding: "14px", border: "none", borderRadius: 12,
+        background: scanning ? "#94a3b8" : unreceived.length === 0 ? "#d1d5db" : C.success,
+        color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 18,
+      }}>
+        {scanning ? "èª­ã¿å–ã‚Šä¸­..." : unreceived.length === 0 ? "ã™ã¹ã¦å—å–æ¸ˆã¿ âœ…" : "ðŸ“· å±Šã„ãŸå•†å“ã®ã‚¿ã‚°ã‚’ã‚¹ã‚­ãƒ£ãƒ³ï¼ˆãƒ‡ãƒ¢ï¼‰"}
+      </button>
+
+      {/* Unreceived */}
+      <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 10 }}>
+        å—å–å¾…ã¡ <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{unreceived.length}ä»¶</span>
+      </div>
+      {unreceived.length === 0 ? (
+        <EmptyState icon="âœ…" message="ã™ã¹ã¦å—å–æ¸ˆã¿ã§ã™" />
+      ) : (
+        unreceived.map((item) => (
+          <div key={item.id} style={{
+            display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
+            background: C.card, borderRadius: 10, marginBottom: 5, border: `1px solid ${C.border}`,
+          }}>
+            <span style={{ fontSize: 18 }}>ðŸ“¦</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
+              <div style={{ fontSize: 10, color: C.textSub }}>Ã— {item.quantity}å€‹ Â· ç™ºæ³¨æ—¥ {item.orderedAt}</div>
+            </div>
+          </div>
+        ))
+      )}
+
+      {/* Received */}
+      {received.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, marginBottom: 8 }}>å—å–æ¸ˆã¿</div>
+          {received.map((item) => (
+            <div key={item.id} style={{
+              display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+              background: C.successLight, borderRadius: 10, marginBottom: 4,
+              border: `1px solid ${C.successBorder}`, opacity: 0.5,
+            }}>
+              <span style={{ fontSize: 16 }}>âœ…</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, textDecoration: "line-through" }}>{item.name}</div>
+              </div>
+              <span style={{ fontSize: 10, color: C.success, fontWeight: 600 }}>å—å–æ¸ˆ</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {received.length > 0 && (
+        <div style={{ marginTop: 16, padding: 12, background: C.warnLight, borderRadius: 10, border: `1px solid ${C.warnBorder}` }}>
+          <p style={{ fontSize: 12, color: C.warnDark, margin: 0, lineHeight: 1.6 }}>
+            ðŸ’¡ å—å–å®Œäº†ã—ãŸã‚¿ã‚°ã¯ã€å±Šã„ãŸå•†å“ã®<strong>å¾Œã‚ã‹ã‚‰Næœ¬ç›®</strong>ã®ä½ç½®ã«ä»˜ã‘ç›´ã—ã¦ãã ã•ã„ã€‚
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// â”€â”€â”€ Product Management Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function ProductScreen({ products, setProducts, onNavigate }) {
+  const [view, setView] = useState("list"); // list | add | edit
+  const [editProduct, setEditProduct] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterCat, setFilterCat] = useState("");
+
+  const filtered = products.filter((p) => {
+    if (!p.isActive) return false;
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.manufacturer.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterCat && p.category !== filterCat) return false;
+    return true;
+  });
+
+  const categoryCounts = {};
+  products.filter((p) => p.isActive).forEach((p) => { categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1; });
+
+  if (view === "add" || view === "edit") {
+    return (
+      <ProductForm
+        product={view === "edit" ? editProduct : null}
+        onSave={(p) => {
+          if (view === "edit") {
+            setProducts((prev) => prev.map((x) => x.id === p.id ? p : x));
+          } else {
+            setProducts((prev) => [...prev, { ...p, id: Date.now(), isActive: true }]);
+          }
+          setView("list");
+          setEditProduct(null);
+        }}
+        onCancel={() => { setView("list"); setEditProduct(null); }}
+        onDelete={view === "edit" ? () => {
+          setProducts((prev) => prev.map((x) => x.id === editProduct.id ? { ...x, isActive: false } : x));
+          setView("list");
+          setEditProduct(null);
+        } : null}
+      />
+    );
+  }
+
+  return (
+    <div style={{ padding: "0 20px" }}>
+      {/* Search */}
+      <div style={{ position: "relative", marginBottom: 12 }}>
+        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: C.textMuted }}>ðŸ”</span>
+        <input
+          value={search} onChange={(e) => setSearch(e.target.value)}
+          placeholder="å•†å“åãƒ»ãƒ¡ãƒ¼ã‚«ãƒ¼ã§æ¤œç´¢"
+          style={{
+            width: "100%", padding: "11px 12px 11px 38px", border: `1px solid ${C.border}`,
+            borderRadius: 10, fontSize: 13, outline: "none", background: C.card,
+            boxSizing: "border-box",
+          }}
+        />
+      </div>
+
+      {/* Category filter */}
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 14, paddingBottom: 4 }}>
+        <button onClick={() => setFilterCat("")} style={{
+          padding: "6px 12px", borderRadius: 20, border: `1px solid ${filterCat === "" ? C.primary : C.border}`,
+          background: filterCat === "" ? C.primaryLight : C.card, color: filterCat === "" ? C.primary : C.textSub,
+          fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
+        }}>ã™ã¹ã¦ ({products.filter((p) => p.isActive).length})</button>
+        {Object.entries(categoryCounts).map(([cat, count]) => (
+          <button key={cat} onClick={() => setFilterCat(cat)} style={{
+            padding: "6px 12px", borderRadius: 20, border: `1px solid ${filterCat === cat ? C.primary : C.border}`,
+            background: filterCat === cat ? C.primaryLight : C.card, color: filterCat === cat ? C.primary : C.textSub,
+            fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
+          }}>{cat} ({count})</button>
+        ))}
+      </div>
+
+      {/* Product list */}
+      {filtered.map((p) => (
+        <div key={p.id} onClick={() => { setEditProduct(p); setView("edit"); }} style={{
+          display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+          background: C.card, borderRadius: 10, marginBottom: 6,
+          border: `1px solid ${C.border}`, cursor: "pointer",
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 8, background: C.bg,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 11, fontWeight: 700, color: C.primary, flexShrink: 0,
+          }}>
+            {p.category.slice(0, 2)}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+            <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
+              {p.manufacturer} Â· {p.location} Â· ç™ºæ³¨ç‚¹: {p.reorderPoint || "æœªè¨­å®š"}æœ¬ç›® Â· ç™ºæ³¨æ•°: {p.defaultOrderQty}å€‹
+            </div>
+          </div>
+          <span style={{ color: C.textMuted, fontSize: 14 }}>â€º</span>
+        </div>
+      ))}
+
+      {filtered.length === 0 && <EmptyState icon="ðŸ“­" message="è©²å½“ã™ã‚‹å•†å“ãŒã‚ã‚Šã¾ã›ã‚“" />}
+
+      {/* Add button */}
+      <button onClick={() => setView("add")} style={{
+        position: "fixed", bottom: 80, right: "calc(50% - 190px)",
+        width: 56, height: 56, borderRadius: 28,
+        background: C.primary, color: "#fff", border: "none",
+        fontSize: 28, fontWeight: 400, cursor: "pointer",
+        boxShadow: "0 4px 16px rgba(37,99,235,0.35)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        zIndex: 40,
+      }}>+</button>
+    </div>
+  );
+}
+
+// â”€â”€â”€ Product Form (Add/Edit) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function ProductForm({ product, onSave, onCancel, onDelete }) {
+  const [form, setForm] = useState(product || {
+    name: "", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", manufacturer: "",
+    defaultOrderQty: 1, reorderPoint: null, janCode: "",
+  });
+  const [showBarcodeScan, setShowBarcodeScan] = useState(false);
+
+  const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+
+  const isValid = form.name.trim() !== "";
+
+  const simulateBarcodeScan = () => {
+    setShowBarcodeScan(true);
+    setTimeout(() => {
+      setShowBarcodeScan(false);
+      setForm((f) => ({
+        ...f,
+        name: "ãƒŸãƒ«ãƒœãƒ³ ã‚ªãƒ«ãƒ‡ã‚£ãƒ¼ãƒ– ã‚¢ãƒ‡ã‚£ã‚¯ã‚·ãƒ¼ GP7",
+        manufacturer: "ãƒŸãƒ«ãƒœãƒ³",
+        category: "ã‚«ãƒ©ãƒ¼å‰¤",
+        janCode: "4954835325141",
+      }));
+    }, 1500);
+  };
+
+  return (
+    <div style={{ padding: "0 20px" }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 16 }}>
+        {product ? "å•†å“ã‚’ç·¨é›†" : "æ–°ã—ã„å•†å“ã‚’ç™»éŒ²"}
+      </div>
+
+      {/* Barcode scan shortcut */}
+      {!product && (
+        <button onClick={simulateBarcodeScan} disabled={showBarcodeScan} style={{
+          width: "100%", padding: "14px", border: `1.5px dashed ${C.primary}`,
+          borderRadius: 12, background: C.primaryLight, color: C.primary,
+          fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 16,
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        }}>
+          {showBarcodeScan ? (
+            <>
+              <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>â³</span>
+              ãƒãƒ¼ã‚³ãƒ¼ãƒ‰èª­ã¿å–ã‚Šä¸­...
+              <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+            </>
+          ) : (
+            <>ðŸ“· ãƒãƒ¼ã‚³ãƒ¼ãƒ‰ã§å•†å“æƒ…å ±ã‚’è‡ªå‹•å…¥åŠ›ï¼ˆãƒ‡ãƒ¢ï¼‰</>
+          )}
+        </button>
+      )}
+
+      {/* Form fields */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <FormField label="å•†å“å" required>
+          <input value={form.name} onChange={(e) => update("name", e.target.value)}
+            placeholder="ä¾‹ï¼šã‚¤ãƒ«ãƒŸãƒŠã‚«ãƒ©ãƒ¼ ã‚ªãƒ¼ã‚·ãƒ£ãƒ³ 6"
+            style={inputStyle} />
+        </FormField>
+
+        <FormField label="ãƒ¡ãƒ¼ã‚«ãƒ¼">
+          <input value={form.manufacturer} onChange={(e) => update("manufacturer", e.target.value)}
+            placeholder="ä¾‹ï¼šã‚¦ã‚¨ãƒ©"
+            style={inputStyle} />
+        </FormField>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <FormField label="ã‚«ãƒ†ã‚´ãƒª" style={{ flex: 1 }}>
+            <select value={form.category} onChange={(e) => update("category", e.target.value)} style={{ ...inputStyle, appearance: "auto" }}>
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </FormField>
+          <FormField label="ä¿ç®¡å ´æ‰€" style={{ flex: 1 }}>
+            <select value={form.location} onChange={(e) => update("location", e.target.value)} style={{ ...inputStyle, appearance: "auto" }}>
+              {LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </FormField>
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <FormField label="ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆç™ºæ³¨æ•°" style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <QuantityStepper value={form.defaultOrderQty} onChange={(v) => update("defaultOrderQty", v)} />
+              <span style={{ fontSize: 12, color: C.textSub }}>å€‹</span>
+            </div>
+          </FormField>
+          <FormField label="ç™ºæ³¨ç‚¹ï¼ˆå¾Œã‚ã‹ã‚‰Næœ¬ç›®ï¼‰" style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <QuantityStepper value={form.reorderPoint || 1} onChange={(v) => update("reorderPoint", v)} min={1} max={20} />
+              <span style={{ fontSize: 12, color: C.textSub }}>æœ¬ç›®</span>
+            </div>
+          </FormField>
+        </div>
+
+        {form.janCode && (
+          <FormField label="JANã‚³ãƒ¼ãƒ‰">
+            <div style={{ ...inputStyle, background: C.bg, color: C.textSub }}>{form.janCode}</div>
+          </FormField>
+        )}
+      </div>
+
+      {/* QR Tag binding info - only for new registration */}
+      {!product && (
+        <div style={{ marginTop: 20, padding: 12, background: C.primaryLight, borderRadius: 10, border: `1px solid ${C.primaryBorder}` }}>
+          <p style={{ fontSize: 12, color: C.primary, margin: 0, lineHeight: 1.6 }}>
+            ðŸ·ï¸ ä¿å­˜å¾Œã€QRã‚¿ã‚°ã‚’ã‚¹ã‚­ãƒ£ãƒ³ã—ã¦ã“ã®å•†å“ã«ç´ä»˜ã‘ã¦ãã ã•ã„ã€‚
+            ã‚¿ã‚°ã«å•†å“åã‚’æ‰‹æ›¸ãã—ã€å¾Œã‚ã‹ã‚‰{form.reorderPoint || "N"}æœ¬ç›®ã«å–ã‚Šä»˜ã‘ã¾ã™ã€‚
+          </p>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+        <button onClick={() => isValid && onSave(form)} disabled={!isValid} style={{
+          width: "100%", padding: "14px", border: "none", borderRadius: 12,
+          background: isValid ? C.primary : "#d1d5db", color: "#fff",
+          fontSize: 14, fontWeight: 700, cursor: isValid ? "pointer" : "default",
+        }}>
+          {product ? "ä¿å­˜ã™ã‚‹" : "å•†å“ã‚’ç™»éŒ²ã™ã‚‹"}
+        </button>
+        <button onClick={onCancel} style={{
+          width: "100%", padding: "14px", border: `1px solid ${C.border}`, borderRadius: 12,
+          background: C.card, color: C.textSub, fontSize: 14, fontWeight: 600, cursor: "pointer",
+        }}>
+          ã‚­ãƒ£ãƒ³ã‚»ãƒ«
+        </button>
+        {onDelete && (
+          <button onClick={onDelete} style={{
+            width: "100%", padding: "12px", border: "none", borderRadius: 12,
+            background: "transparent", color: C.danger, fontSize: 13, fontWeight: 600, cursor: "pointer",
+          }}>
+            ã“ã®å•†å“ã‚’å‰Šé™¤ã™ã‚‹
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FormField({ label, required, children, style = {} }) {
+  return (
+    <div style={style}>
+      <label style={{ fontSize: 12, fontWeight: 600, color: C.text, display: "block", marginBottom: 5 }}>
+        {label}{required && <span style={{ color: C.danger, marginLeft: 2 }}>*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const inputStyle = {
+  width: "100%", padding: "10px 12px", border: `1px solid ${C.border}`,
+  borderRadius: 8, fontSize: 14, outline: "none", background: "#fff",
+  boxSizing: "border-box", color: C.text,
+};
+
+// â”€â”€â”€ Stockout Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function StockoutButton() {
+  const [reported, setReported] = useState(false);
+  if (reported) {
+    return (
+      <div style={{ padding: "11px 14px", background: C.dangerLight, borderRadius: 10, border: `1px solid ${C.dangerBorder}`, textAlign: "center" }}>
+        <span style={{ fontSize: 12, color: C.danger, fontWeight: 600 }}>âš ï¸ åœ¨åº«åˆ‡ã‚Œã‚’å ±å‘Šã—ã¾ã—ãŸï¼ˆæ¶ˆè²»ã‚µã‚¤ã‚¯ãƒ«ã®å­¦ç¿’ã«ä½¿ã„ã¾ã™ï¼‰</span>
+      </div>
+    );
+  }
+  return (
+    <button onClick={() => setReported(true)} style={{
+      width: "100%", padding: "12px", border: `1.5px solid ${C.danger}`,
+      borderRadius: 12, background: C.card, color: C.danger,
+      fontSize: 13, fontWeight: 700, cursor: "pointer",
+    }}>
+      âš ï¸ åœ¨åº«ãŒåˆ‡ã‚ŒãŸå•†å“ã‚’å ±å‘Šã™ã‚‹
+    </button>
+  );
+}
+
+// â”€â”€â”€ Main App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+export default function SalonMock() {
+  const [screen, setScreen] = useState("top");
+  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+
+  // Order items: scanned but not yet ordered
+  const [orderItems, setOrderItems] = useState([
+    { id: 101, productId: 1, name: "ã‚¤ãƒ«ãƒŸãƒŠã‚«ãƒ©ãƒ¼ ã‚ªãƒ¼ã‚·ãƒ£ãƒ³ 6", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", quantity: 2, status: "scanned", scannedAt: "2/15 14:20", checked: false },
+    { id: 102, productId: 2, name: "ã‚¢ãƒ‡ã‚£ã‚¯ã‚·ãƒ¼ ã‚°ãƒ¬ãƒ¼ãƒ‘ãƒ¼ãƒ« 7", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", quantity: 2, status: "scanned", scannedAt: "2/15 14:20", checked: false },
+    { id: 103, productId: 3, name: "ã‚ªãƒ«ãƒ‡ã‚£ãƒ¼ãƒ– ã‚·ãƒ¼ãƒ‡ã‚£ãƒ« C-8", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸­æ®µ", quantity: 3, status: "scanned", scannedAt: "2/16 10:05", checked: false },
+    { id: 104, productId: 4, name: "ã‚ªã‚­ã‚· 6% 2å‰¤ 1000ml", category: "2å‰¤", location: "æ£šB", quantity: 1, status: "scanned", scannedAt: "2/16 10:05", checked: false },
+    { id: 105, productId: 5, name: "ãƒ•ã‚¡ã‚¤ãƒãƒ¼ãƒ—ãƒ¬ãƒƒã‚¯ã‚¹ No.1", category: "ãƒˆãƒªãƒ¼ãƒˆãƒ¡ãƒ³ãƒˆ", location: "ãƒ¯ã‚´ãƒ³", quantity: 1, status: "scanned", scannedAt: "2/17 09:30", checked: false },
+  ]);
+
+  // Ordered items: ordered, waiting for delivery
+  const [orderedItems, setOrderedItems] = useState([
+    { id: 201, productId: 6, name: "ã‚¹ãƒ­ã‚¦ã‚«ãƒ©ãƒ¼ ãƒ¢ãƒŽãƒˆãƒ¼ãƒ³ MT/08", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸‹æ®µ", quantity: 2, status: "ordered", orderedAt: "2/14" },
+    { id: 202, productId: 7, name: "ãƒ—ãƒ­ãƒžã‚¹ã‚¿ãƒ¼ ã‚¹ã‚¦ã‚£ãƒ¼ãƒ„ PK-7", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸­æ®µ", quantity: 2, status: "ordered", orderedAt: "2/14" },
+  ]);
+
+  const handleAddOrderItem = (product) => {
+    const newItem = {
+      id: Date.now(),
+      productId: product.id,
+      name: product.name,
+      category: product.category,
+      location: product.location,
+      quantity: product.defaultOrderQty,
+      status: "scanned",
+      scannedAt: new Date().toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" }) + " " +
+        new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
+      checked: false,
+    };
+    setOrderItems((prev) => [...prev, newItem]);
+  };
+
+  const pendingCount = orderItems.filter((i) => i.status === "scanned").length;
+  const waitingCount = orderedItems.filter((i) => i.status === "ordered").length;
+  const activeProducts = products.filter((p) => p.isActive).length;
+
+  const screenTitle = { top: null, scan: "QRã‚¹ã‚­ãƒ£ãƒ³", order: "ç™ºæ³¨ãƒªã‚¹ãƒˆ", receive: "å—å–å¾…ã¡", products: "å•†å“ç®¡ç†" };
+
+  return (
+    <div style={{
+      maxWidth: 420, margin: "0 auto", minHeight: "100vh",
+      background: C.bg, fontFamily: "'Noto Sans JP', system-ui, sans-serif",
+      position: "relative",
+    }}>
+      <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&display=swap" rel="stylesheet" />
+
+      {/* Header */}
+      <div style={{
+        padding: "14px 20px", background: C.card, borderBottom: `1px solid ${C.border}`,
+        display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 50,
+      }}>
+        {screen !== "top" && (
+          <button onClick={() => setScreen("top")}
+            style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: "4px", color: "#555" }}>
+            â†
+          </button>
+        )}
+        <div style={{ flex: 1 }}>
+          {screen === "top" ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18 }}>ðŸ·ï¸</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>QRã‚ªãƒ¼ãƒ€ãƒ¼</span>
+              <span style={{ fontSize: 10, color: C.textSub, background: "#f3f4f6", padding: "2px 8px", borderRadius: 10 }}>ãƒ‡ãƒ¢</span>
+            </div>
+          ) : (
+            <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{screenTitle[screen]}</span>
+          )}
+        </div>
+        {screen === "top" && (
+          <div style={{ fontSize: 11, color: C.textSub }}>Hair Salon BLOOM</div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div style={{ paddingTop: 16, paddingBottom: 90 }}>
+        {screen === "top" && (
+          <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} />
+        )}
+        {screen === "scan" && (
+          <ScanScreen onNavigate={setScreen} products={products} onAddOrderItem={handleAddOrderItem} />
+        )}
+        {screen === "order" && (
+          <OrderScreen orderItems={orderItems} setOrderItems={setOrderItems} orderedItems={orderedItems} setOrderedItems={setOrderedItems} />
+        )}
+        {screen === "receive" && (
+          <ReceiveScreen orderedItems={orderedItems} setOrderedItems={setOrderedItems} />
+        )}
+        {screen === "products" && (
+          <ProductScreen products={products} setProducts={setProducts} onNavigate={setScreen} />
+        )}
+      </div>
+
+      {/* Bottom nav */}
+      <div style={{
+        position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+        width: "100%", maxWidth: 420, background: C.card, borderTop: `1px solid ${C.border}`,
+        display: "flex", justifyContent: "space-around", padding: "6px 0 18px", zIndex: 50,
+      }}>
+        {[
+          { id: "top", icon: "ðŸ ", label: "ãƒ›ãƒ¼ãƒ " },
+          { id: "scan", icon: "ðŸ“·", label: "ã‚¹ã‚­ãƒ£ãƒ³" },
+          { id: "order", icon: "ðŸ“‹", label: "ç™ºæ³¨", badge: pendingCount },
+          { id: "receive", icon: "ðŸ“¦", label: "å—å–", badge: waitingCount },
+        ].map((nav) => (
+          <button key={nav.id} onClick={() => setScreen(nav.id)} style={{
+            background: "none", border: "none", cursor: "pointer",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
+            padding: "4px 12px", opacity: screen === nav.id ? 1 : 0.4, position: "relative",
+          }}>
+            <span style={{ fontSize: 20 }}>{nav.icon}</span>
+            <span style={{ fontSize: 9, fontWeight: 600, color: screen === nav.id ? C.primary : C.textSub }}>{nav.label}</span>
+            {nav.badge > 0 && (
+              <span style={{
+                position: "absolute", top: -2, right: 4,
+                minWidth: 16, height: 16, borderRadius: 8,
+                background: C.danger, color: "#fff",
+                fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "0 4px",
+              }}>{nav.badge}</span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
