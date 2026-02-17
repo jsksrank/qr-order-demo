@@ -1,25 +1,50 @@
 "use client";
+import { useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 
-import { useState } from "react";
+// ━━━ DB ↔ JS マッピング ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function mapProductFromDB(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    location: row.location,
+    manufacturer: row.manufacturer || "",
+    defaultOrderQty: row.default_order_qty || 1,
+    reorderPoint: row.reorder_point,
+    isActive: row.is_active,
+    janCode: row.jan_code || "",
+    storeId: row.store_id,
+  };
+}
 
-// ─── Sample Data ─────────────────────────────────────────
-const INITIAL_PRODUCTS = [
+function mapProductToDB(product, storeId) {
+  return {
+    store_id: storeId,
+    name: product.name,
+    category: product.category,
+    location: product.location,
+    manufacturer: product.manufacturer || "",
+    default_order_qty: product.defaultOrderQty || 1,
+    reorder_point: product.reorderPoint || null,
+    is_active: true,
+    jan_code: product.janCode || null,
+  };
+}
+
+// ━━━ フォールバック用サンプルデータ（Supabase接続失敗時） ━━━━━━━━━
+const FALLBACK_PRODUCTS = [
   { id: 1, name: "イルミナカラー オーシャン 6", category: "カラー剤", location: "棚A上段", manufacturer: "ウエラ", defaultOrderQty: 2, reorderPoint: 3, isActive: true },
   { id: 2, name: "アディクシー グレーパール 7", category: "カラー剤", location: "棚A上段", manufacturer: "ミルボン", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
   { id: 3, name: "オルディーブ シーディル C-8", category: "カラー剤", location: "棚A中段", manufacturer: "ミルボン", defaultOrderQty: 3, reorderPoint: 3, isActive: true },
   { id: 4, name: "オキシ 6% 2剤 1000ml", category: "2剤", location: "棚B", manufacturer: "ウエラ", defaultOrderQty: 1, reorderPoint: 2, isActive: true },
   { id: 5, name: "ファイバープレックス No.1", category: "トリートメント", location: "ワゴン", manufacturer: "シュワルツコフ", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
-  { id: 6, name: "スロウカラー モノトーン MT/08", category: "カラー剤", location: "棚A下段", manufacturer: "ビューティーエクスペリエンス", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
-  { id: 7, name: "プロマスター スウィーツ PK-7", category: "カラー剤", location: "棚A中段", manufacturer: "ホーユー", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
-  { id: 8, name: "THROWシャンプー 500ml", category: "シャンプー", location: "棚C", manufacturer: "ビューティーエクスペリエンス", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
-  { id: 9, name: "トラックオイル No.3", category: "スタイリング", location: "ワゴン", manufacturer: "ナプラ", defaultOrderQty: 2, reorderPoint: 1, isActive: true },
-  { id: 10, name: "N. ポリッシュオイル 150ml", category: "スタイリング", location: "ワゴン", manufacturer: "ナプラ", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
 ];
 
 const CATEGORIES = ["カラー剤", "2剤", "パーマ剤", "トリートメント", "シャンプー", "スタイリング", "その他"];
 const LOCATIONS = ["棚A上段", "棚A中段", "棚A下段", "棚B", "棚C", "ワゴン", "バックヤード"];
 
-// ─── Color Tokens ────────────────────────────────────────
+// ━━━ Color Tokens ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const C = {
   primary: "#2563eb",
   primaryLight: "#eff6ff",
@@ -44,7 +69,7 @@ const C = {
   textMuted: "#9ca3af",
 };
 
-// ─── Shared Components ───────────────────────────────────
+// ━━━ Shared Components ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function Badge({ count, color }) {
   if (!count) return null;
   return (
@@ -70,7 +95,7 @@ function QuantityStepper({ value, onChange, min = 1, max = 99 }) {
           fontSize: 18, fontWeight: 700, color: value <= min ? C.textMuted : C.primary,
           cursor: value <= min ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
         }}
-      >{"\u2212"}</button>
+      >−</button>
       <div style={{
         width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 15, fontWeight: 700, color: C.text,
@@ -97,21 +122,21 @@ function EmptyState({ icon, message }) {
   );
 }
 
-// ─── Top Screen ──────────────────────────────────────────
+// ━━━ Top Screen ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
   return (
     <div style={{ padding: "0 20px" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontSize: 40, marginBottom: 6 }}>{"\uD83C\uDFF7\uFE0F"}</div>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: "0 0 4px" }}>{"QR\u30AA\u30FC\u30C0\u30FC"}</h2>
-        <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>{"美容室向け発注管理"}</p>
+        <div style={{ fontSize: 40, marginBottom: 6 }}>🏷️</div>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: "0 0 4px" }}>QRオーダー</h2>
+        <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>美容室向け発注管理</p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {[
-          { id: "scan", icon: "\uD83D\uDCF7", label: "QRスキャン", desc: "タグを読み取って発注リストに追加", color: C.primary },
-          { id: "order", icon: "\uD83D\uDCCB", label: "発注リスト", desc: "未発注の商品を確認・発注処理", color: C.danger, badge: orderCount },
-          { id: "receive", icon: "\uD83D\uDCE6", label: "受取待ち", desc: "届いた商品のタグをスキャンして完了", color: C.success, badge: receiveCount },
+          { id: "scan", icon: "📷", label: "QRスキャン", desc: "タグを読み取って発注リストに追加", color: C.primary },
+          { id: "order", icon: "📋", label: "発注リスト", desc: "未発注の商品を確認・発注処理", color: C.danger, badge: orderCount },
+          { id: "receive", icon: "📦", label: "受取待ち", desc: "届いた商品のタグをスキャンして完了", color: C.success, badge: receiveCount },
         ].map((btn) => (
           <button
             key={btn.id}
@@ -142,13 +167,13 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
           boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
         }}
       >
-        <span style={{ fontSize: 28 }}>{"\u2699\uFE0F"}</span>
+        <span style={{ fontSize: 28 }}>⚙️</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>商品管理</div>
-          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>{"商品の登録・編集・QRタグ紐付け"}</div>
+          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>商品の登録・編集・QRタグ紐付け</div>
         </div>
         <div style={{ fontSize: 13, color: C.textSub }}>{productCount}品</div>
-        <span style={{ color: C.textMuted, fontSize: 16 }}>{"\u203A"}</span>
+        <span style={{ color: C.textMuted, fontSize: 16 }}>›</span>
       </button>
 
       <div style={{ marginTop: 20, padding: 14, background: C.bg, borderRadius: 12, border: `1px solid ${C.border}` }}>
@@ -174,7 +199,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
   );
 }
 
-// ─── Scan Screen ─────────────────────────────────────────
+// ━━━ Scan Screen ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ScanScreen({ onNavigate, products, onAddOrderItem }) {
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState([]);
@@ -222,7 +247,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
           </>
         ) : showResult ? (
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 44, marginBottom: 6 }}>{"\u2705"}</div>
+            <div style={{ fontSize: 44, marginBottom: 6 }}>✅</div>
             <p style={{ color: "#4ade80", fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>読み取り完了！</p>
             <p style={{ color: "#fff", fontSize: 13, margin: 0 }}>{scanned[scanned.length - 1]?.name}</p>
           </div>
@@ -244,7 +269,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
         background: scanning ? "#94a3b8" : C.primary, color: "#fff",
         fontSize: 15, fontWeight: 700, cursor: scanning ? "default" : "pointer", marginBottom: 18,
       }}>
-        {scanning ? "読み取り中..." : "\uD83D\uDCF7 スキャンする（デモ）"}
+        {scanning ? "読み取り中..." : "📷 スキャンする（デモ）"}
       </button>
 
       {scanned.length > 0 && (
@@ -258,7 +283,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
               background: C.successLight, borderRadius: 10, marginBottom: 5,
               border: `1px solid ${C.successBorder}`,
             }}>
-              <span style={{ fontSize: 18 }}>{"\u2705"}</span>
+              <span style={{ fontSize: 18 }}>✅</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
                 <div style={{ fontSize: 10, color: C.textSub }}>{item.category} · {item.location}</div>
@@ -271,7 +296,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
             borderRadius: 12, background: C.primaryLight, color: C.primary,
             fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 10,
           }}>
-            {"\uD83D\uDCCB 発注リストを確認する \u2192"}
+            📋 発注リストを確認する →
           </button>
         </div>
       )}
@@ -279,7 +304,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
   );
 }
 
-// ─── Order Screen ────────────────────────────────────────
+// ━━━ Order Screen ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [lastOrderedCount, setLastOrderedCount] = useState(0);
@@ -308,8 +333,8 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
   };
 
   const generateLineText = () => {
-    const lines = pending.map((i, idx) => `${idx + 1}. ${i.name} \u00D7 ${i.quantity}\u500B`);
-    return `\u3010\u767A\u6CE8\u30EA\u30B9\u30C8\u3011${new Date().toLocaleDateString("ja-JP")}\n\n${lines.join("\n")}\n\n\u5408\u8A08 ${pending.length}\u54C1\u76EE / ${pending.reduce((s, i) => s + i.quantity, 0)}\u500B\n\u3088\u308D\u3057\u304F\u304A\u9858\u3044\u3044\u305F\u3057\u307E\u3059\u3002`;
+    const lines = pending.map((i, idx) => `${idx + 1}. ${i.name} × ${i.quantity}個`);
+    return `【発注リスト】${new Date().toLocaleDateString("ja-JP")}\n\n${lines.join("\n")}\n\n合計 ${pending.length}品目 / ${pending.reduce((s, i) => s + i.quantity, 0)}個\nよろしくお願いいたします。`;
   };
 
   return (
@@ -320,7 +345,7 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
           border: "1px solid #86efac", marginBottom: 14,
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <span style={{ fontSize: 18 }}>{"\u2705"}</span>
+          <span style={{ fontSize: 18 }}>✅</span>
           <span style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>
             {lastOrderedCount}件を発注処理しました
           </span>
@@ -344,7 +369,7 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
         </div>
 
         {pending.length === 0 ? (
-          <EmptyState icon={"\uD83C\uDF89"} message="未発注の商品はありません" />
+          <EmptyState icon="🎉" message="未発注の商品はありません" />
         ) : (
           pending.map((item) => (
             <div key={item.id} style={{
@@ -359,7 +384,7 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
                 background: item.checked ? C.primary : C.card,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                {item.checked && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{"\u2714"}</span>}
+                {item.checked && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>✓</span>}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
@@ -373,12 +398,12 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
         )}
 
         <button onClick={handleOrder} disabled={checkedCount === 0} style={{
-          width: "100%", padding: "14px", border: "none", borderRadius: 12,
-          background: checkedCount > 0 ? C.danger : "#d1d5db", color: "#fff", fontSize: 14, fontWeight: 700,
-          cursor: checkedCount > 0 ? "pointer" : "default", marginTop: 10,
-        }}>
-          {checkedCount > 0 ? `\u2705 選択した${checkedCount}件を発注済みにする` : "\u2705 発注する商品を選択してください"}
-        </button>
+            width: "100%", padding: "14px", border: "none", borderRadius: 12,
+            background: checkedCount > 0 ? C.danger : "#d1d5db", color: "#fff", fontSize: 14, fontWeight: 700,
+            cursor: checkedCount > 0 ? "pointer" : "default", marginTop: 10,
+          }}>
+            ✅ {checkedCount > 0 ? `選択した${checkedCount}件を発注済みにする` : "発注する商品を選択してください"}
+          </button>
       </div>
 
       <button onClick={() => setShowLinePopup(true)} style={{
@@ -387,7 +412,7 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
         cursor: "pointer", marginBottom: 20,
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
       }}>
-        <span style={{ fontSize: 18 }}>{"\uD83D\uDCAC"}</span>LINEで発注リストを送信
+        <span style={{ fontSize: 18 }}>💬</span>LINEで発注リストを送信
       </button>
 
       {showLinePopup && (
@@ -396,8 +421,8 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
           <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "20px 20px 0 0", padding: "20px 20px 28px" }}
             onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>{"\uD83D\uDCAC LINE送信プレビュー"}</h3>
-              <button onClick={() => setShowLinePopup(false)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>{"\u2715"}</button>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>💬 LINE送信プレビュー</h3>
+              <button onClick={() => setShowLinePopup(false)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>✕</button>
             </div>
             <div style={{
               padding: 14, background: C.bg, borderRadius: 12,
@@ -420,7 +445,7 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
   );
 }
 
-// ─── Receive Screen ──────────────────────────────────────
+// ━━━ Receive Screen ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ReceiveScreen({ orderedItems, setOrderedItems }) {
   const [scanning, setScanning] = useState(false);
   const [lastReceived, setLastReceived] = useState(null);
@@ -448,11 +473,11 @@ function ReceiveScreen({ orderedItems, setOrderedItems }) {
           border: "1px solid #86efac", marginBottom: 14,
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <span style={{ fontSize: 18 }}>{"\uD83D\uDCE6"}</span>
+          <span style={{ fontSize: 18 }}>📦</span>
           <div>
             <div style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>受取完了！</div>
             <div style={{ fontSize: 11, color: C.successDark }}>{lastReceived}</div>
-            <div style={{ fontSize: 10, color: "#15803d", marginTop: 2 }}>{"\u2192 タグを新しい在庫に付け直してください"}</div>
+            <div style={{ fontSize: 10, color: "#15803d", marginTop: 2 }}>→ タグを新しい在庫に付け直してください</div>
           </div>
         </div>
       )}
@@ -462,24 +487,24 @@ function ReceiveScreen({ orderedItems, setOrderedItems }) {
         background: scanning ? "#94a3b8" : unreceived.length === 0 ? "#d1d5db" : C.success,
         color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 18,
       }}>
-        {scanning ? "読み取り中..." : unreceived.length === 0 ? "すべて受取済み \u2705" : "\uD83D\uDCF7 届いた商品のタグをスキャン（デモ）"}
+        {scanning ? "読み取り中..." : unreceived.length === 0 ? "すべて受取済み ✅" : "📷 届いた商品のタグをスキャン（デモ）"}
       </button>
 
       <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 10 }}>
         受取待ち <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{unreceived.length}件</span>
       </div>
       {unreceived.length === 0 ? (
-        <EmptyState icon={"\u2705"} message="すべて受取済みです" />
+        <EmptyState icon="✅" message="すべて受取済みです" />
       ) : (
         unreceived.map((item) => (
           <div key={item.id} style={{
             display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
             background: C.card, borderRadius: 10, marginBottom: 5, border: `1px solid ${C.border}`,
           }}>
-            <span style={{ fontSize: 18 }}>{"\uD83D\uDCE6"}</span>
+            <span style={{ fontSize: 18 }}>📦</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
-              <div style={{ fontSize: 10, color: C.textSub }}>{"\u00D7"} {item.quantity}個 · 発注日 {item.orderedAt}</div>
+              <div style={{ fontSize: 10, color: C.textSub }}>× {item.quantity}個 · 発注日 {item.orderedAt}</div>
             </div>
           </div>
         ))
@@ -494,7 +519,7 @@ function ReceiveScreen({ orderedItems, setOrderedItems }) {
               background: C.successLight, borderRadius: 10, marginBottom: 4,
               border: `1px solid ${C.successBorder}`, opacity: 0.5,
             }}>
-              <span style={{ fontSize: 16 }}>{"\u2705"}</span>
+              <span style={{ fontSize: 16 }}>✅</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, textDecoration: "line-through" }}>{item.name}</div>
               </div>
@@ -507,7 +532,7 @@ function ReceiveScreen({ orderedItems, setOrderedItems }) {
       {received.length > 0 && (
         <div style={{ marginTop: 16, padding: 12, background: C.warnLight, borderRadius: 10, border: `1px solid ${C.warnBorder}` }}>
           <p style={{ fontSize: 12, color: C.warnDark, margin: 0, lineHeight: 1.6 }}>
-            {"\uD83D\uDCA1"} 受取完了したタグは、届いた商品の<strong>後ろからN本目</strong>の位置に付け直してください。
+            💡 受取完了したタグは、届いた商品の<strong>後ろからN本目</strong>の位置に付け直してください。
           </p>
         </div>
       )}
@@ -515,12 +540,13 @@ function ReceiveScreen({ orderedItems, setOrderedItems }) {
   );
 }
 
-// ─── Product Management Screen ───────────────────────────
-function ProductScreen({ products, setProducts, onNavigate }) {
+// ━━━ Product Management Screen（Supabase対応版）━━━━━━━━━━━━━━━━
+function ProductScreen({ products, onAddProduct, onUpdateProduct, onDeleteProduct }) {
   const [view, setView] = useState("list");
   const [editProduct, setEditProduct] = useState(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const filtered = products.filter((p) => {
     if (!p.isActive) return false;
@@ -536,20 +562,35 @@ function ProductScreen({ products, setProducts, onNavigate }) {
     return (
       <ProductForm
         product={view === "edit" ? editProduct : null}
-        onSave={(p) => {
-          if (view === "edit") {
-            setProducts((prev) => prev.map((x) => x.id === p.id ? p : x));
-          } else {
-            setProducts((prev) => [...prev, { ...p, id: Date.now(), isActive: true }]);
+        saving={saving}
+        onSave={async (p) => {
+          setSaving(true);
+          try {
+            if (view === "edit") {
+              await onUpdateProduct({ ...p, id: editProduct.id });
+            } else {
+              await onAddProduct(p);
+            }
+            setView("list");
+            setEditProduct(null);
+          } catch (err) {
+            console.error("保存エラー:", err);
+          } finally {
+            setSaving(false);
           }
-          setView("list");
-          setEditProduct(null);
         }}
         onCancel={() => { setView("list"); setEditProduct(null); }}
-        onDelete={view === "edit" ? () => {
-          setProducts((prev) => prev.map((x) => x.id === editProduct.id ? { ...x, isActive: false } : x));
-          setView("list");
-          setEditProduct(null);
+        onDelete={view === "edit" ? async () => {
+          setSaving(true);
+          try {
+            await onDeleteProduct(editProduct.id);
+            setView("list");
+            setEditProduct(null);
+          } catch (err) {
+            console.error("削除エラー:", err);
+          } finally {
+            setSaving(false);
+          }
         } : null}
       />
     );
@@ -558,7 +599,7 @@ function ProductScreen({ products, setProducts, onNavigate }) {
   return (
     <div style={{ padding: "0 20px" }}>
       <div style={{ position: "relative", marginBottom: 12 }}>
-        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: C.textMuted }}>{"\uD83D\uDD0D"}</span>
+        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: C.textMuted }}>🔍</span>
         <input
           value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="商品名・メーカーで検索"
@@ -604,11 +645,11 @@ function ProductScreen({ products, setProducts, onNavigate }) {
               {p.manufacturer} · {p.location} · 発注点: {p.reorderPoint || "未設定"}本目 · 発注数: {p.defaultOrderQty}個
             </div>
           </div>
-          <span style={{ color: C.textMuted, fontSize: 14 }}>{"\u203A"}</span>
+          <span style={{ color: C.textMuted, fontSize: 14 }}>›</span>
         </div>
       ))}
 
-      {filtered.length === 0 && <EmptyState icon={"\uD83D\uDD2D"} message="該当する商品がありません" />}
+      {filtered.length === 0 && <EmptyState icon="🔭" message="該当する商品がありません" />}
 
       <button onClick={() => setView("add")} style={{
         position: "fixed", bottom: 80, right: "calc(50% - 190px)",
@@ -623,8 +664,8 @@ function ProductScreen({ products, setProducts, onNavigate }) {
   );
 }
 
-// ─── Product Form ────────────────────────────────────────
-function ProductForm({ product, onSave, onCancel, onDelete }) {
+// ━━━ Product Form ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function ProductForm({ product, onSave, onCancel, onDelete, saving }) {
   const [form, setForm] = useState(product || {
     name: "", category: "カラー剤", location: "棚A上段", manufacturer: "",
     defaultOrderQty: 1, reorderPoint: null, janCode: "",
@@ -633,7 +674,7 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
 
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
-  const isValid = form.name.trim() !== "";
+  const isValid = form.name.trim() !== "" && !saving;
 
   const simulateBarcodeScan = () => {
     setShowBarcodeScan(true);
@@ -664,12 +705,12 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
         }}>
           {showBarcodeScan ? (
             <>
-              <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>{"\u23F3"}</span>
+              <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⏳</span>
               バーコード読み取り中...
               <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
             </>
           ) : (
-            <>{"\uD83D\uDCF7 バーコードで商品情報を自動入力（デモ）"}</>
+            <>📷 バーコードで商品情報を自動入力（デモ）</>
           )}
         </button>
       )}
@@ -725,7 +766,7 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
       {!product && (
         <div style={{ marginTop: 20, padding: 12, background: C.primaryLight, borderRadius: 10, border: `1px solid ${C.primaryBorder}` }}>
           <p style={{ fontSize: 12, color: C.primary, margin: 0, lineHeight: 1.6 }}>
-            {"\uD83C\uDFF7\uFE0F"} 保存後、QRタグをスキャンしてこの商品に紐付けてください。
+            🏷️ 保存後、QRタグをスキャンしてこの商品に紐付けてください。
             タグに商品名を手書きし、後ろから{form.reorderPoint || "N"}本目に取り付けます。
           </p>
         </div>
@@ -737,16 +778,16 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
           background: isValid ? C.primary : "#d1d5db", color: "#fff",
           fontSize: 14, fontWeight: 700, cursor: isValid ? "pointer" : "default",
         }}>
-          {product ? "保存する" : "商品を登録する"}
+          {saving ? "保存中..." : product ? "保存する" : "商品を登録する"}
         </button>
-        <button onClick={onCancel} style={{
+        <button onClick={onCancel} disabled={saving} style={{
           width: "100%", padding: "14px", border: `1px solid ${C.border}`, borderRadius: 12,
           background: C.card, color: C.textSub, fontSize: 14, fontWeight: 600, cursor: "pointer",
         }}>
           キャンセル
         </button>
         {onDelete && (
-          <button onClick={onDelete} style={{
+          <button onClick={onDelete} disabled={saving} style={{
             width: "100%", padding: "12px", border: "none", borderRadius: 12,
             background: "transparent", color: C.danger, fontSize: 13, fontWeight: 600, cursor: "pointer",
           }}>
@@ -775,13 +816,13 @@ const inputStyle = {
   boxSizing: "border-box", color: C.text,
 };
 
-// ─── Stockout Button ─────────────────────────────────────
+// ━━━ Stockout Button ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function StockoutButton() {
   const [reported, setReported] = useState(false);
   if (reported) {
     return (
       <div style={{ padding: "11px 14px", background: C.dangerLight, borderRadius: 10, border: `1px solid ${C.dangerBorder}`, textAlign: "center" }}>
-        <span style={{ fontSize: 12, color: C.danger, fontWeight: 600 }}>{"\u26A0\uFE0F 在庫切れを報告しました（消費サイクルの学習に使います）"}</span>
+        <span style={{ fontSize: 12, color: C.danger, fontWeight: 600 }}>⚠️ 在庫切れを報告しました（消費サイクルの学習に使います）</span>
       </div>
     );
   }
@@ -791,16 +832,20 @@ function StockoutButton() {
       borderRadius: 12, background: C.card, color: C.danger,
       fontSize: 13, fontWeight: 700, cursor: "pointer",
     }}>
-      {"\u26A0\uFE0F 在庫が切れた商品を報告する"}
+      ⚠️ 在庫が切れた商品を報告する
     </button>
   );
 }
 
-// ─── Main App ────────────────────────────────────────────
+// ━━━ Main App（Supabase対応版）━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export default function SalonMock() {
   const [screen, setScreen] = useState("top");
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dbConnected, setDbConnected] = useState(false);
+  const [storeId, setStoreId] = useState(null);
 
+  // Order items: scanned but not yet ordered（まだローカルstate）
   const [orderItems, setOrderItems] = useState([
     { id: 101, productId: 1, name: "イルミナカラー オーシャン 6", category: "カラー剤", location: "棚A上段", quantity: 2, status: "scanned", scannedAt: "2/15 14:20", checked: false },
     { id: 102, productId: 2, name: "アディクシー グレーパール 7", category: "カラー剤", location: "棚A上段", quantity: 2, status: "scanned", scannedAt: "2/15 14:20", checked: false },
@@ -809,11 +854,106 @@ export default function SalonMock() {
     { id: 105, productId: 5, name: "ファイバープレックス No.1", category: "トリートメント", location: "ワゴン", quantity: 1, status: "scanned", scannedAt: "2/17 09:30", checked: false },
   ]);
 
+  // Ordered items: ordered, waiting for delivery（まだローカルstate）
   const [orderedItems, setOrderedItems] = useState([
     { id: 201, productId: 6, name: "スロウカラー モノトーン MT/08", category: "カラー剤", location: "棚A下段", quantity: 2, status: "ordered", orderedAt: "2/14" },
     { id: 202, productId: 7, name: "プロマスター スウィーツ PK-7", category: "カラー剤", location: "棚A中段", quantity: 2, status: "ordered", orderedAt: "2/14" },
   ]);
 
+  // ━━━ Supabaseからデータ読み込み ━━━
+  useEffect(() => {
+    async function loadData() {
+      try {
+        // 最初の店舗を取得
+        const { data: store, error: storeError } = await supabase
+          .from("stores")
+          .select("id, store_name")
+          .limit(1)
+          .single();
+
+        if (storeError) throw storeError;
+        setStoreId(store.id);
+
+        // 商品一覧を取得
+        const { data: productRows, error: prodError } = await supabase
+          .from("products")
+          .select("*")
+          .eq("store_id", store.id)
+          .eq("is_active", true)
+          .order("created_at", { ascending: true });
+
+        if (prodError) throw prodError;
+        setProducts(productRows.map(mapProductFromDB));
+        setDbConnected(true);
+        console.log(`✅ Supabase接続成功: ${store.store_name} (商品${productRows.length}件)`);
+      } catch (err) {
+        console.error("⚠️ Supabase接続失敗（フォールバックデータを使用）:", err);
+        setProducts(FALLBACK_PRODUCTS);
+        setDbConnected(false);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  // ━━━ 商品CRUD（Supabase対応）━━━
+  const handleAddProduct = async (product) => {
+    if (!storeId || !dbConnected) {
+      // フォールバック：ローカルstateだけ更新
+      setProducts((prev) => [...prev, { ...product, id: Date.now(), isActive: true }]);
+      return;
+    }
+    const dbProduct = mapProductToDB(product, storeId);
+    const { data, error } = await supabase
+      .from("products")
+      .insert(dbProduct)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("商品追加エラー:", error);
+      throw error;
+    }
+    setProducts((prev) => [...prev, mapProductFromDB(data)]);
+  };
+
+  const handleUpdateProduct = async (product) => {
+    if (!dbConnected) {
+      setProducts((prev) => prev.map((p) => p.id === product.id ? product : p));
+      return;
+    }
+    const dbProduct = mapProductToDB(product, storeId);
+    const { error } = await supabase
+      .from("products")
+      .update(dbProduct)
+      .eq("id", product.id);
+
+    if (error) {
+      console.error("商品更新エラー:", error);
+      throw error;
+    }
+    setProducts((prev) => prev.map((p) => p.id === product.id ? { ...product, isActive: true } : p));
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    if (!dbConnected) {
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+      return;
+    }
+    const { error } = await supabase
+      .from("products")
+      .update({ is_active: false })
+      .eq("id", productId);
+
+    if (error) {
+      console.error("商品削除エラー:", error);
+      throw error;
+    }
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+  };
+
+  // ━━━ スキャン→発注リスト追加 ━━━
   const handleAddOrderItem = (product) => {
     const newItem = {
       id: Date.now(),
@@ -836,6 +976,21 @@ export default function SalonMock() {
 
   const screenTitle = { top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち", products: "商品管理" };
 
+  // ━━━ ローディング表示 ━━━
+  if (loading) {
+    return (
+      <div style={{
+        maxWidth: 420, margin: "0 auto", minHeight: "100vh",
+        background: C.bg, fontFamily: "'Noto Sans JP', system-ui, sans-serif",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      }}>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        <div style={{ fontSize: 40, marginBottom: 12 }}>🏷️</div>
+        <div style={{ fontSize: 14, color: C.textSub }}>データを読み込み中...</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       maxWidth: 420, margin: "0 auto", minHeight: "100vh",
@@ -844,6 +999,7 @@ export default function SalonMock() {
     }}>
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
+      {/* Header */}
       <div style={{
         padding: "14px 20px", background: C.card, borderBottom: `1px solid ${C.border}`,
         display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 50,
@@ -851,15 +1007,17 @@ export default function SalonMock() {
         {screen !== "top" && (
           <button onClick={() => setScreen("top")}
             style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: "4px", color: "#555" }}>
-            {"\u2190"}
+            ←
           </button>
         )}
         <div style={{ flex: 1 }}>
           {screen === "top" ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 18 }}>{"\uD83C\uDFF7\uFE0F"}</span>
+              <span style={{ fontSize: 18 }}>🏷️</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>QRオーダー</span>
-              <span style={{ fontSize: 10, color: C.textSub, background: "#f3f4f6", padding: "2px 8px", borderRadius: 10 }}>デモ</span>
+              <span style={{ fontSize: 10, color: dbConnected ? C.success : C.textSub, background: dbConnected ? C.successLight : "#f3f4f6", padding: "2px 8px", borderRadius: 10, border: dbConnected ? `1px solid ${C.successBorder}` : "none" }}>
+                {dbConnected ? "DB接続中" : "デモ"}
+              </span>
             </div>
           ) : (
             <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{screenTitle[screen]}</span>
@@ -870,6 +1028,7 @@ export default function SalonMock() {
         )}
       </div>
 
+      {/* Content */}
       <div style={{ paddingTop: 16, paddingBottom: 90 }}>
         {screen === "top" && (
           <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} />
@@ -884,20 +1043,26 @@ export default function SalonMock() {
           <ReceiveScreen orderedItems={orderedItems} setOrderedItems={setOrderedItems} />
         )}
         {screen === "products" && (
-          <ProductScreen products={products} setProducts={setProducts} onNavigate={setScreen} />
+          <ProductScreen
+            products={products}
+            onAddProduct={handleAddProduct}
+            onUpdateProduct={handleUpdateProduct}
+            onDeleteProduct={handleDeleteProduct}
+          />
         )}
       </div>
 
+      {/* Bottom nav */}
       <div style={{
         position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
         width: "100%", maxWidth: 420, background: C.card, borderTop: `1px solid ${C.border}`,
         display: "flex", justifyContent: "space-around", padding: "6px 0 18px", zIndex: 50,
       }}>
         {[
-          { id: "top", icon: "\uD83C\uDFE0", label: "ホーム" },
-          { id: "scan", icon: "\uD83D\uDCF7", label: "スキャン" },
-          { id: "order", icon: "\uD83D\uDCCB", label: "発注", badge: pendingCount },
-          { id: "receive", icon: "\uD83D\uDCE6", label: "受取", badge: waitingCount },
+          { id: "top", icon: "🏠", label: "ホーム" },
+          { id: "scan", icon: "📷", label: "スキャン" },
+          { id: "order", icon: "📋", label: "発注", badge: pendingCount },
+          { id: "receive", icon: "📦", label: "受取", badge: waitingCount },
         ].map((nav) => (
           <button key={nav.id} onClick={() => setScreen(nav.id)} style={{
             background: "none", border: "none", cursor: "pointer",
