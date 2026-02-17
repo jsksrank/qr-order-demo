@@ -2,24 +2,24 @@
 
 import { useState } from "react";
 
-// â”€â”€â”€ Sample Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Sample Data ─────────────────────────────────────────
 const INITIAL_PRODUCTS = [
-  { id: 1, name: "ã‚¤ãƒ«ãƒŸãƒŠã‚«ãƒ©ãƒ¼ ã‚ªãƒ¼ã‚·ãƒ£ãƒ³ 6", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", manufacturer: "ã‚¦ã‚¨ãƒ©", defaultOrderQty: 2, reorderPoint: 3, isActive: true },
-  { id: 2, name: "ã‚¢ãƒ‡ã‚£ã‚¯ã‚·ãƒ¼ ã‚°ãƒ¬ãƒ¼ãƒ‘ãƒ¼ãƒ« 7", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", manufacturer: "ãƒŸãƒ«ãƒœãƒ³", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
-  { id: 3, name: "ã‚ªãƒ«ãƒ‡ã‚£ãƒ¼ãƒ– ã‚·ãƒ¼ãƒ‡ã‚£ãƒ« C-8", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸­æ®µ", manufacturer: "ãƒŸãƒ«ãƒœãƒ³", defaultOrderQty: 3, reorderPoint: 3, isActive: true },
-  { id: 4, name: "ã‚ªã‚­ã‚· 6% 2å‰¤ 1000ml", category: "2å‰¤", location: "æ£šB", manufacturer: "ã‚¦ã‚¨ãƒ©", defaultOrderQty: 1, reorderPoint: 2, isActive: true },
-  { id: 5, name: "ãƒ•ã‚¡ã‚¤ãƒãƒ¼ãƒ—ãƒ¬ãƒƒã‚¯ã‚¹ No.1", category: "ãƒˆãƒªãƒ¼ãƒˆãƒ¡ãƒ³ãƒˆ", location: "ãƒ¯ã‚´ãƒ³", manufacturer: "ã‚·ãƒ¥ãƒ¯ãƒ«ãƒ„ã‚³ãƒ•", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
-  { id: 6, name: "ã‚¹ãƒ­ã‚¦ã‚«ãƒ©ãƒ¼ ãƒ¢ãƒŽãƒˆãƒ¼ãƒ³ MT/08", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸‹æ®µ", manufacturer: "ãƒ“ãƒ¥ãƒ¼ãƒ†ã‚£ãƒ¼ã‚¨ã‚¯ã‚¹ãƒšãƒªã‚¨ãƒ³ã‚¹", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
-  { id: 7, name: "ãƒ—ãƒ­ãƒžã‚¹ã‚¿ãƒ¼ ã‚¹ã‚¦ã‚£ãƒ¼ãƒ„ PK-7", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸­æ®µ", manufacturer: "ãƒ›ãƒ¼ãƒ¦ãƒ¼", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
-  { id: 8, name: "THROWã‚·ãƒ£ãƒ³ãƒ—ãƒ¼ 500ml", category: "ã‚·ãƒ£ãƒ³ãƒ—ãƒ¼", location: "æ£šC", manufacturer: "ãƒ“ãƒ¥ãƒ¼ãƒ†ã‚£ãƒ¼ã‚¨ã‚¯ã‚¹ãƒšãƒªã‚¨ãƒ³ã‚¹", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
-  { id: 9, name: "ãƒˆãƒ©ãƒƒã‚¯ã‚ªã‚¤ãƒ« No.3", category: "ã‚¹ã‚¿ã‚¤ãƒªãƒ³ã‚°", location: "ãƒ¯ã‚´ãƒ³", manufacturer: "ãƒŠãƒ—ãƒ©", defaultOrderQty: 2, reorderPoint: 1, isActive: true },
-  { id: 10, name: "N. ãƒãƒªãƒƒã‚·ãƒ¥ã‚ªã‚¤ãƒ« 150ml", category: "ã‚¹ã‚¿ã‚¤ãƒªãƒ³ã‚°", location: "ãƒ¯ã‚´ãƒ³", manufacturer: "ãƒŠãƒ—ãƒ©", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
+  { id: 1, name: "イルミナカラー オーシャン 6", category: "カラー剤", location: "棚A上段", manufacturer: "ウエラ", defaultOrderQty: 2, reorderPoint: 3, isActive: true },
+  { id: 2, name: "アディクシー グレーパール 7", category: "カラー剤", location: "棚A上段", manufacturer: "ミルボン", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
+  { id: 3, name: "オルディーブ シーディル C-8", category: "カラー剤", location: "棚A中段", manufacturer: "ミルボン", defaultOrderQty: 3, reorderPoint: 3, isActive: true },
+  { id: 4, name: "オキシ 6% 2剤 1000ml", category: "2剤", location: "棚B", manufacturer: "ウエラ", defaultOrderQty: 1, reorderPoint: 2, isActive: true },
+  { id: 5, name: "ファイバープレックス No.1", category: "トリートメント", location: "ワゴン", manufacturer: "シュワルツコフ", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
+  { id: 6, name: "スロウカラー モノトーン MT/08", category: "カラー剤", location: "棚A下段", manufacturer: "ビューティーエクスペリエンス", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
+  { id: 7, name: "プロマスター スウィーツ PK-7", category: "カラー剤", location: "棚A中段", manufacturer: "ホーユー", defaultOrderQty: 2, reorderPoint: 2, isActive: true },
+  { id: 8, name: "THROWシャンプー 500ml", category: "シャンプー", location: "棚C", manufacturer: "ビューティーエクスペリエンス", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
+  { id: 9, name: "トラックオイル No.3", category: "スタイリング", location: "ワゴン", manufacturer: "ナプラ", defaultOrderQty: 2, reorderPoint: 1, isActive: true },
+  { id: 10, name: "N. ポリッシュオイル 150ml", category: "スタイリング", location: "ワゴン", manufacturer: "ナプラ", defaultOrderQty: 1, reorderPoint: 1, isActive: true },
 ];
 
-const CATEGORIES = ["ã‚«ãƒ©ãƒ¼å‰¤", "2å‰¤", "ãƒ‘ãƒ¼ãƒžå‰¤", "ãƒˆãƒªãƒ¼ãƒˆãƒ¡ãƒ³ãƒˆ", "ã‚·ãƒ£ãƒ³ãƒ—ãƒ¼", "ã‚¹ã‚¿ã‚¤ãƒªãƒ³ã‚°", "ãã®ä»–"];
-const LOCATIONS = ["æ£šAä¸Šæ®µ", "æ£šAä¸­æ®µ", "æ£šAä¸‹æ®µ", "æ£šB", "æ£šC", "ãƒ¯ã‚´ãƒ³", "ãƒãƒƒã‚¯ãƒ¤ãƒ¼ãƒ‰"];
+const CATEGORIES = ["カラー剤", "2剤", "パーマ剤", "トリートメント", "シャンプー", "スタイリング", "その他"];
+const LOCATIONS = ["棚A上段", "棚A中段", "棚A下段", "棚B", "棚C", "ワゴン", "バックヤード"];
 
-// â”€â”€â”€ Color Tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Color Tokens ────────────────────────────────────────
 const C = {
   primary: "#2563eb",
   primaryLight: "#eff6ff",
@@ -44,7 +44,7 @@ const C = {
   textMuted: "#9ca3af",
 };
 
-// â”€â”€â”€ Shared Components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Shared Components ───────────────────────────────────
 function Badge({ count, color }) {
   if (!count) return null;
   return (
@@ -70,7 +70,7 @@ function QuantityStepper({ value, onChange, min = 1, max = 99 }) {
           fontSize: 18, fontWeight: 700, color: value <= min ? C.textMuted : C.primary,
           cursor: value <= min ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center",
         }}
-      >âˆ’</button>
+      >{"\u2212"}</button>
       <div style={{
         width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 15, fontWeight: 700, color: C.text,
@@ -97,22 +97,21 @@ function EmptyState({ icon, message }) {
   );
 }
 
-// â”€â”€â”€ Top Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Top Screen ──────────────────────────────────────────
 function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
   return (
     <div style={{ padding: "0 20px" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontSize: 40, marginBottom: 6 }}>ðŸ·ï¸</div>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: "0 0 4px" }}>QRã‚ªãƒ¼ãƒ€ãƒ¼</h2>
-        <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>ç¾Žå®¹å®¤å‘ã‘ç™ºæ³¨ç®¡ç†</p>
+        <div style={{ fontSize: 40, marginBottom: 6 }}>{"\uD83C\uDFF7\uFE0F"}</div>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: "0 0 4px" }}>{"QR\u30AA\u30FC\u30C0\u30FC"}</h2>
+        <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>{"美容室向け発注管理"}</p>
       </div>
 
-      {/* Main 3 actions */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {[
-          { id: "scan", icon: "ðŸ“·", label: "QRã‚¹ã‚­ãƒ£ãƒ³", desc: "ã‚¿ã‚°ã‚’èª­ã¿å–ã£ã¦ç™ºæ³¨ãƒªã‚¹ãƒˆã«è¿½åŠ ", color: C.primary },
-          { id: "order", icon: "ðŸ“‹", label: "ç™ºæ³¨ãƒªã‚¹ãƒˆ", desc: "æœªç™ºæ³¨ã®å•†å“ã‚’ç¢ºèªãƒ»ç™ºæ³¨å‡¦ç†", color: C.danger, badge: orderCount },
-          { id: "receive", icon: "ðŸ“¦", label: "å—å–å¾…ã¡", desc: "å±Šã„ãŸå•†å“ã®ã‚¿ã‚°ã‚’ã‚¹ã‚­ãƒ£ãƒ³ã—ã¦å®Œäº†", color: C.success, badge: receiveCount },
+          { id: "scan", icon: "\uD83D\uDCF7", label: "QRスキャン", desc: "タグを読み取って発注リストに追加", color: C.primary },
+          { id: "order", icon: "\uD83D\uDCCB", label: "発注リスト", desc: "未発注の商品を確認・発注処理", color: C.danger, badge: orderCount },
+          { id: "receive", icon: "\uD83D\uDCE6", label: "受取待ち", desc: "届いた商品のタグをスキャンして完了", color: C.success, badge: receiveCount },
         ].map((btn) => (
           <button
             key={btn.id}
@@ -133,7 +132,6 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
         ))}
       </div>
 
-      {/* Product Management Card */}
       <button
         onClick={() => onNavigate("products")}
         style={{
@@ -144,23 +142,22 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
           boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
         }}
       >
-        <span style={{ fontSize: 28 }}>âš™ï¸</span>
+        <span style={{ fontSize: 28 }}>{"\u2699\uFE0F"}</span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>å•†å“ç®¡ç†</div>
-          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>å•†å“ã®ç™»éŒ²ãƒ»ç·¨é›†ãƒ»QRã‚¿ã‚°ç´ä»˜ã‘</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>商品管理</div>
+          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>{"商品の登録・編集・QRタグ紐付け"}</div>
         </div>
-        <div style={{ fontSize: 13, color: C.textSub }}>{productCount}å“</div>
-        <span style={{ color: C.textMuted, fontSize: 16 }}>â€º</span>
+        <div style={{ fontSize: 13, color: C.textSub }}>{productCount}品</div>
+        <span style={{ color: C.textMuted, fontSize: 16 }}>{"\u203A"}</span>
       </button>
 
-      {/* Summary */}
       <div style={{ marginTop: 20, padding: 14, background: C.bg, borderRadius: 12, border: `1px solid ${C.border}` }}>
-        <div style={{ fontSize: 11, color: C.textSub, marginBottom: 8, fontWeight: 600 }}>ä»Šæœˆã®ã‚µãƒžãƒªãƒ¼</div>
+        <div style={{ fontSize: 11, color: C.textSub, marginBottom: 8, fontWeight: 600 }}>今月のサマリー</div>
         <div style={{ display: "flex", justifyContent: "space-around" }}>
           {[
-            { label: "ç™ºæ³¨å›žæ•°", value: "8å›ž", color: C.primary },
-            { label: "ç®¡ç†SKU", value: `${productCount}å“`, color: C.success },
-            { label: "åœ¨åº«åˆ‡ã‚Œ", value: "1å›ž", color: C.danger },
+            { label: "発注回数", value: "8回", color: C.primary },
+            { label: "管理SKU", value: `${productCount}品`, color: C.success },
+            { label: "在庫切れ", value: "1回", color: C.danger },
           ].map((s, i) => (
             <div key={i} style={{ textAlign: "center" }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
@@ -170,7 +167,6 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
         </div>
       </div>
 
-      {/* Stockout button */}
       <div style={{ marginTop: 16 }}>
         <StockoutButton />
       </div>
@@ -178,7 +174,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
   );
 }
 
-// â”€â”€â”€ Scan Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Scan Screen ─────────────────────────────────────────
 function ScanScreen({ onNavigate, products, onAddOrderItem }) {
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState([]);
@@ -207,7 +203,6 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
 
   return (
     <div style={{ padding: "0 20px" }}>
-      {/* Camera area */}
       <div style={{
         width: "100%", aspectRatio: "1", maxHeight: 260,
         background: scanning ? "#1a1a2e" : "#111827", borderRadius: 16,
@@ -223,12 +218,12 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
               }} />
             </div>
             <style>{`@keyframes scanLine { 0%{top:0} 50%{top:calc(100% - 3px)} 100%{top:0} }`}</style>
-            <p style={{ color: "#fff", fontSize: 13, marginTop: 14 }}>ã‚¹ã‚­ãƒ£ãƒ³ä¸­...</p>
+            <p style={{ color: "#fff", fontSize: 13, marginTop: 14 }}>スキャン中...</p>
           </>
         ) : showResult ? (
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 44, marginBottom: 6 }}>âœ…</div>
-            <p style={{ color: "#4ade80", fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>èª­ã¿å–ã‚Šå®Œäº†ï¼</p>
+            <div style={{ fontSize: 44, marginBottom: 6 }}>{"\u2705"}</div>
+            <p style={{ color: "#4ade80", fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>読み取り完了！</p>
             <p style={{ color: "#fff", fontSize: 13, margin: 0 }}>{scanned[scanned.length - 1]?.name}</p>
           </div>
         ) : (
@@ -237,9 +232,9 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
               width: 170, height: 170, border: "2px dashed #4b5563", borderRadius: 12,
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <span style={{ fontSize: 12, color: "#6b7280" }}>QRã‚’ã“ã“ã«åˆã‚ã›ã‚‹</span>
+              <span style={{ fontSize: 12, color: "#6b7280" }}>QRをここに合わせる</span>
             </div>
-            <p style={{ color: "#9ca3af", fontSize: 12, marginTop: 10 }}>ã‚«ã‚´ã«è²¯ã‚ãŸã‚¿ã‚°ã‚’ã¾ã¨ã‚ã¦ã‚¹ã‚­ãƒ£ãƒ³</p>
+            <p style={{ color: "#9ca3af", fontSize: 12, marginTop: 10 }}>カゴに貯めたタグをまとめてスキャン</p>
           </>
         )}
       </div>
@@ -249,13 +244,13 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
         background: scanning ? "#94a3b8" : C.primary, color: "#fff",
         fontSize: 15, fontWeight: 700, cursor: scanning ? "default" : "pointer", marginBottom: 18,
       }}>
-        {scanning ? "èª­ã¿å–ã‚Šä¸­..." : "ðŸ“· ã‚¹ã‚­ãƒ£ãƒ³ã™ã‚‹ï¼ˆãƒ‡ãƒ¢ï¼‰"}
+        {scanning ? "読み取り中..." : "\uD83D\uDCF7 スキャンする（デモ）"}
       </button>
 
       {scanned.length > 0 && (
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: C.textSub, marginBottom: 8 }}>
-            ä»Šå›žã‚¹ã‚­ãƒ£ãƒ³ã—ãŸå•†å“ï¼ˆ{scanned.length}ä»¶ï¼‰
+            今回スキャンした商品（{scanned.length}件）
           </div>
           {scanned.map((item, i) => (
             <div key={i} style={{
@@ -263,10 +258,10 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
               background: C.successLight, borderRadius: 10, marginBottom: 5,
               border: `1px solid ${C.successBorder}`,
             }}>
-              <span style={{ fontSize: 18 }}>âœ…</span>
+              <span style={{ fontSize: 18 }}>{"\u2705"}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
-                <div style={{ fontSize: 10, color: C.textSub }}>{item.category} Â· {item.location}</div>
+                <div style={{ fontSize: 10, color: C.textSub }}>{item.category} · {item.location}</div>
               </div>
               <div style={{ fontSize: 10, color: C.textSub }}>{item.time}</div>
             </div>
@@ -276,7 +271,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
             borderRadius: 12, background: C.primaryLight, color: C.primary,
             fontSize: 13, fontWeight: 700, cursor: "pointer", marginTop: 10,
           }}>
-            ðŸ“‹ ç™ºæ³¨ãƒªã‚¹ãƒˆã‚’ç¢ºèªã™ã‚‹ â†’
+            {"\uD83D\uDCCB 発注リストを確認する \u2192"}
           </button>
         </div>
       )}
@@ -284,7 +279,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
   );
 }
 
-// â”€â”€â”€ Order Screen (with quantity) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Order Screen ────────────────────────────────────────
 function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [lastOrderedCount, setLastOrderedCount] = useState(0);
@@ -313,8 +308,8 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
   };
 
   const generateLineText = () => {
-    const lines = pending.map((i, idx) => `${idx + 1}. ${i.name} Ã— ${i.quantity}å€‹`);
-    return `ã€ç™ºæ³¨ãƒªã‚¹ãƒˆã€‘${new Date().toLocaleDateString("ja-JP")}\n\n${lines.join("\n")}\n\nåˆè¨ˆ ${pending.length}å“ç›® / ${pending.reduce((s, i) => s + i.quantity, 0)}å€‹\nã‚ˆã‚ã—ããŠé¡˜ã„ã„ãŸã—ã¾ã™ã€‚`;
+    const lines = pending.map((i, idx) => `${idx + 1}. ${i.name} \u00D7 ${i.quantity}\u500B`);
+    return `\u3010\u767A\u6CE8\u30EA\u30B9\u30C8\u3011${new Date().toLocaleDateString("ja-JP")}\n\n${lines.join("\n")}\n\n\u5408\u8A08 ${pending.length}\u54C1\u76EE / ${pending.reduce((s, i) => s + i.quantity, 0)}\u500B\n\u3088\u308D\u3057\u304F\u304A\u9858\u3044\u3044\u305F\u3057\u307E\u3059\u3002`;
   };
 
   return (
@@ -325,32 +320,31 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
           border: "1px solid #86efac", marginBottom: 14,
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <span style={{ fontSize: 18 }}>âœ…</span>
+          <span style={{ fontSize: 18 }}>{"\u2705"}</span>
           <span style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>
-            {lastOrderedCount}ä»¶ã‚’ç™ºæ³¨å‡¦ç†ã—ã¾ã—ãŸ
+            {lastOrderedCount}件を発注処理しました
           </span>
         </div>
       )}
 
-      {/* Pending items */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>æœªç™ºæ³¨</span>
-            <span style={{ fontSize: 12, color: C.textSub, marginLeft: 8 }}>{pending.length}ä»¶</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>未発注</span>
+            <span style={{ fontSize: 12, color: C.textSub, marginLeft: 8 }}>{pending.length}件</span>
           </div>
           {pending.length > 0 && (
             <button
               onClick={() => setOrderItems((prev) => prev.map((i) => i.status === "scanned" ? { ...i, checked: !pending.every((x) => x.checked) } : i))}
               style={{ fontSize: 11, color: C.primary, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}
             >
-              {pending.every((i) => i.checked) ? "é¸æŠžè§£é™¤" : "ã™ã¹ã¦é¸æŠž"}
+              {pending.every((i) => i.checked) ? "選択解除" : "すべて選択"}
             </button>
           )}
         </div>
 
         {pending.length === 0 ? (
-          <EmptyState icon="ðŸŽ‰" message="æœªç™ºæ³¨ã®å•†å“ã¯ã‚ã‚Šã¾ã›ã‚“" />
+          <EmptyState icon={"\uD83C\uDF89"} message="未発注の商品はありません" />
         ) : (
           pending.map((item) => (
             <div key={item.id} style={{
@@ -365,12 +359,12 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
                 background: item.checked ? C.primary : C.card,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                {item.checked && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>âœ“</span>}
+                {item.checked && <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>{"\u2714"}</span>}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
                 <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
-                  {item.category} Â· {item.location} Â· {item.scannedAt}
+                  {item.category} · {item.location} · {item.scannedAt}
                 </div>
               </div>
               <QuantityStepper value={item.quantity} onChange={(v) => updateQty(item.id, v)} />
@@ -379,33 +373,31 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
         )}
 
         <button onClick={handleOrder} disabled={checkedCount === 0} style={{
-            width: "100%", padding: "14px", border: "none", borderRadius: 12,
-            background: checkedCount > 0 ? C.danger : "#d1d5db", color: "#fff", fontSize: 14, fontWeight: 700,
-            cursor: checkedCount > 0 ? "pointer" : "default", marginTop: 10,
-          }}>
-            âœ… {checkedCount > 0 ? `é¸æŠžã—ãŸ${checkedCount}ä»¶ã‚’ç™ºæ³¨æ¸ˆã¿ã«ã™ã‚‹` : "ç™ºæ³¨ã™ã‚‹å•†å“ã‚’é¸æŠžã—ã¦ãã ã•ã„"}
-          </button>
+          width: "100%", padding: "14px", border: "none", borderRadius: 12,
+          background: checkedCount > 0 ? C.danger : "#d1d5db", color: "#fff", fontSize: 14, fontWeight: 700,
+          cursor: checkedCount > 0 ? "pointer" : "default", marginTop: 10,
+        }}>
+          {checkedCount > 0 ? `\u2705 選択した${checkedCount}件を発注済みにする` : "\u2705 発注する商品を選択してください"}
+        </button>
       </div>
 
-      {/* LINE send */}
       <button onClick={() => setShowLinePopup(true)} style={{
         width: "100%", padding: "14px", border: "none", borderRadius: 12,
         background: C.line, color: "#fff", fontSize: 14, fontWeight: 700,
         cursor: "pointer", marginBottom: 20,
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
       }}>
-        <span style={{ fontSize: 18 }}>ðŸ’¬</span>LINEã§ç™ºæ³¨ãƒªã‚¹ãƒˆã‚’é€ä¿¡
+        <span style={{ fontSize: 18 }}>{"\uD83D\uDCAC"}</span>LINEで発注リストを送信
       </button>
 
-      {/* LINE popup */}
       {showLinePopup && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100 }}
           onClick={() => setShowLinePopup(false)}>
           <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "20px 20px 0 0", padding: "20px 20px 28px" }}
             onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>ðŸ’¬ LINEé€ä¿¡ãƒ—ãƒ¬ãƒ“ãƒ¥ãƒ¼</h3>
-              <button onClick={() => setShowLinePopup(false)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>âœ•</button>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>{"\uD83D\uDCAC LINE送信プレビュー"}</h3>
+              <button onClick={() => setShowLinePopup(false)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>{"\u2715"}</button>
             </div>
             <div style={{
               padding: 14, background: C.bg, borderRadius: 12,
@@ -419,7 +411,7 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
               background: C.line, color: "#fff", fontSize: 14, fontWeight: 700,
               cursor: "pointer", marginTop: 14,
             }}>
-              LINEã«é€ä¿¡ã™ã‚‹
+              LINEに送信する
             </button>
           </div>
         </div>
@@ -428,7 +420,7 @@ function OrderScreen({ orderItems, setOrderItems, orderedItems, setOrderedItems 
   );
 }
 
-// â”€â”€â”€ Receive Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Receive Screen ──────────────────────────────────────
 function ReceiveScreen({ orderedItems, setOrderedItems }) {
   const [scanning, setScanning] = useState(false);
   const [lastReceived, setLastReceived] = useState(null);
@@ -456,11 +448,11 @@ function ReceiveScreen({ orderedItems, setOrderedItems }) {
           border: "1px solid #86efac", marginBottom: 14,
           display: "flex", alignItems: "center", gap: 8,
         }}>
-          <span style={{ fontSize: 18 }}>ðŸ“¦</span>
+          <span style={{ fontSize: 18 }}>{"\uD83D\uDCE6"}</span>
           <div>
-            <div style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>å—å–å®Œäº†ï¼</div>
+            <div style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>受取完了！</div>
             <div style={{ fontSize: 11, color: C.successDark }}>{lastReceived}</div>
-            <div style={{ fontSize: 10, color: "#15803d", marginTop: 2 }}>â†’ ã‚¿ã‚°ã‚’æ–°ã—ã„åœ¨åº«ã«ä»˜ã‘ç›´ã—ã¦ãã ã•ã„</div>
+            <div style={{ fontSize: 10, color: "#15803d", marginTop: 2 }}>{"\u2192 タグを新しい在庫に付け直してください"}</div>
           </div>
         </div>
       )}
@@ -470,45 +462,43 @@ function ReceiveScreen({ orderedItems, setOrderedItems }) {
         background: scanning ? "#94a3b8" : unreceived.length === 0 ? "#d1d5db" : C.success,
         color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 18,
       }}>
-        {scanning ? "èª­ã¿å–ã‚Šä¸­..." : unreceived.length === 0 ? "ã™ã¹ã¦å—å–æ¸ˆã¿ âœ…" : "ðŸ“· å±Šã„ãŸå•†å“ã®ã‚¿ã‚°ã‚’ã‚¹ã‚­ãƒ£ãƒ³ï¼ˆãƒ‡ãƒ¢ï¼‰"}
+        {scanning ? "読み取り中..." : unreceived.length === 0 ? "すべて受取済み \u2705" : "\uD83D\uDCF7 届いた商品のタグをスキャン（デモ）"}
       </button>
 
-      {/* Unreceived */}
       <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 10 }}>
-        å—å–å¾…ã¡ <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{unreceived.length}ä»¶</span>
+        受取待ち <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{unreceived.length}件</span>
       </div>
       {unreceived.length === 0 ? (
-        <EmptyState icon="âœ…" message="ã™ã¹ã¦å—å–æ¸ˆã¿ã§ã™" />
+        <EmptyState icon={"\u2705"} message="すべて受取済みです" />
       ) : (
         unreceived.map((item) => (
           <div key={item.id} style={{
             display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
             background: C.card, borderRadius: 10, marginBottom: 5, border: `1px solid ${C.border}`,
           }}>
-            <span style={{ fontSize: 18 }}>ðŸ“¦</span>
+            <span style={{ fontSize: 18 }}>{"\uD83D\uDCE6"}</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
-              <div style={{ fontSize: 10, color: C.textSub }}>Ã— {item.quantity}å€‹ Â· ç™ºæ³¨æ—¥ {item.orderedAt}</div>
+              <div style={{ fontSize: 10, color: C.textSub }}>{"\u00D7"} {item.quantity}個 · 発注日 {item.orderedAt}</div>
             </div>
           </div>
         ))
       )}
 
-      {/* Received */}
       {received.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, marginBottom: 8 }}>å—å–æ¸ˆã¿</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, marginBottom: 8 }}>受取済み</div>
           {received.map((item) => (
             <div key={item.id} style={{
               display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
               background: C.successLight, borderRadius: 10, marginBottom: 4,
               border: `1px solid ${C.successBorder}`, opacity: 0.5,
             }}>
-              <span style={{ fontSize: 16 }}>âœ…</span>
+              <span style={{ fontSize: 16 }}>{"\u2705"}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, textDecoration: "line-through" }}>{item.name}</div>
               </div>
-              <span style={{ fontSize: 10, color: C.success, fontWeight: 600 }}>å—å–æ¸ˆ</span>
+              <span style={{ fontSize: 10, color: C.success, fontWeight: 600 }}>受取済</span>
             </div>
           ))}
         </div>
@@ -517,7 +507,7 @@ function ReceiveScreen({ orderedItems, setOrderedItems }) {
       {received.length > 0 && (
         <div style={{ marginTop: 16, padding: 12, background: C.warnLight, borderRadius: 10, border: `1px solid ${C.warnBorder}` }}>
           <p style={{ fontSize: 12, color: C.warnDark, margin: 0, lineHeight: 1.6 }}>
-            ðŸ’¡ å—å–å®Œäº†ã—ãŸã‚¿ã‚°ã¯ã€å±Šã„ãŸå•†å“ã®<strong>å¾Œã‚ã‹ã‚‰Næœ¬ç›®</strong>ã®ä½ç½®ã«ä»˜ã‘ç›´ã—ã¦ãã ã•ã„ã€‚
+            {"\uD83D\uDCA1"} 受取完了したタグは、届いた商品の<strong>後ろからN本目</strong>の位置に付け直してください。
           </p>
         </div>
       )}
@@ -525,9 +515,9 @@ function ReceiveScreen({ orderedItems, setOrderedItems }) {
   );
 }
 
-// â”€â”€â”€ Product Management Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Product Management Screen ───────────────────────────
 function ProductScreen({ products, setProducts, onNavigate }) {
-  const [view, setView] = useState("list"); // list | add | edit
+  const [view, setView] = useState("list");
   const [editProduct, setEditProduct] = useState(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
@@ -567,12 +557,11 @@ function ProductScreen({ products, setProducts, onNavigate }) {
 
   return (
     <div style={{ padding: "0 20px" }}>
-      {/* Search */}
       <div style={{ position: "relative", marginBottom: 12 }}>
-        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: C.textMuted }}>ðŸ”</span>
+        <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: C.textMuted }}>{"\uD83D\uDD0D"}</span>
         <input
           value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="å•†å“åãƒ»ãƒ¡ãƒ¼ã‚«ãƒ¼ã§æ¤œç´¢"
+          placeholder="商品名・メーカーで検索"
           style={{
             width: "100%", padding: "11px 12px 11px 38px", border: `1px solid ${C.border}`,
             borderRadius: 10, fontSize: 13, outline: "none", background: C.card,
@@ -581,13 +570,12 @@ function ProductScreen({ products, setProducts, onNavigate }) {
         />
       </div>
 
-      {/* Category filter */}
       <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 14, paddingBottom: 4 }}>
         <button onClick={() => setFilterCat("")} style={{
           padding: "6px 12px", borderRadius: 20, border: `1px solid ${filterCat === "" ? C.primary : C.border}`,
           background: filterCat === "" ? C.primaryLight : C.card, color: filterCat === "" ? C.primary : C.textSub,
           fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-        }}>ã™ã¹ã¦ ({products.filter((p) => p.isActive).length})</button>
+        }}>すべて ({products.filter((p) => p.isActive).length})</button>
         {Object.entries(categoryCounts).map(([cat, count]) => (
           <button key={cat} onClick={() => setFilterCat(cat)} style={{
             padding: "6px 12px", borderRadius: 20, border: `1px solid ${filterCat === cat ? C.primary : C.border}`,
@@ -597,7 +585,6 @@ function ProductScreen({ products, setProducts, onNavigate }) {
         ))}
       </div>
 
-      {/* Product list */}
       {filtered.map((p) => (
         <div key={p.id} onClick={() => { setEditProduct(p); setView("edit"); }} style={{
           display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
@@ -614,16 +601,15 @@ function ProductScreen({ products, setProducts, onNavigate }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
             <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
-              {p.manufacturer} Â· {p.location} Â· ç™ºæ³¨ç‚¹: {p.reorderPoint || "æœªè¨­å®š"}æœ¬ç›® Â· ç™ºæ³¨æ•°: {p.defaultOrderQty}å€‹
+              {p.manufacturer} · {p.location} · 発注点: {p.reorderPoint || "未設定"}本目 · 発注数: {p.defaultOrderQty}個
             </div>
           </div>
-          <span style={{ color: C.textMuted, fontSize: 14 }}>â€º</span>
+          <span style={{ color: C.textMuted, fontSize: 14 }}>{"\u203A"}</span>
         </div>
       ))}
 
-      {filtered.length === 0 && <EmptyState icon="ðŸ“­" message="è©²å½“ã™ã‚‹å•†å“ãŒã‚ã‚Šã¾ã›ã‚“" />}
+      {filtered.length === 0 && <EmptyState icon={"\uD83D\uDD2D"} message="該当する商品がありません" />}
 
-      {/* Add button */}
       <button onClick={() => setView("add")} style={{
         position: "fixed", bottom: 80, right: "calc(50% - 190px)",
         width: 56, height: 56, borderRadius: 28,
@@ -637,10 +623,10 @@ function ProductScreen({ products, setProducts, onNavigate }) {
   );
 }
 
-// â”€â”€â”€ Product Form (Add/Edit) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Product Form ────────────────────────────────────────
 function ProductForm({ product, onSave, onCancel, onDelete }) {
   const [form, setForm] = useState(product || {
-    name: "", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", manufacturer: "",
+    name: "", category: "カラー剤", location: "棚A上段", manufacturer: "",
     defaultOrderQty: 1, reorderPoint: null, janCode: "",
   });
   const [showBarcodeScan, setShowBarcodeScan] = useState(false);
@@ -655,9 +641,9 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
       setShowBarcodeScan(false);
       setForm((f) => ({
         ...f,
-        name: "ãƒŸãƒ«ãƒœãƒ³ ã‚ªãƒ«ãƒ‡ã‚£ãƒ¼ãƒ– ã‚¢ãƒ‡ã‚£ã‚¯ã‚·ãƒ¼ GP7",
-        manufacturer: "ãƒŸãƒ«ãƒœãƒ³",
-        category: "ã‚«ãƒ©ãƒ¼å‰¤",
+        name: "ミルボン オルディーブ アディクシー GP7",
+        manufacturer: "ミルボン",
+        category: "カラー剤",
         janCode: "4954835325141",
       }));
     }, 1500);
@@ -666,10 +652,9 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
   return (
     <div style={{ padding: "0 20px" }}>
       <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 16 }}>
-        {product ? "å•†å“ã‚’ç·¨é›†" : "æ–°ã—ã„å•†å“ã‚’ç™»éŒ²"}
+        {product ? "商品を編集" : "新しい商品を登録"}
       </div>
 
-      {/* Barcode scan shortcut */}
       {!product && (
         <button onClick={simulateBarcodeScan} disabled={showBarcodeScan} style={{
           width: "100%", padding: "14px", border: `1.5px dashed ${C.primary}`,
@@ -679,37 +664,36 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
         }}>
           {showBarcodeScan ? (
             <>
-              <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>â³</span>
-              ãƒãƒ¼ã‚³ãƒ¼ãƒ‰èª­ã¿å–ã‚Šä¸­...
+              <span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>{"\u23F3"}</span>
+              バーコード読み取り中...
               <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
             </>
           ) : (
-            <>ðŸ“· ãƒãƒ¼ã‚³ãƒ¼ãƒ‰ã§å•†å“æƒ…å ±ã‚’è‡ªå‹•å…¥åŠ›ï¼ˆãƒ‡ãƒ¢ï¼‰</>
+            <>{"\uD83D\uDCF7 バーコードで商品情報を自動入力（デモ）"}</>
           )}
         </button>
       )}
 
-      {/* Form fields */}
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <FormField label="å•†å“å" required>
+        <FormField label="商品名" required>
           <input value={form.name} onChange={(e) => update("name", e.target.value)}
-            placeholder="ä¾‹ï¼šã‚¤ãƒ«ãƒŸãƒŠã‚«ãƒ©ãƒ¼ ã‚ªãƒ¼ã‚·ãƒ£ãƒ³ 6"
+            placeholder="例：イルミナカラー オーシャン 6"
             style={inputStyle} />
         </FormField>
 
-        <FormField label="ãƒ¡ãƒ¼ã‚«ãƒ¼">
+        <FormField label="メーカー">
           <input value={form.manufacturer} onChange={(e) => update("manufacturer", e.target.value)}
-            placeholder="ä¾‹ï¼šã‚¦ã‚¨ãƒ©"
+            placeholder="例：ウエラ"
             style={inputStyle} />
         </FormField>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <FormField label="ã‚«ãƒ†ã‚´ãƒª" style={{ flex: 1 }}>
+          <FormField label="カテゴリ" style={{ flex: 1 }}>
             <select value={form.category} onChange={(e) => update("category", e.target.value)} style={{ ...inputStyle, appearance: "auto" }}>
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </FormField>
-          <FormField label="ä¿ç®¡å ´æ‰€" style={{ flex: 1 }}>
+          <FormField label="保管場所" style={{ flex: 1 }}>
             <select value={form.location} onChange={(e) => update("location", e.target.value)} style={{ ...inputStyle, appearance: "auto" }}>
               {LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
@@ -717,58 +701,56 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <FormField label="ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆç™ºæ³¨æ•°" style={{ flex: 1 }}>
+          <FormField label="デフォルト発注数" style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <QuantityStepper value={form.defaultOrderQty} onChange={(v) => update("defaultOrderQty", v)} />
-              <span style={{ fontSize: 12, color: C.textSub }}>å€‹</span>
+              <span style={{ fontSize: 12, color: C.textSub }}>個</span>
             </div>
           </FormField>
-          <FormField label="ç™ºæ³¨ç‚¹ï¼ˆå¾Œã‚ã‹ã‚‰Næœ¬ç›®ï¼‰" style={{ flex: 1 }}>
+          <FormField label="発注点（後ろからN本目）" style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <QuantityStepper value={form.reorderPoint || 1} onChange={(v) => update("reorderPoint", v)} min={1} max={20} />
-              <span style={{ fontSize: 12, color: C.textSub }}>æœ¬ç›®</span>
+              <span style={{ fontSize: 12, color: C.textSub }}>本目</span>
             </div>
           </FormField>
         </div>
 
         {form.janCode && (
-          <FormField label="JANã‚³ãƒ¼ãƒ‰">
+          <FormField label="JANコード">
             <div style={{ ...inputStyle, background: C.bg, color: C.textSub }}>{form.janCode}</div>
           </FormField>
         )}
       </div>
 
-      {/* QR Tag binding info - only for new registration */}
       {!product && (
         <div style={{ marginTop: 20, padding: 12, background: C.primaryLight, borderRadius: 10, border: `1px solid ${C.primaryBorder}` }}>
           <p style={{ fontSize: 12, color: C.primary, margin: 0, lineHeight: 1.6 }}>
-            ðŸ·ï¸ ä¿å­˜å¾Œã€QRã‚¿ã‚°ã‚’ã‚¹ã‚­ãƒ£ãƒ³ã—ã¦ã“ã®å•†å“ã«ç´ä»˜ã‘ã¦ãã ã•ã„ã€‚
-            ã‚¿ã‚°ã«å•†å“åã‚’æ‰‹æ›¸ãã—ã€å¾Œã‚ã‹ã‚‰{form.reorderPoint || "N"}æœ¬ç›®ã«å–ã‚Šä»˜ã‘ã¾ã™ã€‚
+            {"\uD83C\uDFF7\uFE0F"} 保存後、QRタグをスキャンしてこの商品に紐付けてください。
+            タグに商品名を手書きし、後ろから{form.reorderPoint || "N"}本目に取り付けます。
           </p>
         </div>
       )}
 
-      {/* Actions */}
       <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
         <button onClick={() => isValid && onSave(form)} disabled={!isValid} style={{
           width: "100%", padding: "14px", border: "none", borderRadius: 12,
           background: isValid ? C.primary : "#d1d5db", color: "#fff",
           fontSize: 14, fontWeight: 700, cursor: isValid ? "pointer" : "default",
         }}>
-          {product ? "ä¿å­˜ã™ã‚‹" : "å•†å“ã‚’ç™»éŒ²ã™ã‚‹"}
+          {product ? "保存する" : "商品を登録する"}
         </button>
         <button onClick={onCancel} style={{
           width: "100%", padding: "14px", border: `1px solid ${C.border}`, borderRadius: 12,
           background: C.card, color: C.textSub, fontSize: 14, fontWeight: 600, cursor: "pointer",
         }}>
-          ã‚­ãƒ£ãƒ³ã‚»ãƒ«
+          キャンセル
         </button>
         {onDelete && (
           <button onClick={onDelete} style={{
             width: "100%", padding: "12px", border: "none", borderRadius: 12,
             background: "transparent", color: C.danger, fontSize: 13, fontWeight: 600, cursor: "pointer",
           }}>
-            ã“ã®å•†å“ã‚’å‰Šé™¤ã™ã‚‹
+            この商品を削除する
           </button>
         )}
       </div>
@@ -793,13 +775,13 @@ const inputStyle = {
   boxSizing: "border-box", color: C.text,
 };
 
-// â”€â”€â”€ Stockout Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Stockout Button ─────────────────────────────────────
 function StockoutButton() {
   const [reported, setReported] = useState(false);
   if (reported) {
     return (
       <div style={{ padding: "11px 14px", background: C.dangerLight, borderRadius: 10, border: `1px solid ${C.dangerBorder}`, textAlign: "center" }}>
-        <span style={{ fontSize: 12, color: C.danger, fontWeight: 600 }}>âš ï¸ åœ¨åº«åˆ‡ã‚Œã‚’å ±å‘Šã—ã¾ã—ãŸï¼ˆæ¶ˆè²»ã‚µã‚¤ã‚¯ãƒ«ã®å­¦ç¿’ã«ä½¿ã„ã¾ã™ï¼‰</span>
+        <span style={{ fontSize: 12, color: C.danger, fontWeight: 600 }}>{"\u26A0\uFE0F 在庫切れを報告しました（消費サイクルの学習に使います）"}</span>
       </div>
     );
   }
@@ -809,29 +791,27 @@ function StockoutButton() {
       borderRadius: 12, background: C.card, color: C.danger,
       fontSize: 13, fontWeight: 700, cursor: "pointer",
     }}>
-      âš ï¸ åœ¨åº«ãŒåˆ‡ã‚ŒãŸå•†å“ã‚’å ±å‘Šã™ã‚‹
+      {"\u26A0\uFE0F 在庫が切れた商品を報告する"}
     </button>
   );
 }
 
-// â”€â”€â”€ Main App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main App ────────────────────────────────────────────
 export default function SalonMock() {
   const [screen, setScreen] = useState("top");
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
 
-  // Order items: scanned but not yet ordered
   const [orderItems, setOrderItems] = useState([
-    { id: 101, productId: 1, name: "ã‚¤ãƒ«ãƒŸãƒŠã‚«ãƒ©ãƒ¼ ã‚ªãƒ¼ã‚·ãƒ£ãƒ³ 6", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", quantity: 2, status: "scanned", scannedAt: "2/15 14:20", checked: false },
-    { id: 102, productId: 2, name: "ã‚¢ãƒ‡ã‚£ã‚¯ã‚·ãƒ¼ ã‚°ãƒ¬ãƒ¼ãƒ‘ãƒ¼ãƒ« 7", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸Šæ®µ", quantity: 2, status: "scanned", scannedAt: "2/15 14:20", checked: false },
-    { id: 103, productId: 3, name: "ã‚ªãƒ«ãƒ‡ã‚£ãƒ¼ãƒ– ã‚·ãƒ¼ãƒ‡ã‚£ãƒ« C-8", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸­æ®µ", quantity: 3, status: "scanned", scannedAt: "2/16 10:05", checked: false },
-    { id: 104, productId: 4, name: "ã‚ªã‚­ã‚· 6% 2å‰¤ 1000ml", category: "2å‰¤", location: "æ£šB", quantity: 1, status: "scanned", scannedAt: "2/16 10:05", checked: false },
-    { id: 105, productId: 5, name: "ãƒ•ã‚¡ã‚¤ãƒãƒ¼ãƒ—ãƒ¬ãƒƒã‚¯ã‚¹ No.1", category: "ãƒˆãƒªãƒ¼ãƒˆãƒ¡ãƒ³ãƒˆ", location: "ãƒ¯ã‚´ãƒ³", quantity: 1, status: "scanned", scannedAt: "2/17 09:30", checked: false },
+    { id: 101, productId: 1, name: "イルミナカラー オーシャン 6", category: "カラー剤", location: "棚A上段", quantity: 2, status: "scanned", scannedAt: "2/15 14:20", checked: false },
+    { id: 102, productId: 2, name: "アディクシー グレーパール 7", category: "カラー剤", location: "棚A上段", quantity: 2, status: "scanned", scannedAt: "2/15 14:20", checked: false },
+    { id: 103, productId: 3, name: "オルディーブ シーディル C-8", category: "カラー剤", location: "棚A中段", quantity: 3, status: "scanned", scannedAt: "2/16 10:05", checked: false },
+    { id: 104, productId: 4, name: "オキシ 6% 2剤 1000ml", category: "2剤", location: "棚B", quantity: 1, status: "scanned", scannedAt: "2/16 10:05", checked: false },
+    { id: 105, productId: 5, name: "ファイバープレックス No.1", category: "トリートメント", location: "ワゴン", quantity: 1, status: "scanned", scannedAt: "2/17 09:30", checked: false },
   ]);
 
-  // Ordered items: ordered, waiting for delivery
   const [orderedItems, setOrderedItems] = useState([
-    { id: 201, productId: 6, name: "ã‚¹ãƒ­ã‚¦ã‚«ãƒ©ãƒ¼ ãƒ¢ãƒŽãƒˆãƒ¼ãƒ³ MT/08", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸‹æ®µ", quantity: 2, status: "ordered", orderedAt: "2/14" },
-    { id: 202, productId: 7, name: "ãƒ—ãƒ­ãƒžã‚¹ã‚¿ãƒ¼ ã‚¹ã‚¦ã‚£ãƒ¼ãƒ„ PK-7", category: "ã‚«ãƒ©ãƒ¼å‰¤", location: "æ£šAä¸­æ®µ", quantity: 2, status: "ordered", orderedAt: "2/14" },
+    { id: 201, productId: 6, name: "スロウカラー モノトーン MT/08", category: "カラー剤", location: "棚A下段", quantity: 2, status: "ordered", orderedAt: "2/14" },
+    { id: 202, productId: 7, name: "プロマスター スウィーツ PK-7", category: "カラー剤", location: "棚A中段", quantity: 2, status: "ordered", orderedAt: "2/14" },
   ]);
 
   const handleAddOrderItem = (product) => {
@@ -854,7 +834,7 @@ export default function SalonMock() {
   const waitingCount = orderedItems.filter((i) => i.status === "ordered").length;
   const activeProducts = products.filter((p) => p.isActive).length;
 
-  const screenTitle = { top: null, scan: "QRã‚¹ã‚­ãƒ£ãƒ³", order: "ç™ºæ³¨ãƒªã‚¹ãƒˆ", receive: "å—å–å¾…ã¡", products: "å•†å“ç®¡ç†" };
+  const screenTitle = { top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち", products: "商品管理" };
 
   return (
     <div style={{
@@ -864,7 +844,6 @@ export default function SalonMock() {
     }}>
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
-      {/* Header */}
       <div style={{
         padding: "14px 20px", background: C.card, borderBottom: `1px solid ${C.border}`,
         display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 50,
@@ -872,15 +851,15 @@ export default function SalonMock() {
         {screen !== "top" && (
           <button onClick={() => setScreen("top")}
             style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: "4px", color: "#555" }}>
-            â†
+            {"\u2190"}
           </button>
         )}
         <div style={{ flex: 1 }}>
           {screen === "top" ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 18 }}>ðŸ·ï¸</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>QRã‚ªãƒ¼ãƒ€ãƒ¼</span>
-              <span style={{ fontSize: 10, color: C.textSub, background: "#f3f4f6", padding: "2px 8px", borderRadius: 10 }}>ãƒ‡ãƒ¢</span>
+              <span style={{ fontSize: 18 }}>{"\uD83C\uDFF7\uFE0F"}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>QRオーダー</span>
+              <span style={{ fontSize: 10, color: C.textSub, background: "#f3f4f6", padding: "2px 8px", borderRadius: 10 }}>デモ</span>
             </div>
           ) : (
             <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{screenTitle[screen]}</span>
@@ -891,7 +870,6 @@ export default function SalonMock() {
         )}
       </div>
 
-      {/* Content */}
       <div style={{ paddingTop: 16, paddingBottom: 90 }}>
         {screen === "top" && (
           <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} />
@@ -910,17 +888,16 @@ export default function SalonMock() {
         )}
       </div>
 
-      {/* Bottom nav */}
       <div style={{
         position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
         width: "100%", maxWidth: 420, background: C.card, borderTop: `1px solid ${C.border}`,
         display: "flex", justifyContent: "space-around", padding: "6px 0 18px", zIndex: 50,
       }}>
         {[
-          { id: "top", icon: "ðŸ ", label: "ãƒ›ãƒ¼ãƒ " },
-          { id: "scan", icon: "ðŸ“·", label: "ã‚¹ã‚­ãƒ£ãƒ³" },
-          { id: "order", icon: "ðŸ“‹", label: "ç™ºæ³¨", badge: pendingCount },
-          { id: "receive", icon: "ðŸ“¦", label: "å—å–", badge: waitingCount },
+          { id: "top", icon: "\uD83C\uDFE0", label: "ホーム" },
+          { id: "scan", icon: "\uD83D\uDCF7", label: "スキャン" },
+          { id: "order", icon: "\uD83D\uDCCB", label: "発注", badge: pendingCount },
+          { id: "receive", icon: "\uD83D\uDCE6", label: "受取", badge: waitingCount },
         ].map((nav) => (
           <button key={nav.id} onClick={() => setScreen(nav.id)} style={{
             background: "none", border: "none", cursor: "pointer",
