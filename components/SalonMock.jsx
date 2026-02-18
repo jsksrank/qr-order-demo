@@ -2,6 +2,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth-context";
 import { supabase } from "../lib/supabase";
+import dynamic from "next/dynamic";
+
+// SSR セーフ：html5-qrcode はブラウザ専用なので SSR を無効化
+const QrScanner = dynamic(() => import("./QrScanner"), { ssr: false });
 
 // ——— Constants ———
 const CATEGORIES = ["カラー剤", "2剤", "パーマ剤", "トリートメント", "シャンプー", "スタイリング", "その他"];
@@ -195,14 +199,55 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
 }
 
 // ======================================================================
-// Scan Screen
+// Scan Screen（★ Step 3: 実カメラQRスキャン + デモ併設）
 // ======================================================================
-function ScanScreen({ onNavigate, products, onAddOrderItem }) {
-  const [scanning, setScanning] = useState(false);
+function ScanScreen({ onNavigate, products, onAddOrderItem, storeId }) {
+  const [cameraActive, setCameraActive] = useState(false);
+  const [scanning, setScanning] = useState(false); // デモ用
   const [scanned, setScanned] = useState([]);
-  const [showResult, setShowResult] = useState(false);
+  const [scanResult, setScanResult] = useState(null); // { type, name, message }
   const [scanIndex, setScanIndex] = useState(0);
 
+  // ——— 実カメラ QR スキャン成功時 ———
+  const handleQrScan = useCallback(async (decodedText, format) => {
+    // 1) qr_tags テーブルでタグを検索
+    if (supabase && storeId) {
+      const { data: tag } = await supabase
+        .from("qr_tags")
+        .select("id, tag_code, product_id, status")
+        .eq("tag_code", decodedText)
+        .eq("store_id", storeId)
+        .maybeSingle();
+
+      if (tag) {
+        if (tag.status === "removed") {
+          setScanResult({ type: "warning", message: "このタグは既にスキャン済みです" });
+          setTimeout(() => setScanResult(null), 2500);
+          return;
+        }
+
+        // タグに紐づく商品を products から検索
+        const product = products.find((p) => p.id === tag.product_id);
+        if (product) {
+          await onAddOrderItem(product);
+          // qr_tags のステータスを removed に更新
+          await supabase.from("qr_tags").update({ status: "removed" }).eq("id", tag.id);
+
+          const time = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+          setScanned((prev) => [...prev, { name: product.name, category: product.category, location: product.location, time }]);
+          setScanResult({ type: "success", name: product.name, message: "読み取り完了！" });
+          setTimeout(() => setScanResult(null), 2000);
+          return;
+        }
+      }
+    }
+
+    // タグ未登録 or DB未接続
+    setScanResult({ type: "error", name: decodedText, message: "未登録のQRタグです。商品管理でタグを紐付けてください。" });
+    setTimeout(() => setScanResult(null), 4000);
+  }, [storeId, products, onAddOrderItem]);
+
+  // ——— デモスキャン（既存ロジックを維持）———
   const scanTargets = products.filter((p) => p.isActive).slice(0, 5);
 
   const simulateScan = () => {
@@ -210,64 +255,98 @@ function ScanScreen({ onNavigate, products, onAddOrderItem }) {
     setScanning(true);
     setTimeout(() => {
       setScanning(false);
-      setShowResult(true);
       const target = scanTargets[scanIndex % scanTargets.length];
-      const item = {
-        ...target,
-        time: new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" }),
-      };
-      setScanned((prev) => [...prev, item]);
+      const time = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+      setScanned((prev) => [...prev, { ...target, time }]);
       onAddOrderItem(target);
       setScanIndex((i) => i + 1);
-      setTimeout(() => setShowResult(false), 1800);
+      setScanResult({ type: "success", name: target.name, message: "読み取り完了！" });
+      setTimeout(() => setScanResult(null), 1800);
     }, 1000);
   };
 
   return (
     <div style={{ padding: "0 20px" }}>
-      <div style={{
-        width: "100%", aspectRatio: "1", maxHeight: 260,
-        background: scanning ? "#1a1a2e" : "#111827", borderRadius: 16,
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        overflow: "hidden", marginBottom: 14, position: "relative",
-      }}>
-        {scanning ? (
-          <>
-            <div style={{ width: 170, height: 170, border: "3px solid #2563eb", borderRadius: 12, position: "relative" }}>
+      {/* カメラ映像 or プレースホルダー */}
+      {cameraActive ? (
+        <div style={{ marginBottom: 14 }}>
+          <QrScanner mode="qr" active={cameraActive} onScan={handleQrScan} />
+        </div>
+      ) : (
+        <div style={{
+          width: "100%", aspectRatio: "1", maxHeight: 260,
+          background: scanning ? "#1a1a2e" : "#111827", borderRadius: 16,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          overflow: "hidden", marginBottom: 14, position: "relative",
+        }}>
+          {scanning ? (
+            <>
+              <div style={{ width: 170, height: 170, border: "3px solid #2563eb", borderRadius: 12, position: "relative" }}>
+                <div style={{
+                  position: "absolute", top: 0, left: 0, right: 0, height: 3,
+                  background: "#2563eb", animation: "scanLine 1.2s ease-in-out infinite",
+                }} />
+              </div>
+              <style>{`@keyframes scanLine { 0%{top:0} 50%{top:calc(100% - 3px)} 100%{top:0} }`}</style>
+              <p style={{ color: "#fff", fontSize: 13, marginTop: 14 }}>スキャン中...</p>
+            </>
+          ) : scanResult ? (
+            <div style={{ textAlign: "center", padding: "0 20px" }}>
+              <div style={{ fontSize: 44, marginBottom: 6 }}>
+                {scanResult.type === "success" ? "✅" : scanResult.type === "warning" ? "⚠️" : "❌"}
+              </div>
+              <p style={{ color: scanResult.type === "success" ? "#4ade80" : scanResult.type === "warning" ? "#fbbf24" : "#f87171", fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>{scanResult.message}</p>
+              {scanResult.name && <p style={{ color: "#fff", fontSize: 13, margin: 0 }}>{scanResult.name}</p>}
+            </div>
+          ) : (
+            <>
               <div style={{
-                position: "absolute", top: 0, left: 0, right: 0, height: 3,
-                background: "#2563eb", animation: "scanLine 1.2s ease-in-out infinite",
-              }} />
-            </div>
-            <style>{`@keyframes scanLine { 0%{top:0} 50%{top:calc(100% - 3px)} 100%{top:0} }`}</style>
-            <p style={{ color: "#fff", fontSize: 13, marginTop: 14 }}>スキャン中...</p>
-          </>
-        ) : showResult ? (
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 44, marginBottom: 6 }}>✅</div>
-            <p style={{ color: "#4ade80", fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>読み取り完了！</p>
-            <p style={{ color: "#fff", fontSize: 13, margin: 0 }}>{scanned[scanned.length - 1]?.name}</p>
-          </div>
-        ) : (
-          <>
-            <div style={{
-              width: 170, height: 170, border: "2px dashed #4b5563", borderRadius: 12,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <span style={{ fontSize: 12, color: "#6b7280" }}>QRをここに合わせる</span>
-            </div>
-            <p style={{ color: "#9ca3af", fontSize: 12, marginTop: 10 }}>カゴに貯めたタグをまとめてスキャン</p>
-          </>
-        )}
-      </div>
+                width: 170, height: 170, border: "2px dashed #4b5563", borderRadius: 12,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <span style={{ fontSize: 12, color: "#6b7280" }}>QRをここに合わせる</span>
+              </div>
+              <p style={{ color: "#9ca3af", fontSize: 12, marginTop: 10 }}>カゴに貯めたタグをまとめてスキャン</p>
+            </>
+          )}
+        </div>
+      )}
 
-      <button onClick={simulateScan} disabled={scanning} style={{
+      {/* スキャン結果（カメラ使用中） */}
+      {cameraActive && scanResult && (
+        <div style={{
+          padding: "11px 14px", marginBottom: 12, borderRadius: 10,
+          background: scanResult.type === "success" ? "#dcfce7" : scanResult.type === "warning" ? C.warnLight : C.dangerLight,
+          border: `1px solid ${scanResult.type === "success" ? "#86efac" : scanResult.type === "warning" ? C.warnBorder : C.dangerBorder}`,
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <span style={{ fontSize: 18 }}>{scanResult.type === "success" ? "✅" : scanResult.type === "warning" ? "⚠️" : "❌"}</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: scanResult.type === "success" ? C.successDark : scanResult.type === "warning" ? C.warnDark : C.danger }}>{scanResult.message}</div>
+            {scanResult.name && <div style={{ fontSize: 11, color: C.textSub }}>{scanResult.name}</div>}
+          </div>
+        </div>
+      )}
+
+      {/* カメラ起動/停止ボタン */}
+      <button onClick={() => setCameraActive(!cameraActive)} style={{
         width: "100%", padding: "14px", border: "none", borderRadius: 12,
-        background: scanning ? "#94a3b8" : C.primary, color: "#fff",
-        fontSize: 15, fontWeight: 700, cursor: scanning ? "default" : "pointer", marginBottom: 18,
+        background: cameraActive ? "#dc2626" : C.primary, color: "#fff",
+        fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 8,
       }}>
-        {scanning ? "読み取り中..." : "📷 スキャンする（デモ）"}
+        {cameraActive ? "⏹ カメラを停止" : "📷 カメラを起動してスキャン"}
       </button>
+
+      {/* デモスキャンボタン */}
+      {!cameraActive && (
+        <button onClick={simulateScan} disabled={scanning} style={{
+          width: "100%", padding: "12px", border: `1.5px solid ${C.border}`,
+          borderRadius: 12, background: C.card, color: C.textSub,
+          fontSize: 13, fontWeight: 600, cursor: scanning ? "default" : "pointer", marginBottom: 18,
+        }}>
+          {scanning ? "読み取り中..." : "🔧 デモスキャン（カメラなしでテスト）"}
+        </button>
+      )}
 
       {scanned.length > 0 && (
         <div>
@@ -441,12 +520,54 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered }) {
 }
 
 // ======================================================================
-// Receive Screen
+// Receive Screen（★ Step 3: 実カメラQRスキャン + デモ併設）
 // ======================================================================
-function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived }) {
-  const [scanning, setScanning] = useState(false);
+function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, products }) {
+  const [cameraActive, setCameraActive] = useState(false);
+  const [scanning, setScanning] = useState(false); // デモ用
   const [lastReceived, setLastReceived] = useState(null);
+  const [scanError, setScanError] = useState(null);
 
+  // ——— 実カメラ QR スキャンで受取処理 ———
+  const handleQrScan = useCallback(async (decodedText, format) => {
+    if (supabase && storeId) {
+      // qr_tags からタグを検索
+      const { data: tag } = await supabase
+        .from("qr_tags")
+        .select("id, product_id")
+        .eq("tag_code", decodedText)
+        .eq("store_id", storeId)
+        .maybeSingle();
+
+      if (!tag) {
+        setScanError("未登録のタグです");
+        setTimeout(() => setScanError(null), 3000);
+        return;
+      }
+
+      // この商品で「ordered」状態のアイテムを検索
+      const target = orderedItems.find((i) => i.productId === tag.product_id);
+      if (!target) {
+        setScanError("この商品の発注データがありません");
+        setTimeout(() => setScanError(null), 3000);
+        return;
+      }
+
+      // 受取処理
+      await onMarkReceived(target);
+      // qr_tags を attached に戻す（再利用）
+      await supabase.from("qr_tags").update({ status: "attached" }).eq("id", tag.id);
+
+      setScanError(null);
+      setLastReceived(target.name);
+      setTimeout(() => setLastReceived(null), 4000);
+    } else {
+      setScanError("DB未接続のため、デモ受取を使ってください");
+      setTimeout(() => setScanError(null), 3000);
+    }
+  }, [storeId, orderedItems, onMarkReceived]);
+
+  // ——— デモ受取（既存ロジック維持）———
   const simulateReceive = () => {
     const target = orderedItems[0];
     if (!target) return;
@@ -476,13 +597,45 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived }) {
         </div>
       )}
 
-      <button onClick={simulateReceive} disabled={scanning || orderedItems.length === 0} style={{
-        width: "100%", padding: "14px", border: "none", borderRadius: 12,
-        background: scanning ? "#94a3b8" : orderedItems.length === 0 ? "#d1d5db" : C.success,
-        color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 18,
-      }}>
-        {scanning ? "読み取り中..." : orderedItems.length === 0 ? "すべて受取済み ✅" : "📷 届いた商品のタグをスキャン（デモ）"}
+      {scanError && (
+        <div style={{
+          padding: "11px 14px", background: C.dangerLight, borderRadius: 10,
+          border: `1px solid ${C.dangerBorder}`, marginBottom: 14,
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <span style={{ fontSize: 18 }}>❌</span>
+          <span style={{ fontSize: 13, color: C.danger, fontWeight: 600 }}>{scanError}</span>
+        </div>
+      )}
+
+      {/* 実カメラ */}
+      {cameraActive && (
+        <div style={{ marginBottom: 14 }}>
+          <QrScanner mode="qr" active={cameraActive} onScan={handleQrScan} />
+        </div>
+      )}
+
+      {/* カメラ起動/停止ボタン */}
+      <button onClick={() => setCameraActive(!cameraActive)}
+        disabled={orderedItems.length === 0 && !cameraActive}
+        style={{
+          width: "100%", padding: "14px", border: "none", borderRadius: 12,
+          background: cameraActive ? "#dc2626" : orderedItems.length === 0 ? "#d1d5db" : C.success,
+          color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 8,
+        }}>
+        {cameraActive ? "⏹ カメラを停止" : orderedItems.length === 0 ? "すべて受取済み ✅" : "📷 届いた商品のタグをスキャン"}
       </button>
+
+      {/* デモ受取ボタン */}
+      {!cameraActive && orderedItems.length > 0 && (
+        <button onClick={simulateReceive} disabled={scanning} style={{
+          width: "100%", padding: "12px", border: `1.5px solid ${C.border}`,
+          borderRadius: 12, background: C.card, color: C.textSub,
+          fontSize: 13, fontWeight: 600, cursor: scanning ? "default" : "pointer", marginBottom: 18,
+        }}>
+          {scanning ? "読み取り中..." : "🔧 デモ受取（カメラなしでテスト）"}
+        </button>
+      )}
 
       <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 10 }}>
         受取待ち <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{orderedItems.length}件</span>
@@ -645,16 +798,28 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
     name: "", category: "カラー剤", location: "棚A上段", manufacturer: "",
     defaultOrderQty: 1, reorderPoint: null, janCode: "",
   });
-  const [showBarcodeScan, setShowBarcodeScan] = useState(false);
+  const [barcodeScanActive, setBarcodeScanActive] = useState(false);
+  const [showBarcodeScan, setShowBarcodeScan] = useState(false); // デモ用
+  const [barcodeResult, setBarcodeResult] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
   const isValid = form.name.trim() !== "";
 
+  // ——— 実バーコードスキャン結果 ———
+  const handleBarcodeScan = useCallback((decodedText, format) => {
+    setBarcodeScanActive(false);
+    setBarcodeResult(decodedText);
+    setForm((f) => ({ ...f, janCode: decodedText }));
+    // 将来: Yahoo Shopping API で商品名・メーカーを自動取得
+  }, []);
+
+  // ——— デモバーコードスキャン（既存ロジック維持）———
   const simulateBarcodeScan = () => {
     setShowBarcodeScan(true);
     setTimeout(() => {
       setShowBarcodeScan(false);
+      setBarcodeResult("4954835325141");
       setForm((f) => ({
         ...f,
         name: "ミルボン オルディーブ アディクシー GP7",
@@ -682,17 +847,49 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
       </div>
 
       {!product && (
-        <button onClick={simulateBarcodeScan} disabled={showBarcodeScan} style={{
-          width: "100%", padding: "14px", border: `1.5px dashed ${C.primary}`,
-          borderRadius: 12, background: C.primaryLight, color: C.primary,
-          fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 16,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        }}>
-          {showBarcodeScan ? (
-            <><span style={{ animation: "spin 1s linear infinite", display: "inline-block" }}>⏳</span>バーコード読み取り中...
-            <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style></>
-          ) : (<>📷 バーコードで商品情報を自動入力（デモ）</>)}
-        </button>
+        <>
+          {/* 実バーコードスキャン */}
+          {barcodeScanActive ? (
+            <div style={{ marginBottom: 16 }}>
+              <QrScanner mode="barcode" active={barcodeScanActive} onScan={handleBarcodeScan} />
+              <button onClick={() => setBarcodeScanActive(false)} style={{
+                width: "100%", padding: "12px", border: `1.5px solid ${C.danger}`,
+                borderRadius: 12, background: C.dangerLight, color: C.danger,
+                fontSize: 13, fontWeight: 600, cursor: "pointer", marginTop: 8,
+              }}>
+                ✕ スキャンを中止
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              <button onClick={() => setBarcodeScanActive(true)} style={{
+                flex: 1, padding: "14px", border: `1.5px dashed ${C.primary}`,
+                borderRadius: 12, background: C.primaryLight, color: C.primary,
+                fontSize: 13, fontWeight: 600, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}>
+                📷 バーコード読取
+              </button>
+              <button onClick={simulateBarcodeScan} disabled={showBarcodeScan} style={{
+                padding: "14px 16px", border: `1.5px solid ${C.border}`,
+                borderRadius: 12, background: C.card, color: C.textSub,
+                fontSize: 13, fontWeight: 600, cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+              }}>
+                {showBarcodeScan ? "⏳" : "🔧"} デモ
+              </button>
+            </div>
+          )}
+          {barcodeResult && (
+            <div style={{
+              padding: "10px 14px", background: C.successLight, borderRadius: 10,
+              border: `1px solid ${C.successBorder}`, marginBottom: 16,
+              fontSize: 12, color: C.successDark,
+            }}>
+              ✅ バーコード読み取り成功: {barcodeResult}
+            </div>
+          )}
+        </>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1110,13 +1307,13 @@ export default function SalonMock() {
           <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} />
         )}
         {screen === "scan" && (
-          <ScanScreen onNavigate={setScreen} products={products} onAddOrderItem={handleAddOrderItem} />
+          <ScanScreen onNavigate={setScreen} products={products} onAddOrderItem={handleAddOrderItem} storeId={storeId} />
         )}
         {screen === "order" && (
           <OrderScreen pendingItems={pendingItems} setPendingItems={setPendingItems} onMarkOrdered={handleMarkOrdered} />
         )}
         {screen === "receive" && (
-          <ReceiveScreen orderedItems={orderedItems} receivedItems={receivedItems} onMarkReceived={handleMarkReceived} />
+          <ReceiveScreen orderedItems={orderedItems} receivedItems={receivedItems} onMarkReceived={handleMarkReceived} storeId={storeId} products={products} />
         )}
         {screen === "products" && (
           <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct} />
