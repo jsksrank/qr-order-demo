@@ -387,6 +387,7 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [lastOrderedCount, setLastOrderedCount] = useState(0);
   const [showLinePopup, setShowLinePopup] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const checkedCount = pendingItems.filter((i) => i.checked).length;
 
@@ -486,32 +487,50 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered }) {
         cursor: "pointer", marginBottom: 20,
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
       }}>
-        <span style={{ fontSize: 18 }}>💬</span>LINEで発注リストを送信
+        <span style={{ fontSize: 18 }}>💬</span>発注リストを送信
       </button>
 
       {showLinePopup && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100 }}
-          onClick={() => setShowLinePopup(false)}>
+          onClick={() => { setShowLinePopup(false); setCopied(false); }}>
           <div style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: "20px 20px 0 0", padding: "20px 20px 28px" }}
             onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>💬 LINE送信プレビュー</h3>
-              <button onClick={() => setShowLinePopup(false)} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>✕</button>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>📋 発注リスト送信</h3>
+              <button onClick={() => { setShowLinePopup(false); setCopied(false); }} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>✕</button>
             </div>
             <div style={{
               padding: 14, background: C.bg, borderRadius: 12,
               fontFamily: "monospace", fontSize: 12, lineHeight: 1.8,
-              whiteSpace: "pre-wrap", color: "#333", maxHeight: 240, overflowY: "auto",
+              whiteSpace: "pre-wrap", color: "#333", maxHeight: 200, overflowY: "auto",
             }}>
               {generateLineText()}
             </div>
-            <button onClick={() => setShowLinePopup(false)} style={{
-              width: "100%", padding: "14px", border: "none", borderRadius: 12,
-              background: C.line, color: "#fff", fontSize: 14, fontWeight: 700,
-              cursor: "pointer", marginTop: 14,
-            }}>
-              LINEに送信する
-            </button>
+            <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+              <button onClick={() => {
+                navigator.clipboard.writeText(generateLineText()).then(() => setCopied(true)).catch(() => {
+                  const ta = document.createElement("textarea");
+                  ta.value = generateLineText();
+                  document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+                  document.body.removeChild(ta); setCopied(true);
+                });
+              }} style={{
+                flex: 1, padding: "14px", border: "none", borderRadius: 12,
+                background: copied ? C.success : C.primary, color: "#fff",
+                fontSize: 14, fontWeight: 700, cursor: "pointer",
+              }}>
+                {copied ? "✅ コピー済み！" : "📋 テキストをコピー"}
+              </button>
+              <a href={`https://line.me/R/share?text=${encodeURIComponent(generateLineText())}`}
+                target="_blank" rel="noopener noreferrer" style={{
+                flex: 1, padding: "14px", border: "none", borderRadius: 12,
+                background: C.line, color: "#fff", fontSize: 14, fontWeight: 700,
+                cursor: "pointer", textAlign: "center", textDecoration: "none",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                💬 LINEで送る
+              </a>
+            </div>
           </div>
         </div>
       )}
