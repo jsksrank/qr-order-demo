@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth-context";
 import { supabase } from "../lib/supabase";
 import dynamic from "next/dynamic";
+import PricingModal from "./PricingModal";
 
 // SSR セーフ：html5-qrcode はブラウザ専用なので SSR を無効化
 const QrScanner = dynamic(() => import("./QrScanner"), { ssr: false });
@@ -709,7 +710,7 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
 // ======================================================================
 // Product Management Screen
 // ======================================================================
-function ProductScreen({ products, onSaveProduct, onDeleteProduct }) {
+function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, currentPlan, onShowPricing }) {
   const [view, setView] = useState("list");
   const [editProduct, setEditProduct] = useState(null);
   const [search, setSearch] = useState("");
@@ -797,7 +798,14 @@ function ProductScreen({ products, onSaveProduct, onDeleteProduct }) {
 
       {filtered.length === 0 && <EmptyState icon="🔭" message="該当する商品がありません" />}
 
-      <button onClick={() => setView("add")} style={{
+      <button onClick={() => {
+        const activeCount = products.filter(p => p.isActive).length;
+        if (activeCount >= skuLimit) {
+          onShowPricing();
+          return;
+        }
+        setView("add");
+      }} style={{
         position: "fixed", bottom: 80, right: "calc(50% - 190px)",
         width: 56, height: 56, borderRadius: 28,
         background: C.primary, color: "#fff", border: "none",
@@ -1033,7 +1041,7 @@ function StockoutButton() {
 // Main App
 // ======================================================================
 export default function SalonMock() {
-  const { storeId, storeName, signOut, isAuthenticated, isSupabaseConnected } = useAuth();
+  const { storeId, storeName, storePlan, storeMaxSku, storeBonusSku, signOut, isAuthenticated, isSupabaseConnected, user } = useAuth();
   const [screen, setScreen] = useState("top");
   const [products, setProducts] = useState(DEMO_PRODUCTS);
   const [pendingItems, setPendingItems] = useState([]);   // status: scanned
@@ -1041,6 +1049,7 @@ export default function SalonMock() {
   const [receivedItems, setReceivedItems] = useState([]);  // status: received
   const [dbConnected, setDbConnected] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
   const isDbMode = isSupabaseConnected && isAuthenticated && dbConnected;
 
@@ -1335,7 +1344,11 @@ export default function SalonMock() {
           <ReceiveScreen orderedItems={orderedItems} receivedItems={receivedItems} onMarkReceived={handleMarkReceived} storeId={storeId} products={products} />
         )}
         {screen === "products" && (
-          <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct} />
+          <ProductScreen products={products} onSaveProduct={...} onDeleteProduct={...}
+            skuLimit={(storeMaxSku || 10) + (storeBonusSku || 0)}
+            currentPlan={storePlan || "free"}
+            onShowPricing={() => setShowPricing(true)}
+          />
         )}
       </div>
 
@@ -1370,6 +1383,15 @@ export default function SalonMock() {
           </button>
         ))}
       </div>
+
+      {/* Pricing Modal */}
+      <PricingModal
+        isOpen={showPricing}
+        onClose={() => setShowPricing(false)}
+        currentPlan={storePlan || "free"}
+        accessToken={null}
+      />
+
     </div>
   );
 }
