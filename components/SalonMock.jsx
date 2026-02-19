@@ -128,6 +128,38 @@ function EmptyState({ icon, message }) {
 }
 
 // ======================================================================
+// ★CHANGE: OverLimitBanner（SKU上限超過時のブロック画面）
+// ======================================================================
+function OverLimitBanner({ activeCount, skuLimit, onUpgrade }) {
+  return (
+    <div style={{ padding: "0 20px" }}>
+      <div style={{
+        padding: 24, background: C.warnLight, borderRadius: 14,
+        border: `1.5px solid ${C.warnBorder}`, textAlign: "center",
+      }}>
+        <div style={{ fontSize: 40, marginBottom: 10 }}>⚠️</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.warnDark, marginBottom: 8 }}>
+          プラン上限を超えています
+        </div>
+        <div style={{ fontSize: 13, color: C.warnDark, lineHeight: 1.6, marginBottom: 6 }}>
+          登録商品 <strong>{activeCount}品</strong> ／ 上限 <strong>{skuLimit}品</strong>
+        </div>
+        <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.6, marginBottom: 16 }}>
+          この機能を使うには、商品を削除して上限以下にするか、プランをアップグレードしてください。
+        </div>
+        <button onClick={onUpgrade} style={{
+          padding: "14px 32px", border: "none", borderRadius: 12,
+          background: C.primary, color: "#fff",
+          fontSize: 14, fontWeight: 700, cursor: "pointer",
+        }}>
+          プランをアップグレード
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ======================================================================
 // Top Screen
 // ======================================================================
 function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
@@ -201,16 +233,22 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
 
 // ======================================================================
 // Scan Screen（★ Step 3: 実カメラQRスキャン + デモ併設）
+// ★CHANGE: isOverLimit / onShowPricing props 追加
 // ======================================================================
-function ScanScreen({ onNavigate, products, onAddOrderItem, storeId }) {
+function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit, skuLimit, activeCount, onShowPricing }) {
   const [cameraActive, setCameraActive] = useState(false);
   const [scanning, setScanning] = useState(false); // デモ用
   const [scanned, setScanned] = useState([]);
   const [scanResult, setScanResult] = useState(null); // { type, name, message }
   const [scanIndex, setScanIndex] = useState(0);
 
+  // ★CHANGE: SKU上限超過時はブロック画面を表示
+  if (isOverLimit) {
+    return <OverLimitBanner activeCount={activeCount} skuLimit={skuLimit} onUpgrade={onShowPricing} />;
+  }
+
   // ——— 実カメラ QR スキャン成功時 ———
-  const handleQrScan = useCallback(async (decodedText, format) => {
+  const handleQrScan = async (decodedText, format) => {
     // 1) qr_tags テーブルでタグを検索
     if (supabase && storeId) {
       const { data: tag } = await supabase
@@ -246,7 +284,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId }) {
     // タグ未登録 or DB未接続
     setScanResult({ type: "error", name: decodedText, message: "未登録のQRタグです。商品管理でタグを紐付けてください。" });
     setTimeout(() => setScanResult(null), 4000);
-  }, [storeId, products, onAddOrderItem]);
+  };
 
   // ——— デモスキャン（既存ロジックを維持）———
   const scanTargets = products.filter((p) => p.isActive).slice(0, 5);
@@ -383,12 +421,18 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId }) {
 
 // ======================================================================
 // Order Screen
+// ★CHANGE: isOverLimit / onShowPricing props 追加
 // ======================================================================
-function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered }) {
+function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit, skuLimit, activeCount, onShowPricing }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [lastOrderedCount, setLastOrderedCount] = useState(0);
   const [showLinePopup, setShowLinePopup] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // ★CHANGE: SKU上限超過時はブロック画面を表示
+  if (isOverLimit) {
+    return <OverLimitBanner activeCount={activeCount} skuLimit={skuLimit} onUpgrade={onShowPricing} />;
+  }
 
   const checkedCount = pendingItems.filter((i) => i.checked).length;
 
@@ -541,6 +585,7 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered }) {
 
 // ======================================================================
 // Receive Screen（★ Step 3: 実カメラQRスキャン + デモ併設）
+// ★NOTE: 受取はブロックしない（発注済み商品の受取は許可）
 // ======================================================================
 function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, products }) {
   const [cameraActive, setCameraActive] = useState(false);
@@ -1053,6 +1098,11 @@ export default function SalonMock() {
 
   const isDbMode = isSupabaseConnected && isAuthenticated && dbConnected;
 
+  // ★CHANGE: SKU上限チェック（bonus_sku込み）
+  const skuLimit = (storeMaxSku || 10) + (storeBonusSku || 0);
+  const activeProductCount = products.filter((p) => p.isActive).length;
+  const isOverLimit = activeProductCount > skuLimit;
+
   // ——— Fetch products from Supabase ———
   const fetchProducts = useCallback(async () => {
     if (!supabase || !storeId) return;
@@ -1248,7 +1298,7 @@ export default function SalonMock() {
   // ——— Counts ———
   const pendingCount = pendingItems.length;
   const waitingCount = orderedItems.length;
-  const activeProducts = products.filter((p) => p.isActive).length;
+  const activeProducts = activeProductCount; // ★CHANGE: 既に上で計算済み
 
   const screenTitle = { top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち", products: "商品管理" };
 
@@ -1335,17 +1385,23 @@ export default function SalonMock() {
           <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} />
         )}
         {screen === "scan" && (
-          <ScanScreen onNavigate={setScreen} products={products} onAddOrderItem={handleAddOrderItem} storeId={storeId} />
+          <ScanScreen onNavigate={setScreen} products={products} onAddOrderItem={handleAddOrderItem} storeId={storeId}
+            isOverLimit={isOverLimit} skuLimit={skuLimit} activeCount={activeProductCount}
+            onShowPricing={() => setShowPricing(true)}
+          />
         )}
         {screen === "order" && (
-          <OrderScreen pendingItems={pendingItems} setPendingItems={setPendingItems} onMarkOrdered={handleMarkOrdered} />
+          <OrderScreen pendingItems={pendingItems} setPendingItems={setPendingItems} onMarkOrdered={handleMarkOrdered}
+            isOverLimit={isOverLimit} skuLimit={skuLimit} activeCount={activeProductCount}
+            onShowPricing={() => setShowPricing(true)}
+          />
         )}
         {screen === "receive" && (
           <ReceiveScreen orderedItems={orderedItems} receivedItems={receivedItems} onMarkReceived={handleMarkReceived} storeId={storeId} products={products} />
         )}
         {screen === "products" && (
           <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct}
-            skuLimit={(storeMaxSku || 10) + (storeBonusSku || 0)}
+            skuLimit={skuLimit}
             currentPlan={storePlan || "free"}
             onShowPricing={() => setShowPricing(true)}
           />
