@@ -1344,7 +1344,7 @@ export default function SalonMock() {
           <ReceiveScreen orderedItems={orderedItems} receivedItems={receivedItems} onMarkReceived={handleMarkReceived} storeId={storeId} products={products} />
         )}
         {screen === "products" && (
-          <ProductScreen products={products} onSaveProduct={...} onDeleteProduct={...}
+          <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct}
             skuLimit={(storeMaxSku || 10) + (storeBonusSku || 0)}
             currentPlan={storePlan || "free"}
             onShowPricing={() => setShowPricing(true)}
