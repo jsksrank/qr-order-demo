@@ -87,10 +87,13 @@ export default function PricingModal({ isOpen, onClose, currentPlan, accessToken
     setLoading('manage');
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const res = await fetch('/api/stripe/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accessToken }),
+        body: JSON.stringify({ accessToken: token }),
       });
 
       const data = await res.json();
