@@ -2,9 +2,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth-context";
-import dynamic from "next/dynamic";
-
-const QrScanner = dynamic(() => import("./QrScanner"), { ssr: false });
 
 // ——— Color Tokens（SalonMock と同じ）———
 const C = {
@@ -16,7 +13,7 @@ const C = {
   text: "#1a1a2e", textSub: "#6b7280", textMuted: "#9ca3af",
 };
 
-// ステータスの表示設定
+// ★ Step 7簡素化: ステータス設定（removedフィルターは削除したが、表示用に定義は残す）
 const STATUS_CONFIG = {
   attached: { emoji: "🟢", label: "紐付け済", color: C.success, bg: C.successLight, border: C.successBorder },
   removed: { emoji: "🔴", label: "スキャン済", color: C.danger, bg: C.dangerLight, border: C.dangerBorder },
@@ -24,7 +21,9 @@ const STATUS_CONFIG = {
 };
 
 // ======================================================================
-// TagManagementScreen
+// TagManagementScreen（★ Step 7簡素化版）
+// ・タグ生成ボタン＋モーダル削除（自動生成に移行）
+// ・スキャン済フィルター削除（発注リストと重複のため不要）
 // ======================================================================
 export default function TagManagementScreen({ products }) {
   const { storeId } = useAuth();
@@ -32,14 +31,8 @@ export default function TagManagementScreen({ products }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
 
-  // タグ生成
-  const [showGenerate, setShowGenerate] = useState(false);
-  const [generateCount, setGenerateCount] = useState(10);
-  const [generating, setGenerating] = useState(false);
-
   // 紐付け
   const [bindingTagId, setBindingTagId] = useState(null);
-  const [bindCameraActive, setBindCameraActive] = useState(false);
 
   // テキスト出力
   const [showExport, setShowExport] = useState(false);
@@ -70,51 +63,6 @@ export default function TagManagementScreen({ products }) {
     fetchTags();
   }, [fetchTags]);
 
-  // ——— タグ生成 ———
-  const handleGenerate = async () => {
-    if (!supabase || !storeId || generateCount < 1) return;
-    setGenerating(true);
-
-    try {
-      // 現在の最大連番を取得
-      const { data: existing } = await supabase
-        .from("qr_tags")
-        .select("tag_code")
-        .eq("store_id", storeId)
-        .order("tag_code", { ascending: false })
-        .limit(1);
-
-      let nextNum = 1;
-      if (existing && existing.length > 0) {
-        const match = existing[0].tag_code.match(/QRO-(\d+)/);
-        if (match) nextNum = parseInt(match[1], 10) + 1;
-      }
-
-      // 一括INSERT
-      const newTags = [];
-      for (let i = 0; i < generateCount; i++) {
-        newTags.push({
-          store_id: storeId,
-          tag_code: `QRO-${String(nextNum + i).padStart(3, "0")}`,
-          status: "unassigned",
-          product_id: null,
-        });
-      }
-
-      const { error } = await supabase.from("qr_tags").insert(newTags);
-      if (error) throw error;
-
-      await fetchTags();
-      setShowGenerate(false);
-      showFeedback("success", `${generateCount}枚のタグを生成しました`);
-    } catch (e) {
-      console.error("Tag generate error:", e);
-      showFeedback("error", "タグ生成に失敗しました: " + e.message);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
   // ——— 紐付け変更 ———
   const handleBindProduct = async (tagId, productId) => {
     if (!supabase || !storeId) return;
@@ -144,38 +92,14 @@ export default function TagManagementScreen({ products }) {
     }
   };
 
-  // ——— QRスキャンで紐付け ———
-  const handleBindScan = async (decodedText) => {
-    if (!supabase || !storeId) return;
-
-    // スキャンしたQRコードに一致するunassignedタグを探す
-    const tag = tags.find(
-      (t) => t.tag_code === decodedText && (t.status === "unassigned" || t.status === "attached")
-    );
-
-    if (!tag) {
-      showFeedback("error", `タグ「${decodedText}」が見つからないか、スキャン済みです`);
-      return;
-    }
-
-    // bindingTagIdに商品IDがセットされている場合はそれを使う
-    // → ここでは「商品から紐付け」フローではなく「タグ管理画面のスキャン」なので
-    //   スキャンしたタグの情報を表示してbindingTagIdにセット
-    setBindingTagId(tag.id);
-    setBindCameraActive(false);
-    showFeedback("success", `タグ ${tag.tag_code} を選択しました。商品を選んでください。`);
-  };
-
   // ——— テキスト出力 ———
   const generateExportText = (mode) => {
     const filteredTags = getFilteredTags();
 
     if (mode === "codes_only") {
-      // QRコード生成サイト用：タグコードだけ
       return filteredTags.map((t) => t.tag_code).join("\n");
     }
 
-    // 一覧テキスト
     const date = new Date().toLocaleDateString("ja-JP");
     const lines = [
       `【QRオーダー タグ一覧】`,
@@ -223,7 +147,6 @@ export default function TagManagementScreen({ products }) {
   const counts = {
     all: tags.length,
     attached: tags.filter((t) => t.status === "attached").length,
-    removed: tags.filter((t) => t.status === "removed").length,
     unassigned: tags.filter((t) => t.status === "unassigned").length,
   };
 
@@ -256,7 +179,7 @@ export default function TagManagementScreen({ products }) {
         </div>
       )}
 
-      {/* サマリー */}
+      {/* ★ Step 7簡素化: サマリー（スキャン済カウントを削除） */}
       <div style={{
         padding: 14, background: C.card, borderRadius: 12,
         border: `1px solid ${C.border}`, marginBottom: 16,
@@ -265,7 +188,6 @@ export default function TagManagementScreen({ products }) {
           {[
             { label: "全タグ", value: counts.all, color: C.primary },
             { label: "紐付済", value: counts.attached, color: C.success },
-            { label: "スキャン済", value: counts.removed, color: C.danger },
             { label: "未割当", value: counts.unassigned, color: C.textSub },
           ].map((s, i) => (
             <div key={i} style={{ textAlign: "center" }}>
@@ -276,18 +198,10 @@ export default function TagManagementScreen({ products }) {
         </div>
       </div>
 
-      {/* アクションボタン */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <button onClick={() => setShowGenerate(true)} style={{
-          flex: 1, padding: "12px", border: "none", borderRadius: 12,
-          background: C.primary, color: "#fff",
-          fontSize: 13, fontWeight: 700, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-        }}>
-          ＋ タグ生成
-        </button>
+      {/* ★ Step 7簡素化: テキスト出力ボタンのみ（タグ生成ボタン削除） */}
+      <div style={{ marginBottom: 16 }}>
         <button onClick={() => setShowExport(true)} style={{
-          flex: 1, padding: "12px", border: `1.5px solid ${C.border}`,
+          width: "100%", padding: "12px", border: `1.5px solid ${C.border}`,
           borderRadius: 12, background: C.card, color: C.text,
           fontSize: 13, fontWeight: 700, cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -296,13 +210,12 @@ export default function TagManagementScreen({ products }) {
         </button>
       </div>
 
-      {/* フィルター */}
+      {/* ★ Step 7簡素化: フィルター（スキャン済を削除） */}
       <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 14, paddingBottom: 4 }}>
         {[
           { key: "all", label: `すべて (${counts.all})` },
           { key: "unassigned", label: `⚪ 未割当 (${counts.unassigned})` },
           { key: "attached", label: `🟢 紐付済 (${counts.attached})` },
-          { key: "removed", label: `🔴 スキャン済 (${counts.removed})` },
         ].map((f) => (
           <button key={f.key} onClick={() => setFilter(f.key)} style={{
             padding: "6px 12px", borderRadius: 20, whiteSpace: "nowrap", flexShrink: 0,
@@ -319,7 +232,7 @@ export default function TagManagementScreen({ products }) {
         <div style={{ padding: 32, textAlign: "center", color: C.textSub, fontSize: 14, background: C.bg, borderRadius: 12 }}>
           <div style={{ fontSize: 36, marginBottom: 8 }}>🏷️</div>
           {tags.length === 0
-            ? "タグがありません。「タグ生成」で作成してください。"
+            ? "タグがありません。プランに応じて自動生成されます。"
             : "該当するタグがありません"}
         </div>
       ) : (
@@ -403,61 +316,6 @@ export default function TagManagementScreen({ products }) {
             </div>
           );
         })
-      )}
-
-      {/* ======== タグ生成モーダル ======== */}
-      {showGenerate && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}
-          onClick={() => setShowGenerate(false)}>
-          <div style={{
-            width: "90%", maxWidth: 360, background: "#fff", borderRadius: 16, padding: 24,
-          }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: "0 0 16px" }}>
-              🏷️ タグを生成
-            </h3>
-
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: C.text, display: "block", marginBottom: 6 }}>
-                生成枚数
-              </label>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <input
-                  type="number"
-                  value={generateCount}
-                  onChange={(e) => setGenerateCount(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
-                  style={{
-                    width: 80, padding: "10px 12px", border: `1px solid ${C.border}`,
-                    borderRadius: 8, fontSize: 16, fontWeight: 700, textAlign: "center",
-                    outline: "none", color: C.text,
-                  }}
-                />
-                <span style={{ fontSize: 13, color: C.textSub }}>枚</span>
-              </div>
-              <div style={{ fontSize: 11, color: C.textSub, marginTop: 6 }}>
-                QRO-{String((tags.length > 0 ? Math.max(...tags.map(t => {
-                  const m = t.tag_code.match(/QRO-(\d+)/);
-                  return m ? parseInt(m[1], 10) : 0;
-                })) + 1 : 1)).padStart(3, "0")}
-                〜 が自動採番されます
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setShowGenerate(false)} style={{
-                flex: 1, padding: "12px", border: `1px solid ${C.border}`,
-                borderRadius: 12, background: C.card, color: C.textSub,
-                fontSize: 14, fontWeight: 600, cursor: "pointer",
-              }}>キャンセル</button>
-              <button onClick={handleGenerate} disabled={generating} style={{
-                flex: 1, padding: "12px", border: "none",
-                borderRadius: 12, background: generating ? "#d1d5db" : C.primary, color: "#fff",
-                fontSize: 14, fontWeight: 700, cursor: generating ? "default" : "pointer",
-              }}>
-                {generating ? "生成中..." : `${generateCount}枚 生成`}
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* ======== テキスト出力モーダル ======== */}
