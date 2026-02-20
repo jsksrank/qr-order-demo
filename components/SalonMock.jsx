@@ -4,6 +4,7 @@ import { useAuth } from "../lib/auth-context";
 import { supabase } from "../lib/supabase";
 import dynamic from "next/dynamic";
 import PricingModal from "./PricingModal";
+import SettingsScreen from "./SettingsScreen"; // ★STEP6 追加
 
 // SSR セーフ：html5-qrcode はブラウザ専用なので SSR を無効化
 const QrScanner = dynamic(() => import("./QrScanner"), { ssr: false });
@@ -128,7 +129,7 @@ function EmptyState({ icon, message }) {
 }
 
 // ======================================================================
-// ★CHANGE: OverLimitBanner（SKU上限超過時のブロック画面）
+// OverLimitBanner（SKU上限超過時のブロック画面）
 // ======================================================================
 function OverLimitBanner({ activeCount, skuLimit, onUpgrade }) {
   return (
@@ -161,6 +162,7 @@ function OverLimitBanner({ activeCount, skuLimit, onUpgrade }) {
 
 // ======================================================================
 // Top Screen
+// ★STEP6: 設定ボタンを追加
 // ======================================================================
 function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
   return (
@@ -208,6 +210,22 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
         <span style={{ color: C.textMuted, fontSize: 16 }}>›</span>
       </button>
 
+      {/* ★STEP6 追加：設定ボタン */}
+      <button onClick={() => onNavigate("settings")} style={{
+        width: "100%", marginTop: 10, padding: "14px 18px",
+        background: C.card, border: `1px solid ${C.border}`, borderRadius: 14,
+        cursor: "pointer", textAlign: "left",
+        display: "flex", alignItems: "center", gap: 14,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+      }}>
+        <span style={{ fontSize: 28 }}>👤</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>設定</div>
+          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>店舗情報・プラン・アカウント</div>
+        </div>
+        <span style={{ color: C.textMuted, fontSize: 16 }}>›</span>
+      </button>
+
       <div style={{ marginTop: 20, padding: 14, background: C.bg, borderRadius: 12, border: `1px solid ${C.border}` }}>
         <div style={{ fontSize: 11, color: C.textSub, marginBottom: 8, fontWeight: 600 }}>サマリー</div>
         <div style={{ display: "flex", justifyContent: "space-around" }}>
@@ -232,24 +250,20 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
 }
 
 // ======================================================================
-// Scan Screen（★ Step 3: 実カメラQRスキャン + デモ併設）
-// ★CHANGE: isOverLimit / onShowPricing props 追加
+// Scan Screen（実カメラQRスキャン + デモ併設）
 // ======================================================================
 function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit, skuLimit, activeCount, onShowPricing }) {
   const [cameraActive, setCameraActive] = useState(false);
-  const [scanning, setScanning] = useState(false); // デモ用
+  const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState([]);
-  const [scanResult, setScanResult] = useState(null); // { type, name, message }
+  const [scanResult, setScanResult] = useState(null);
   const [scanIndex, setScanIndex] = useState(0);
 
-  // ★CHANGE: SKU上限超過時はブロック画面を表示
   if (isOverLimit) {
     return <OverLimitBanner activeCount={activeCount} skuLimit={skuLimit} onUpgrade={onShowPricing} />;
   }
 
-  // ——— 実カメラ QR スキャン成功時 ———
   const handleQrScan = async (decodedText, format) => {
-    // 1) qr_tags テーブルでタグを検索
     if (supabase && storeId) {
       const { data: tag } = await supabase
         .from("qr_tags")
@@ -265,11 +279,9 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
           return;
         }
 
-        // タグに紐づく商品を products から検索
         const product = products.find((p) => p.id === tag.product_id);
         if (product) {
           await onAddOrderItem(product);
-          // qr_tags のステータスを removed に更新
           await supabase.from("qr_tags").update({ status: "removed" }).eq("id", tag.id);
 
           const time = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
@@ -281,12 +293,10 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
       }
     }
 
-    // タグ未登録 or DB未接続
     setScanResult({ type: "error", name: decodedText, message: "未登録のQRタグです。商品管理でタグを紐付けてください。" });
     setTimeout(() => setScanResult(null), 4000);
   };
 
-  // ——— デモスキャン（既存ロジックを維持）———
   const scanTargets = products.filter((p) => p.isActive).slice(0, 5);
 
   const simulateScan = () => {
@@ -306,7 +316,6 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
 
   return (
     <div style={{ padding: "0 20px" }}>
-      {/* カメラ映像 or プレースホルダー */}
       {cameraActive ? (
         <div style={{ marginBottom: 14 }}>
           <QrScanner mode="qr" active={cameraActive} onScan={handleQrScan} />
@@ -351,7 +360,6 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
         </div>
       )}
 
-      {/* スキャン結果（カメラ使用中） */}
       {cameraActive && scanResult && (
         <div style={{
           padding: "11px 14px", marginBottom: 12, borderRadius: 10,
@@ -367,7 +375,6 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
         </div>
       )}
 
-      {/* カメラ起動/停止ボタン */}
       <button onClick={() => setCameraActive(!cameraActive)} style={{
         width: "100%", padding: "14px", border: "none", borderRadius: 12,
         background: cameraActive ? "#dc2626" : C.primary, color: "#fff",
@@ -376,7 +383,6 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
         {cameraActive ? "⏹ カメラを停止" : "📷 カメラを起動してスキャン"}
       </button>
 
-      {/* デモスキャンボタン */}
       {!cameraActive && (
         <button onClick={simulateScan} disabled={scanning} style={{
           width: "100%", padding: "12px", border: `1.5px solid ${C.border}`,
@@ -421,7 +427,6 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
 
 // ======================================================================
 // Order Screen
-// ★CHANGE: isOverLimit / onShowPricing props 追加
 // ======================================================================
 function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit, skuLimit, activeCount, onShowPricing }) {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -429,7 +434,6 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit
   const [showLinePopup, setShowLinePopup] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // ★CHANGE: SKU上限超過時はブロック画面を表示
   if (isOverLimit) {
     return <OverLimitBanner activeCount={activeCount} skuLimit={skuLimit} onUpgrade={onShowPricing} />;
   }
@@ -584,19 +588,16 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit
 }
 
 // ======================================================================
-// Receive Screen（★ Step 3: 実カメラQRスキャン + デモ併設）
-// ★NOTE: 受取はブロックしない（発注済み商品の受取は許可）
+// Receive Screen
 // ======================================================================
 function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, products }) {
   const [cameraActive, setCameraActive] = useState(false);
-  const [scanning, setScanning] = useState(false); // デモ用
+  const [scanning, setScanning] = useState(false);
   const [lastReceived, setLastReceived] = useState(null);
   const [scanError, setScanError] = useState(null);
 
-  // ——— 実カメラ QR スキャンで受取処理 ———
   const handleQrScan = useCallback(async (decodedText, format) => {
     if (supabase && storeId) {
-      // qr_tags からタグを検索
       const { data: tag } = await supabase
         .from("qr_tags")
         .select("id, product_id")
@@ -610,7 +611,6 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
         return;
       }
 
-      // この商品で「ordered」状態のアイテムを検索
       const target = orderedItems.find((i) => i.productId === tag.product_id);
       if (!target) {
         setScanError("この商品の発注データがありません");
@@ -618,9 +618,7 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
         return;
       }
 
-      // 受取処理
       await onMarkReceived(target);
-      // qr_tags を attached に戻す（再利用）
       await supabase.from("qr_tags").update({ status: "attached" }).eq("id", tag.id);
 
       setScanError(null);
@@ -632,7 +630,6 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
     }
   }, [storeId, orderedItems, onMarkReceived]);
 
-  // ——— デモ受取（既存ロジック維持）———
   const simulateReceive = () => {
     const target = orderedItems[0];
     if (!target) return;
@@ -673,14 +670,12 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
         </div>
       )}
 
-      {/* 実カメラ */}
       {cameraActive && (
         <div style={{ marginBottom: 14 }}>
           <QrScanner mode="qr" active={cameraActive} onScan={handleQrScan} />
         </div>
       )}
 
-      {/* カメラ起動/停止ボタン */}
       <button onClick={() => setCameraActive(!cameraActive)}
         disabled={orderedItems.length === 0 && !cameraActive}
         style={{
@@ -691,7 +686,6 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
         {cameraActive ? "⏹ カメラを停止" : orderedItems.length === 0 ? "すべて受取済み ✅" : "📷 届いた商品のタグをスキャン"}
       </button>
 
-      {/* デモ受取ボタン */}
       {!cameraActive && orderedItems.length > 0 && (
         <button onClick={simulateReceive} disabled={scanning} style={{
           width: "100%", padding: "12px", border: `1.5px solid ${C.border}`,
@@ -871,22 +865,19 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
     defaultOrderQty: 1, reorderPoint: null, janCode: "",
   });
   const [barcodeScanActive, setBarcodeScanActive] = useState(false);
-  const [showBarcodeScan, setShowBarcodeScan] = useState(false); // デモ用
+  const [showBarcodeScan, setShowBarcodeScan] = useState(false);
   const [barcodeResult, setBarcodeResult] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
   const isValid = form.name.trim() !== "";
 
-  // ——— 実バーコードスキャン結果 ———
   const handleBarcodeScan = useCallback((decodedText, format) => {
     setBarcodeScanActive(false);
     setBarcodeResult(decodedText);
     setForm((f) => ({ ...f, janCode: decodedText }));
-    // 将来: Yahoo Shopping API で商品名・メーカーを自動取得
   }, []);
 
-  // ——— デモバーコードスキャン（既存ロジック維持）———
   const simulateBarcodeScan = () => {
     setShowBarcodeScan(true);
     setTimeout(() => {
@@ -920,7 +911,6 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
 
       {!product && (
         <>
-          {/* 実バーコードスキャン */}
           {barcodeScanActive ? (
             <div style={{ marginBottom: 16 }}>
               <QrScanner mode="barcode" active={barcodeScanActive} onScan={handleBarcodeScan} />
@@ -1084,21 +1074,21 @@ function StockoutButton() {
 
 // ======================================================================
 // Main App
+// ★STEP6: settings画面追加、ヘッダーメニューに設定導線追加
 // ======================================================================
 export default function SalonMock() {
   const { storeId, storeName, storePlan, storeMaxSku, storeBonusSku, signOut, isAuthenticated, isSupabaseConnected, user } = useAuth();
   const [screen, setScreen] = useState("top");
   const [products, setProducts] = useState(DEMO_PRODUCTS);
-  const [pendingItems, setPendingItems] = useState([]);   // status: scanned
-  const [orderedItems, setOrderedItems] = useState([]);    // status: ordered
-  const [receivedItems, setReceivedItems] = useState([]);  // status: received
+  const [pendingItems, setPendingItems] = useState([]);
+  const [orderedItems, setOrderedItems] = useState([]);
+  const [receivedItems, setReceivedItems] = useState([]);
   const [dbConnected, setDbConnected] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
 
   const isDbMode = isSupabaseConnected && isAuthenticated && dbConnected;
 
-  // ★CHANGE: SKU上限チェック（bonus_sku込み）
   const skuLimit = (storeMaxSku || 10) + (storeBonusSku || 0);
   const activeProductCount = products.filter((p) => p.isActive).length;
   const isOverLimit = activeProductCount > skuLimit;
@@ -1117,7 +1107,6 @@ export default function SalonMock() {
         setProducts(data.map(dbToJs));
         setDbConnected(true);
       } else {
-        // DB is connected but no data yet - use empty array
         setProducts([]);
         setDbConnected(true);
       }
@@ -1163,7 +1152,6 @@ export default function SalonMock() {
   // ——— Product CRUD ———
   const handleSaveProduct = async (formData, isEdit) => {
     if (!supabase || !storeId) {
-      // Fallback: local state only
       if (isEdit) {
         setProducts((prev) => prev.map((x) => x.id === formData.id ? { ...formData, isActive: true } : x));
       } else {
@@ -1216,7 +1204,6 @@ export default function SalonMock() {
   // ——— Order Item operations ———
   const handleAddOrderItem = async (product) => {
     if (!supabase || !storeId) {
-      // Fallback: local state
       const newItem = {
         id: Date.now(), productId: product.id, name: product.name,
         category: product.category, location: product.location,
@@ -1244,15 +1231,12 @@ export default function SalonMock() {
 
   const handleMarkOrdered = async (items) => {
     if (!supabase || !storeId) {
-      // Fallback: local state
       setPendingItems((prev) => prev.filter((i) => !items.find((x) => x.id === i.id)));
       setOrderedItems((prev) => [...prev, ...items.map((i) => ({ ...i, status: "ordered", orderedAt: formatShortDate(new Date().toISOString()) }))]);
       return;
     }
 
     try {
-      const ids = items.map((i) => i.id);
-      // Also update quantity in DB if changed
       for (const item of items) {
         const { error } = await supabase
           .from("order_items")
@@ -1273,7 +1257,6 @@ export default function SalonMock() {
 
   const handleMarkReceived = async (item) => {
     if (!supabase || !storeId) {
-      // Fallback: local state
       setOrderedItems((prev) => prev.filter((i) => i.id !== item.id));
       setReceivedItems((prev) => [...prev, { ...item, status: "received" }]);
       return;
@@ -1298,9 +1281,9 @@ export default function SalonMock() {
   // ——— Counts ———
   const pendingCount = pendingItems.length;
   const waitingCount = orderedItems.length;
-  const activeProducts = activeProductCount; // ★CHANGE: 既に上で計算済み
+  const activeProducts = activeProductCount;
 
-  const screenTitle = { top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち", products: "商品管理" };
+  const screenTitle = { top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち", products: "商品管理", settings: "設定" }; // ★STEP6: settings追加
 
   return (
     <div style={{
@@ -1365,6 +1348,15 @@ export default function SalonMock() {
                       {isDbMode ? "Supabase接続中" : "デモモード"}
                     </div>
                   </div>
+                  {/* ★STEP6 追加：設定メニュー */}
+                  <button onClick={() => { setScreen("settings"); setShowMenu(false); }} style={{
+                    width: "100%", padding: "12px 16px", border: "none",
+                    background: "transparent", textAlign: "left",
+                    fontSize: 13, color: C.text, cursor: "pointer",
+                    borderBottom: `1px solid ${C.border}`,
+                  }}>
+                    ⚙️ 設定
+                  </button>
                   <button onClick={() => { signOut(); setShowMenu(false); }} style={{
                     width: "100%", padding: "12px 16px", border: "none",
                     background: "transparent", textAlign: "left",
@@ -1405,6 +1397,10 @@ export default function SalonMock() {
             currentPlan={storePlan || "free"}
             onShowPricing={() => setShowPricing(true)}
           />
+        )}
+        {/* ★STEP6 追加：設定画面 */}
+        {screen === "settings" && (
+          <SettingsScreen activeProductCount={activeProductCount} />
         )}
       </div>
 
