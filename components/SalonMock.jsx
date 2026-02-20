@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import dynamic from "next/dynamic";
 import PricingModal from "./PricingModal";
 import SettingsScreen from "./SettingsScreen"; // ★STEP6 追加
+import TagManagementScreen from "./TagManagementScreen"; // ★STEP7 追加
 
 // SSR セーフ：html5-qrcode はブラウザ専用なので SSR を無効化
 const QrScanner = dynamic(() => import("./QrScanner"), { ssr: false });
@@ -163,8 +164,9 @@ function OverLimitBanner({ activeCount, skuLimit, onUpgrade }) {
 // ======================================================================
 // Top Screen
 // ★STEP6: 設定ボタンを追加
+// ★STEP7: タグ管理ボタンを追加
 // ======================================================================
-function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
+function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCount }) {
   return (
     <div style={{ padding: "0 20px" }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
@@ -207,6 +209,23 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount }) {
           <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>商品の登録・編集・QRタグ紐付け</div>
         </div>
         <div style={{ fontSize: 13, color: C.textSub }}>{productCount}品</div>
+        <span style={{ color: C.textMuted, fontSize: 16 }}>›</span>
+      </button>
+
+      {/* ★STEP7 追加：タグ管理ボタン */}
+      <button onClick={() => onNavigate("tags")} style={{
+        width: "100%", marginTop: 10, padding: "14px 18px",
+        background: C.card, border: `1px solid ${C.border}`, borderRadius: 14,
+        cursor: "pointer", textAlign: "left",
+        display: "flex", alignItems: "center", gap: 14,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+      }}>
+        <span style={{ fontSize: 28 }}>🏷️</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>タグ管理</div>
+          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>QRタグの生成・紐付け・テキスト出力</div>
+        </div>
+        <div style={{ fontSize: 13, color: C.textSub }}>{tagCount}枚</div>
         <span style={{ color: C.textMuted, fontSize: 16 }}>›</span>
       </button>
 
@@ -1075,6 +1094,7 @@ function StockoutButton() {
 // ======================================================================
 // Main App
 // ★STEP6: settings画面追加、ヘッダーメニューに設定導線追加
+// ★STEP7: tags画面追加、ホームにタグ管理ボタン追加
 // ======================================================================
 export default function SalonMock() {
   const { storeId, storeName, storePlan, storeMaxSku, storeBonusSku, signOut, isAuthenticated, isSupabaseConnected, user } = useAuth();
@@ -1086,6 +1106,7 @@ export default function SalonMock() {
   const [dbConnected, setDbConnected] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+  const [tagCount, setTagCount] = useState(0); // ★STEP7 追加
 
   const isDbMode = isSupabaseConnected && isAuthenticated && dbConnected;
 
@@ -1141,13 +1162,28 @@ export default function SalonMock() {
     }
   }, [storeId]);
 
+  // ★STEP7 追加：タグ数を取得
+  const fetchTagCount = useCallback(async () => {
+    if (!supabase || !storeId) return;
+    try {
+      const { count, error } = await supabase
+        .from("qr_tags")
+        .select("*", { count: "exact", head: true })
+        .eq("store_id", storeId);
+      if (!error) setTagCount(count || 0);
+    } catch (e) {
+      console.error("Tag count fetch error:", e);
+    }
+  }, [storeId]);
+
   // ——— Initial data load ———
   useEffect(() => {
     if (storeId) {
       fetchProducts();
       fetchOrderItems();
+      fetchTagCount(); // ★STEP7 追加
     }
-  }, [storeId, fetchProducts, fetchOrderItems]);
+  }, [storeId, fetchProducts, fetchOrderItems, fetchTagCount]);
 
   // ——— Product CRUD ———
   const handleSaveProduct = async (formData, isEdit) => {
@@ -1283,7 +1319,7 @@ export default function SalonMock() {
   const waitingCount = orderedItems.length;
   const activeProducts = activeProductCount;
 
-  const screenTitle = { top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち", products: "商品管理", settings: "設定" }; // ★STEP6: settings追加
+  const screenTitle = { top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち", products: "商品管理", tags: "タグ管理", settings: "設定" }; // ★STEP7: tags追加
 
   return (
     <div style={{
@@ -1374,7 +1410,7 @@ export default function SalonMock() {
       {/* Content */}
       <div style={{ paddingTop: 16, paddingBottom: 90 }}>
         {screen === "top" && (
-          <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} />
+          <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} tagCount={tagCount} />
         )}
         {screen === "scan" && (
           <ScanScreen onNavigate={setScreen} products={products} onAddOrderItem={handleAddOrderItem} storeId={storeId}
@@ -1397,6 +1433,10 @@ export default function SalonMock() {
             currentPlan={storePlan || "free"}
             onShowPricing={() => setShowPricing(true)}
           />
+        )}
+        {/* ★STEP7 追加：タグ管理画面 */}
+        {screen === "tags" && (
+          <TagManagementScreen products={products} />
         )}
         {/* ★STEP6 追加：設定画面 */}
         {screen === "settings" && (
