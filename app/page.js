@@ -1,10 +1,11 @@
 "use client";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import AuthForm from "../components/AuthForm";
+import ResetPasswordForm from "../components/ResetPasswordForm";
 import SalonMock from "../components/SalonMock";
 
 function AppContent() {
-  const { isAuthenticated, loading, isSupabaseConnected } = useAuth();
+  const { isAuthenticated, loading, isPasswordRecovery } = useAuth();
 
   // ローディング中
   if (loading) {
@@ -19,6 +20,11 @@ function AppContent() {
         <p style={{ fontSize: 13, color: "#6b7280" }}>読み込み中...</p>
       </div>
     );
+  }
+
+  // パスワードリセットリンクからのアクセス
+  if (isPasswordRecovery) {
+    return <ResetPasswordForm />;
   }
 
   // 未認証 → ログイン画面
