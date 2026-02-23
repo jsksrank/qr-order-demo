@@ -10,15 +10,16 @@ const supabaseAdmin = createClient(
 export async function POST(request) {
   try {
     const authHeader = request.headers.get('authorization');
-const accessToken = authHeader?.replace('Bearer ', '');
-if (!accessToken) {
-  return NextResponse.json({ error: 'Missing access token' }, { status: 401 });
-}
-const supabaseUser = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-const { data: { user }, error: authError } = await supabaseUser.auth.getUser(accessToken);
+    const accessToken = authHeader?.replace('Bearer ', '');
+    if (!accessToken) {
+      return NextResponse.json({ error: 'Missing access token' }, { status: 401 });
+    }
+
+    const supabaseUser = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser(accessToken);
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -38,14 +39,12 @@ const { data: { user }, error: authError } = await supabaseUser.auth.getUser(acc
     }
 
     const origin = request.headers.get('origin') || 'http://localhost:3000';
-
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: store.stripe_customer_id,
       return_url: origin,
     });
 
     return NextResponse.json({ url: portalSession.url });
-
   } catch (error) {
     console.error('Portal error:', error);
     return NextResponse.json(
