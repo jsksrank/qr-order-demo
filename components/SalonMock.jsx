@@ -1205,12 +1205,37 @@ export default function SalonMock() {
           .eq("store_id", storeId);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        // ★S21：insert後にIDを取得（自動タグ紐付け用）
+        const { data: newProduct, error } = await supabase
           .from("products")
-          .insert(jsToDb(formData, storeId));
+          .insert(jsToDb(formData, storeId))
+          .select("id")
+          .single();
         if (error) throw error;
+
+        // ★S21：未割当タグの最若番を自動紐付け
+        if (newProduct) {
+          const { data: freeTag } = await supabase
+            .from("qr_tags")
+            .select("id, tag_code")
+            .eq("store_id", storeId)
+            .eq("status", "unassigned")
+            .is("product_id", null)
+            .order("tag_code", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+
+          if (freeTag) {
+            await supabase
+              .from("qr_tags")
+              .update({ product_id: newProduct.id, status: "attached" })
+              .eq("id", freeTag.id);
+            console.log(`★S21 自動タグ紐付け: ${freeTag.tag_code} → ${formData.name}`);
+          }
+        }
       }
       await fetchProducts();
+      await fetchTagCount(); // ★S21：タグ数を更新
     } catch (e) {
       console.error("Product save error:", e);
       alert("保存に失敗しました: " + e.message);
