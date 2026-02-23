@@ -13,7 +13,7 @@ const C = {
   text: "#1a1a2e", textSub: "#6b7280", textMuted: "#9ca3af",
 };
 
-// ★ Step 7簡素化: ステータス設定（removedフィルターは削除したが、表示用に定義は残す）
+// ★ Step 7簡素化: ステータス設定（removedは表示用に定義は残す）
 const STATUS_CONFIG = {
   attached: { emoji: "🟢", label: "紐付け済", color: C.success, bg: C.successLight, border: C.successBorder },
   removed: { emoji: "🔴", label: "スキャン済", color: C.danger, bg: C.dangerLight, border: C.dangerBorder },
@@ -23,6 +23,7 @@ const STATUS_CONFIG = {
 // ======================================================================
 // TagManagementScreen（★ Step 7簡素化版）
 // ・タグ生成ボタン＋モーダル削除（自動生成に移行）
+// ・テキスト出力削除（不要と判断）
 // ・スキャン済フィルター削除（発注リストと重複のため不要）
 // ======================================================================
 export default function TagManagementScreen({ products }) {
@@ -33,10 +34,6 @@ export default function TagManagementScreen({ products }) {
 
   // 紐付け
   const [bindingTagId, setBindingTagId] = useState(null);
-
-  // テキスト出力
-  const [showExport, setShowExport] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   // フィードバック
   const [feedback, setFeedback] = useState(null);
@@ -92,46 +89,6 @@ export default function TagManagementScreen({ products }) {
     }
   };
 
-  // ——— テキスト出力 ———
-  const generateExportText = (mode) => {
-    const filteredTags = getFilteredTags();
-
-    if (mode === "codes_only") {
-      return filteredTags.map((t) => t.tag_code).join("\n");
-    }
-
-    const date = new Date().toLocaleDateString("ja-JP");
-    const lines = [
-      `【QRオーダー タグ一覧】`,
-      `出力日: ${date}`,
-      ``,
-      ...filteredTags.map((t) => {
-        const product = t.product_id ? products.find((p) => p.id === t.product_id) : null;
-        const statusConf = STATUS_CONFIG[t.status];
-        return `${t.tag_code}  ${statusConf.emoji} ${statusConf.label}  →  ${product ? product.name : "（未割当）"}`;
-      }),
-      ``,
-      `合計: ${filteredTags.length}枚`,
-    ];
-    return lines.join("\n");
-  };
-
-  const copyText = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
   // ——— ヘルパー ———
   const showFeedback = (type, message) => {
     setFeedback({ type, message });
@@ -179,7 +136,7 @@ export default function TagManagementScreen({ products }) {
         </div>
       )}
 
-      {/* ★ Step 7簡素化: サマリー（スキャン済カウントを削除） */}
+      {/* ★ Step 7簡素化: サマリー（3項目のみ） */}
       <div style={{
         padding: 14, background: C.card, borderRadius: 12,
         border: `1px solid ${C.border}`, marginBottom: 16,
@@ -198,19 +155,7 @@ export default function TagManagementScreen({ products }) {
         </div>
       </div>
 
-      {/* ★ Step 7簡素化: テキスト出力ボタンのみ（タグ生成ボタン削除） */}
-      <div style={{ marginBottom: 16 }}>
-        <button onClick={() => setShowExport(true)} style={{
-          width: "100%", padding: "12px", border: `1.5px solid ${C.border}`,
-          borderRadius: 12, background: C.card, color: C.text,
-          fontSize: 13, fontWeight: 700, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-        }}>
-          📄 テキスト出力
-        </button>
-      </div>
-
-      {/* ★ Step 7簡素化: フィルター（スキャン済を削除） */}
+      {/* ★ Step 7簡素化: フィルター（3つのみ） */}
       <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 14, paddingBottom: 4 }}>
         {[
           { key: "all", label: `すべて (${counts.all})` },
@@ -316,59 +261,6 @@ export default function TagManagementScreen({ products }) {
             </div>
           );
         })
-      )}
-
-      {/* ======== テキスト出力モーダル ======== */}
-      {showExport && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100 }}
-          onClick={() => { setShowExport(false); setCopied(false); }}>
-          <div style={{
-            width: "100%", maxWidth: 420, background: "#fff",
-            borderRadius: "20px 20px 0 0", padding: "20px 20px 28px",
-          }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>📄 テキスト出力</h3>
-              <button onClick={() => { setShowExport(false); setCopied(false); }}
-                style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>✕</button>
-            </div>
-
-            {/* 一覧テキスト */}
-            <div style={{
-              padding: 14, background: C.bg, borderRadius: 12,
-              fontFamily: "monospace", fontSize: 11, lineHeight: 1.8,
-              whiteSpace: "pre-wrap", color: "#333", maxHeight: 200, overflowY: "auto",
-              marginBottom: 12,
-            }}>
-              {generateExportText("full")}
-            </div>
-
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              <button onClick={() => copyText(generateExportText("full"))} style={{
-                flex: 1, padding: "12px", border: "none", borderRadius: 12,
-                background: copied ? C.success : C.primary, color: "#fff",
-                fontSize: 13, fontWeight: 700, cursor: "pointer",
-              }}>
-                {copied ? "✅ コピー済み！" : "📋 一覧をコピー"}
-              </button>
-              <button onClick={() => copyText(generateExportText("codes_only"))} style={{
-                flex: 1, padding: "12px", border: `1.5px solid ${C.border}`,
-                borderRadius: 12, background: C.card, color: C.text,
-                fontSize: 13, fontWeight: 700, cursor: "pointer",
-              }}>
-                🏷️ コードだけコピー
-              </button>
-            </div>
-
-            <div style={{
-              padding: 10, background: C.warnLight, borderRadius: 8,
-              border: `1px solid ${C.warnBorder}`,
-            }}>
-              <p style={{ fontSize: 11, color: C.warnDark, margin: 0, lineHeight: 1.6 }}>
-                💡 「コードだけコピー」でタグコード一覧をコピーし、QRコード生成サイトで一括作成できます。
-              </p>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
