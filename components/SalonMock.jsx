@@ -768,7 +768,7 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
 // ======================================================================
 // Product Management Screen
 // ======================================================================
-function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, currentPlan, onShowPricing }) {
+function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, currentPlan, onShowPricing, tagMap = {} }) {
   const [view, setView] = useState("list");
   const [editProduct, setEditProduct] = useState(null);
   const [search, setSearch] = useState("");
