@@ -223,7 +223,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
         <span style={{ fontSize: 28 }}>🏷️</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>タグ管理</div>
-          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>QRタグの生成・紐付け・テキスト出力</div>
+          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>QRタグの紐付け管理</div>
         </div>
         <div style={{ fontSize: 13, color: C.textSub }}>{tagCount}枚</div>
         <span style={{ color: C.textMuted, fontSize: 16 }}>›</span>
@@ -1022,8 +1022,8 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
       {!product && (
         <div style={{ marginTop: 20, padding: 12, background: C.primaryLight, borderRadius: 10, border: `1px solid ${C.primaryBorder}` }}>
           <p style={{ fontSize: 12, color: C.primary, margin: 0, lineHeight: 1.6 }}>
-            🏷️ 保存後、QRタグをスキャンしてこの商品に紐付けてください。
-            タグに商品名を手書きし、後ろから{form.reorderPoint || "N"}本目に取り付けます。
+            🏷️ 保存すると未割当のQRタグが自動で紐付けされます。
+        タグ管理画面で対応表を確認し、物理タグを商品に取り付けてください。
           </p>
         </div>
       )}
@@ -1249,17 +1249,25 @@ export default function SalonMock() {
     }
 
     try {
-      const { error } = await supabase
-        .from("products")
-        .update({ is_active: false })
-        .eq("id", productId)
-        .eq("store_id", storeId);
-      if (error) throw error;
-      await fetchProducts();
-    } catch (e) {
-      console.error("Product delete error:", e);
-      alert("削除に失敗しました: " + e.message);
-    }
+  // ★S21：商品に紐付いたタグを解除（unassignedに戻す）
+  await supabase
+    .from("qr_tags")
+    .update({ product_id: null, status: "unassigned" })
+    .eq("store_id", storeId)
+    .eq("product_id", productId);
+
+  const { error } = await supabase
+    .from("products")
+    .update({ is_active: false })
+    .eq("id", productId)
+    .eq("store_id", storeId);
+  if (error) throw error;
+  await fetchProducts();
+  await fetchTagCount(); // ★S21：タグ数を更新
+} catch (e) {
+  console.error("Product delete error:", e);
+  alert("削除に失敗しました: " + e.message);
+}
   };
 
   // ——— Order Item operations ———
