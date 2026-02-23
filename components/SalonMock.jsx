@@ -846,8 +846,9 @@ function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, cur
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-            <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
-              {p.manufacturer} · {p.location} · 発注点: {p.reorderPoint || "未設定"}本目 · 発注数: {p.defaultOrderQty}個
+<div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
+              {tagMap[p.id] ? <span style={{ color: C.primary, fontWeight: 600 }}>{tagMap[p.id]}</span> : <span style={{ color: C.textMuted }}>タグなし</span>}
+              {" · "}{p.manufacturer} · {p.location}
             </div>
           </div>
           <span style={{ color: C.textMuted, fontSize: 14 }}>›</span>
