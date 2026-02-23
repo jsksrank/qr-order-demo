@@ -9,13 +9,16 @@ const supabaseAdmin = createClient(
 
 export async function POST(request) {
   try {
-    const { accessToken } = await request.json();
-
-    const supabaseUser = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser(accessToken);
+    const authHeader = request.headers.get('authorization');
+const accessToken = authHeader?.replace('Bearer ', '');
+if (!accessToken) {
+  return NextResponse.json({ error: 'Missing access token' }, { status: 401 });
+}
+const supabaseUser = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+const { data: { user }, error: authError } = await supabaseUser.auth.getUser(accessToken);
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
