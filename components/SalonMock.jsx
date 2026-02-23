@@ -1440,7 +1440,7 @@ export default function SalonMock() {
         )}
         {/* ★STEP6 追加：設定画面 */}
         {screen === "settings" && (
-          <SettingsScreen activeProductCount={activeProductCount} />
+          <SettingsScreen activeProductCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />
         )}
       </div>
 
