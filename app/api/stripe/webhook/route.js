@@ -116,7 +116,7 @@ async function handleSubscriptionChange(subscription) {
 
           const { error: insertError } = await supabaseAdmin
             .from('qr_tags')
-            .insert(newTags);
+            .upsert(newTags, { onConflict: 'store_id,tag_code', ignoreDuplicates: true });
 
           if (insertError) {
             console.error('Tag auto-generation failed:', insertError);
