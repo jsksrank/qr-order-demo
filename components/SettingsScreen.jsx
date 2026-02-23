@@ -188,7 +188,7 @@ function LogoutConfirmModal({ onClose, onConfirm }) {
 // ========================================
 // メイン：SettingsScreen
 // ========================================
-export default function SettingsScreen({ activeProductCount }) {
+export default function SettingsScreen({ activeProductCount, onShowPricing }) {
   // ★ 実際のuseAuth変数名に合わせる
   const {
     user, storeName, storePlan, storeMaxSku, storeBonusSku, subscriptionStatus,
@@ -204,8 +204,17 @@ export default function SettingsScreen({ activeProductCount }) {
   const totalSku = (storeMaxSku || 10) + (storeBonusSku || 0);
   const skuUsage = activeProductCount || 0;
 
+  // ★ Step 7: 課金履歴がなければPricingModal、あればCustomer Portal
+  const hasSubscriptionHistory = subscriptionStatus && subscriptionStatus !== "canceled";
+
   // Customer Portal を開く
   const handleOpenPortal = async () => {
+    // ★ Step 7: 未課金ユーザー → PricingModalを表示
+    if (!hasSubscriptionHistory && onShowPricing) {
+      onShowPricing();
+      return;
+    }
+
     setPortalLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -287,7 +296,7 @@ export default function SettingsScreen({ activeProductCount }) {
       <SettingsSection title="アカウント">
         <SettingsRow icon="🔑" label="パスワードを変更" onClick={() => setShowChangePw(true)} />
         <SettingsRow icon="💳" label="プラン・お支払い管理"
-          value={subscriptionStatus === "active" ? "Stripeで管理" : storePlan === "free" ? "無料プラン利用中" : ""}
+          value={hasSubscriptionHistory ? "Stripeで管理" : "プランを選択"}
           onClick={handleOpenPortal} borderBottom={false} />
       </SettingsSection>
 
