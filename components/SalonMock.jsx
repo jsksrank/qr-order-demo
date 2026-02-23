@@ -1107,6 +1107,7 @@ export default function SalonMock() {
   const [showMenu, setShowMenu] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
   const [tagCount, setTagCount] = useState(0); // ★STEP7 追加
+  const [tagMap, setTagMap] = useState({}); // ★S21：productId → tag_code のマップ
 
   const isDbMode = isSupabaseConnected && isAuthenticated && dbConnected;
 
@@ -1163,7 +1164,7 @@ export default function SalonMock() {
   }, [storeId]);
 
   // ★STEP7 追加：タグ数を取得
-  const fetchTagCount = useCallback(async () => {
+const fetchTagCount = useCallback(async () => {
     if (!supabase || !storeId) return;
     try {
       const { count, error } = await supabase
@@ -1171,6 +1172,18 @@ export default function SalonMock() {
         .select("*", { count: "exact", head: true })
         .eq("store_id", storeId);
       if (!error) setTagCount(count || 0);
+
+      // ★S21：商品→タグコードのマップを構築
+      const { data: tags } = await supabase
+        .from("qr_tags")
+        .select("product_id, tag_code")
+        .eq("store_id", storeId)
+        .not("product_id", "is", null);
+      if (tags) {
+        const map = {};
+        tags.forEach(t => { map[t.product_id] = t.tag_code; });
+        setTagMap(map);
+      }
     } catch (e) {
       console.error("Tag count fetch error:", e);
     }
@@ -1460,14 +1473,14 @@ export default function SalonMock() {
         {screen === "receive" && (
           <ReceiveScreen orderedItems={orderedItems} receivedItems={receivedItems} onMarkReceived={handleMarkReceived} storeId={storeId} products={products} />
         )}
-        {screen === "products" && (
+{screen === "products" && (
           <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct}
             skuLimit={skuLimit}
             currentPlan={storePlan || "free"}
             onShowPricing={() => setShowPricing(true)}
+            tagMap={tagMap}
           />
-        )}
-        {/* ★STEP7 追加：タグ管理画面 */}
+        )}        {/* ★STEP7 追加：タグ管理画面 */}
         {screen === "tags" && (
           <TagManagementScreen products={products} />
         )}
