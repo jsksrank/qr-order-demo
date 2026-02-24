@@ -318,7 +318,7 @@ export default function AuthForm() {
             {/* 新規登録の注意事項 */}
             {mode === "signup" && (
               <p style={{ fontSize: 10, color: C.textMuted, marginTop: 12, lineHeight: 1.6 }}>
-                登録することで<a href="/legal" target="_blank" style={{ color: C.primary }}>特定商取引法に基づく表記</a>に同意したものとみなします。
+                登録することで<a href="/legal" target="_blank" style={{ color: C.primary }}>運営者情報・販売条件</a>に同意したものとみなします。
               </p>
             )}
 
