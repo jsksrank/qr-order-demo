@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'QRオーダー - 美容室向け発注管理',
-  description: 'QR発注点方式による美容室向け在庫発注管理SaaS',
+  title: '在庫番 | 美容室の発注管理をQRで自動化',
+  description: 'QRタグをスキャンするだけで発注リストを自動作成。美容室専用の在庫管理SaaS。',
 };
 
 export default function RootLayout({ children }) {
