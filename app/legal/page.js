@@ -1,6 +1,6 @@
 export const metadata = {
-  title: '特定商取引法に基づく表記 | 在庫番',
-  description: '在庫番（zaiko-ban.com）の特定商取引法に基づく表記',
+  title: '運営者情報 | 在庫番',
+  description: '在庫番（zaiko-ban.com）の運営者情報・販売に関する情報',
 };
 
 export default function LegalPage() {
@@ -22,7 +22,7 @@ export default function LegalPage() {
           ← トップに戻る
         </a>
         <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 8px" }}>
-          特定商取引法に基づく表記
+          運営者情報
         </h1>
         <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>最終更新日：2026年2月25日</p>
       </div>
@@ -36,10 +36,8 @@ export default function LegalPage() {
           <tbody>
             {[
               ["販売事業者", "株式会社コクシ・ムソー"],
-              ["代表者", "高橋僚介"],
               ["所在地", "〒220-0073\n神奈川県横浜市西区岡野1-9-6 岡野町ビル701"],
-              ["電話番号", "045-534-9227\n※お問い合わせはメールまたはLINEにてお願いいたします"],
-              ["メールアドレス", "info@zaiko-ban.com"],
+              ["お問い合わせ", "FORM_LINK"],
               ["販売URL", "https://zaiko-ban.com"],
               ["販売価格", "各プランの月額料金はサービスサイトの料金ページに表示された金額となります\n・無料プラン：¥0\n・ライトプラン：¥1,980/月（税別）\n・スタンダードプラン：¥3,980/月（税別）\n・プロプラン：¥5,980/月（税別）"],
               ["販売価格以外の必要料金", "・インターネット接続に必要な通信費\n・QRタグ追加購入費用（必要な場合のみ）"],
@@ -48,6 +46,7 @@ export default function LegalPage() {
               ["サービス提供時期", "お申し込み完了後、即時ご利用いただけます\nQRタグは登録住所へ別途郵送いたします（通常5営業日以内）"],
               ["返品・キャンセル", "・デジタルサービスの性質上、ご利用開始後の返金はいたしかねます\n・いつでも管理画面またはカスタマーポータルから解約可能です\n・解約後は無料プラン（10 SKU）に自動移行します\n・解約手数料はかかりません"],
               ["動作環境", "・スマートフォン：iOS 15以降（Safari）、Android 10以降（Chrome）\n・PC：最新版Chrome, Safari, Edge\n・インターネット接続が必要です"],
+              ["その他", "代表者氏名、電話番号、メールアドレス等の連絡先情報は、\nお問い合わせフォームよりご請求いただければ遅滞なく開示いたします"],
             ].map(([label, value], i) => (
               <tr key={i} style={{ borderBottom: "1px solid #e5e7eb" }}>
                 <th style={{
@@ -62,7 +61,16 @@ export default function LegalPage() {
                   padding: "16px 20px", fontSize: 14, color: "#1a1a2e",
                   whiteSpace: "pre-line", lineHeight: 1.8,
                 }}>
-                  {value}
+                  {label === "お問い合わせ" ? (
+                    <a
+                      href="https://forms.gle/KYf2N99PYUg1c4ke7"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#0d9488", fontWeight: 600, textDecoration: "underline" }}
+                    >
+                      お問い合わせフォームはこちら
+                    </a>
+                  ) : value}
                 </td>
               </tr>
             ))}
