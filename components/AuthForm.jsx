@@ -15,17 +15,69 @@ const C = {
   textMuted: "#9ca3af",
 };
 
+const inputBaseStyle = {
+  width: "100%", padding: "12px 14px", fontSize: 15,
+  border: `1.5px solid ${C.border}`, borderRadius: 10,
+  outline: "none", boxSizing: "border-box",
+};
+
+function InputField({ label, required, children }) {
+  return (
+    <div>
+      <label style={{ fontSize: 12, color: C.textSub, fontWeight: 600, display: "block", marginBottom: 4 }}>
+        {label}{required && <span style={{ color: C.danger, marginLeft: 2 }}>*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 export default function AuthForm() {
   const { signIn, signUp, resetPassword, error: authError } = useAuth();
   const [mode, setMode] = useState("login"); // "login" | "signup" | "reset"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [shopName, setShopName] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
   const [localError, setLocalError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [addressLoading, setAddressLoading] = useState(false);
 
   const displayError = localError || authError;
+
+  // 郵便番号から住所を自動入力（zipcloud API）
+  const lookupAddress = async (code) => {
+    const cleaned = code.replace(/[^0-9]/g, "");
+    if (cleaned.length !== 7) return;
+    setAddressLoading(true);
+    try {
+      const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${cleaned}`);
+      const data = await res.json();
+      if (data.results && data.results[0]) {
+        const r = data.results[0];
+        setAddress(`${r.address1}${r.address2}${r.address3}`);
+      }
+    } catch (e) {
+      // 無視：手入力で対応
+    }
+    setAddressLoading(false);
+  };
+
+  const handlePostalCodeChange = (val) => {
+    // ハイフン自動挿入
+    let cleaned = val.replace(/[^0-9]/g, "");
+    if (cleaned.length > 3) {
+      cleaned = cleaned.slice(0, 3) + "-" + cleaned.slice(3, 7);
+    }
+    setPostalCode(cleaned);
+    // 7桁入力で自動検索
+    if (cleaned.replace("-", "").length === 7) {
+      lookupAddress(cleaned);
+    }
+  };
 
   const handleSubmit = async () => {
     setLocalError(null);
@@ -56,16 +108,34 @@ export default function AuthForm() {
       setLocalError("パスワードは6文字以上にしてください");
       return;
     }
-    if (mode === "signup" && !shopName.trim()) {
-      setLocalError("店舗名を入力してください");
-      return;
+    if (mode === "signup") {
+      if (!shopName.trim()) {
+        setLocalError("店舗名を入力してください");
+        return;
+      }
+      if (!postalCode.trim() || postalCode.replace(/[^0-9]/g, "").length !== 7) {
+        setLocalError("正しい郵便番号を入力してください");
+        return;
+      }
+      if (!address.trim()) {
+        setLocalError("住所を入力してください");
+        return;
+      }
+      if (!phone.trim()) {
+        setLocalError("電話番号を入力してください");
+        return;
+      }
     }
 
     setLoading(true);
     if (mode === "login") {
       await signIn(email.trim(), password);
     } else {
-      await signUp(email.trim(), password, shopName.trim());
+      await signUp(email.trim(), password, shopName.trim(), {
+        postalCode: postalCode.trim(),
+        address: address.trim(),
+        phone: phone.trim(),
+      });
     }
     setLoading(false);
   };
@@ -88,7 +158,7 @@ export default function AuthForm() {
       {/* ロゴ */}
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <div style={{ fontSize: 48, marginBottom: 8 }}>🏷️</div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>QRオーダー</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>在庫番</h1>
         <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>美容室向け発注管理</p>
       </div>
 
@@ -129,72 +199,109 @@ export default function AuthForm() {
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-              {/* 店舗名（新規登録のみ） */}
+              {/* ===== 新規登録用フィールド ===== */}
               {mode === "signup" && (
-                <div>
-                  <label style={{ fontSize: 12, color: C.textSub, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                    店舗名
-                  </label>
-                  <input
-                    type="text"
-                    value={shopName}
-                    onChange={(e) => setShopName(e.target.value)}
-                    placeholder="例：Hair Salon BLOOM"
-                    maxLength={50}
-                    style={{
-                      width: "100%", padding: "12px 14px", fontSize: 15,
-                      border: `1.5px solid ${C.border}`, borderRadius: 10,
-                      outline: "none", boxSizing: "border-box",
-                    }}
-                    onFocus={(e) => (e.target.style.borderColor = C.primary)}
-                    onBlur={(e) => (e.target.style.borderColor = C.border)}
-                  />
-                </div>
+                <>
+                  {/* 店舗名 */}
+                  <InputField label="店舗名" required>
+                    <input
+                      type="text"
+                      value={shopName}
+                      onChange={(e) => setShopName(e.target.value)}
+                      placeholder="例：Hair Salon BLOOM"
+                      maxLength={50}
+                      style={inputBaseStyle}
+                      onFocus={(e) => (e.target.style.borderColor = C.primary)}
+                      onBlur={(e) => (e.target.style.borderColor = C.border)}
+                    />
+                  </InputField>
+
+                  {/* 郵便番号 */}
+                  <InputField label="郵便番号（QRタグ送付先）" required>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input
+                        type="text"
+                        value={postalCode}
+                        onChange={(e) => handlePostalCodeChange(e.target.value)}
+                        placeholder="123-4567"
+                        maxLength={8}
+                        inputMode="numeric"
+                        style={{ ...inputBaseStyle, width: 140, flexShrink: 0 }}
+                        onFocus={(e) => (e.target.style.borderColor = C.primary)}
+                        onBlur={(e) => (e.target.style.borderColor = C.border)}
+                      />
+                      {addressLoading && (
+                        <span style={{ fontSize: 12, color: C.textMuted }}>検索中...</span>
+                      )}
+                    </div>
+                  </InputField>
+
+                  {/* 住所 */}
+                  <InputField label="住所" required>
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="都道府県 市区町村 番地 建物名"
+                      maxLength={200}
+                      style={inputBaseStyle}
+                      onFocus={(e) => (e.target.style.borderColor = C.primary)}
+                      onBlur={(e) => (e.target.style.borderColor = C.border)}
+                    />
+                    <p style={{ fontSize: 10, color: C.textMuted, marginTop: 4, lineHeight: 1.5 }}>
+                      ※ QRタグの郵送先になります。建物名・部屋番号まで正確にご記入ください。
+                    </p>
+                  </InputField>
+
+                  {/* 電話番号 */}
+                  <InputField label="電話番号" required>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="090-1234-5678"
+                      maxLength={20}
+                      inputMode="tel"
+                      style={inputBaseStyle}
+                      onFocus={(e) => (e.target.style.borderColor = C.primary)}
+                      onBlur={(e) => (e.target.style.borderColor = C.border)}
+                    />
+                  </InputField>
+
+                  {/* 区切り線 */}
+                  <div style={{ borderTop: `1px solid ${C.border}`, margin: "4px 0" }} />
+                </>
               )}
 
               {/* メールアドレス */}
-              <div>
-                <label style={{ fontSize: 12, color: C.textSub, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                  メールアドレス
-                </label>
+              <InputField label="メールアドレス" required={mode === "signup"}>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="salon@example.com"
                   autoComplete="email"
-                  style={{
-                    width: "100%", padding: "12px 14px", fontSize: 15,
-                    border: `1.5px solid ${C.border}`, borderRadius: 10,
-                    outline: "none", boxSizing: "border-box",
-                  }}
+                  style={inputBaseStyle}
                   onFocus={(e) => (e.target.style.borderColor = C.primary)}
                   onBlur={(e) => (e.target.style.borderColor = C.border)}
                 />
-              </div>
+              </InputField>
 
               {/* パスワード（リセットモードでは非表示） */}
               {mode !== "reset" && (
-                <div>
-                  <label style={{ fontSize: 12, color: C.textSub, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                    パスワード
-                  </label>
+                <InputField label="パスワード" required={mode === "signup"}>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="6文字以上"
                     autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    style={{
-                      width: "100%", padding: "12px 14px", fontSize: 15,
-                      border: `1.5px solid ${C.border}`, borderRadius: 10,
-                      outline: "none", boxSizing: "border-box",
-                    }}
+                    style={inputBaseStyle}
                     onFocus={(e) => (e.target.style.borderColor = C.primary)}
                     onBlur={(e) => (e.target.style.borderColor = C.border)}
                     onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                   />
-                </div>
+                </InputField>
               )}
             </div>
 
@@ -208,12 +315,19 @@ export default function AuthForm() {
               </div>
             )}
 
+            {/* 新規登録の注意事項 */}
+            {mode === "signup" && (
+              <p style={{ fontSize: 10, color: C.textMuted, marginTop: 12, lineHeight: 1.6 }}>
+                登録することで<a href="/legal" target="_blank" style={{ color: C.primary }}>特定商取引法に基づく表記</a>に同意したものとみなします。
+              </p>
+            )}
+
             {/* メインボタン */}
             <button
               onClick={handleSubmit}
               disabled={loading}
               style={{
-                width: "100%", marginTop: 20, padding: "14px",
+                width: "100%", marginTop: mode === "signup" ? 12 : 20, padding: "14px",
                 border: "none", borderRadius: 12,
                 background: loading ? C.textMuted : C.primary,
                 color: "#fff", fontSize: 15, fontWeight: 700,
@@ -222,7 +336,7 @@ export default function AuthForm() {
             >
               {loading ? "処理中..." :
                 mode === "login" ? "ログイン" :
-                mode === "signup" ? "新規登録" :
+                mode === "signup" ? "無料で始める" :
                 "リセットメールを送信"
               }
             </button>
@@ -286,7 +400,7 @@ export default function AuthForm() {
 
       {/* フッター */}
       <p style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: C.textMuted }}>
-        © 2026 QRオーダー
+        © 2026 在庫番
       </p>
     </div>
   );
