@@ -1,8 +1,8 @@
 "use client";
-import { AuthProvider, useAuth } from "../lib/auth-context";
-import AuthForm from "../components/AuthForm";
-import ResetPasswordForm from "../components/ResetPasswordForm";
-import SalonMock from "../components/SalonMock";
+import { AuthProvider, useAuth } from "../../lib/auth-context";
+import AuthForm from "../../components/AuthForm";
+import ResetPasswordForm from "../../components/ResetPasswordForm";
+import SalonMock from "../../components/SalonMock";
 
 function AppContent() {
   const { isAuthenticated, loading, isPasswordRecovery } = useAuth();
@@ -36,7 +36,7 @@ function AppContent() {
   return <SalonMock />;
 }
 
-export default function Page() {
+export default function AppPage() {
   return (
     <AuthProvider>
       <AppContent />
