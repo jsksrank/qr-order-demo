@@ -381,8 +381,9 @@ export default function LandingPage() {
             <li><a href="#pricing">料金</a></li>
             <li><a href="#faq">FAQ</a></li>
             <li><a href="#contact">お問い合わせ</a></li>
+            <li><a href="/legal">特定商取引法に基づく表記</a></li>
           </ul>
-          <div className="footer-copy">© 2026 在庫番（zaiko-ban.com）All rights reserved.</div>
+          <div className="footer-copy">© 2026 株式会社コクシ・ムソー / 在庫番（zaiko-ban.com）</div>
         </div>
       </footer>
     </div>
