@@ -185,14 +185,155 @@ function LogoutConfirmModal({ onClose, onConfirm }) {
   );
 }
 
+// ★ 紹介プログラムカード
+function ReferralCard({ referralCode, referralCount }) {
+  const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const referralUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/app?ref=${referralCode}`
+    : "";
+
+  const discount = referralCount * 500;
+
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(referralCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // フォールバック
+      const textArea = document.createElement("textarea");
+      textArea.value = referralCode;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const shareLink = async () => {
+    // Web Share API対応の場合（モバイル）
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "在庫番 - 紹介プログラム",
+          text: `在庫番を使ってみませんか？紹介コード「${referralCode}」で有料プランが永久¥500 OFF！`,
+          url: referralUrl,
+        });
+        return;
+      } catch {
+        // キャンセルまたは非対応→クリップボードにフォールバック
+      }
+    }
+    // クリップボードにコピー
+    try {
+      await navigator.clipboard.writeText(referralUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = referralUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
+
+  return (
+    <div style={{
+      background: C.card, borderRadius: 14, padding: 18,
+      border: `1px solid ${C.border}`, marginBottom: 16,
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: C.textSub, marginBottom: 12, letterSpacing: 0.5 }}>
+        🎁 紹介プログラム
+      </div>
+
+      {/* 紹介コード表示 */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "12px 14px", background: C.bg, borderRadius: 10,
+        border: `1px dashed ${C.border}`, marginBottom: 12,
+      }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, color: C.textMuted, marginBottom: 2 }}>あなたの紹介コード</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: C.primary, letterSpacing: 2, fontFamily: "monospace" }}>
+            {referralCode || "---"}
+          </div>
+        </div>
+        <button
+          onClick={copyCode}
+          style={{
+            padding: "8px 14px", border: `1px solid ${copied ? C.successBorder : C.primaryBorder}`,
+            borderRadius: 8, background: copied ? C.successLight : C.primaryLight,
+            color: copied ? C.success : C.primary,
+            fontSize: 12, fontWeight: 600, cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {copied ? "✅ コピー済" : "コピー"}
+        </button>
+      </div>
+
+      {/* 紹介リンク共有ボタン */}
+      <button
+        onClick={shareLink}
+        style={{
+          width: "100%", padding: "12px", border: "none", borderRadius: 10,
+          background: C.primary, color: "#fff",
+          fontSize: 13, fontWeight: 700, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          marginBottom: 14,
+        }}
+      >
+        {copiedLink ? "✅ リンクをコピーしました" : "📤 紹介リンクを共有する"}
+      </button>
+
+      {/* 紹介実績 */}
+      <div style={{
+        display: "flex", justifyContent: "space-around",
+        padding: "12px 0", borderTop: `1px solid ${C.border}`,
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>{referralCount}</div>
+          <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>紹介人数</div>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: discount > 0 ? C.success : C.textMuted }}>
+            ¥{discount.toLocaleString()}
+          </div>
+          <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>月額割引</div>
+        </div>
+      </div>
+
+      {/* 説明 */}
+      <div style={{
+        marginTop: 10, padding: "10px 12px", background: C.warnLight,
+        borderRadius: 8, border: `1px solid ${C.warnBorder}`,
+      }}>
+        <p style={{ fontSize: 11, color: C.text, margin: 0, lineHeight: 1.7 }}>
+          <strong>仕組み：</strong>1人紹介するごとに月額¥500 OFF（永久適用）。
+          紹介された方も全プラン永久¥500 OFF。
+          例：ライトプランで6人紹介すると実質無料！
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ========================================
 // メイン：SettingsScreen
 // ========================================
 export default function SettingsScreen({ activeProductCount, onShowPricing }) {
-  // ★ 実際のuseAuth変数名に合わせる
   const {
     user, storeName, storePlan, storeMaxSku, storeBonusSku, subscriptionStatus,
     signOut, updateStoreName,
+    referralCode, referralCount,
   } = useAuth();
 
   const [showEditName, setShowEditName] = useState(false);
@@ -204,12 +345,9 @@ export default function SettingsScreen({ activeProductCount, onShowPricing }) {
   const totalSku = (storeMaxSku || 10) + (storeBonusSku || 0);
   const skuUsage = activeProductCount || 0;
 
-  // ★ Step 7: 課金履歴がなければPricingModal、あればCustomer Portal
   const hasSubscriptionHistory = subscriptionStatus && subscriptionStatus !== "canceled";
 
-  // Customer Portal を開く
   const handleOpenPortal = async () => {
-    // ★ Step 7: 未課金ユーザー → PricingModalを表示
     if (!hasSubscriptionHistory && onShowPricing) {
       onShowPricing();
       return;
@@ -285,6 +423,9 @@ export default function SettingsScreen({ activeProductCount, onShowPricing }) {
           </p>
         )}
       </div>
+
+      {/* ★ 紹介プログラム */}
+      <ReferralCard referralCode={referralCode} referralCount={referralCount} />
 
       {/* 店舗設定 */}
       <SettingsSection title="店舗設定">
