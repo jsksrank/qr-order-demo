@@ -189,9 +189,14 @@ function LogoutConfirmModal({ onClose, onConfirm }) {
 function ReferralCard({ referralCode, referralCount }) {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showQr, setShowQr] = useState(false);
 
   const referralUrl = typeof window !== "undefined"
     ? `${window.location.origin}/app?ref=${referralCode}`
+    : "";
+
+  const qrImageUrl = referralUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(referralUrl)}`
     : "";
 
   const discount = referralCount * 500;
@@ -281,18 +286,49 @@ function ReferralCard({ referralCode, referralCount }) {
       </div>
 
       {/* 紹介リンク共有ボタン */}
-      <button
-        onClick={shareLink}
-        style={{
-          width: "100%", padding: "12px", border: "none", borderRadius: 10,
-          background: C.primary, color: "#fff",
-          fontSize: 13, fontWeight: 700, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-          marginBottom: 14,
-        }}
-      >
-        {copiedLink ? "✅ リンクをコピーしました" : "📤 紹介リンクを共有する"}
-      </button>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+        <button
+          onClick={shareLink}
+          style={{
+            flex: 1, padding: "12px", border: "none", borderRadius: 10,
+            background: C.primary, color: "#fff",
+            fontSize: 13, fontWeight: 700, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+          }}
+        >
+          {copiedLink ? "✅ コピー済" : "📤 リンクを共有"}
+        </button>
+        <button
+          onClick={() => setShowQr(!showQr)}
+          style={{
+            padding: "12px 16px", border: `1.5px solid ${showQr ? C.primary : C.border}`,
+            borderRadius: 10, background: showQr ? C.primaryLight : C.card,
+            color: showQr ? C.primary : C.textSub,
+            fontSize: 13, fontWeight: 700, cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {showQr ? "✕ 閉じる" : "QR表示"}
+        </button>
+      </div>
+
+      {/* QRコード表示 */}
+      {showQr && (
+        <div style={{
+          padding: 20, background: "#fff", borderRadius: 12,
+          border: `1px solid ${C.border}`, marginBottom: 14,
+          textAlign: "center",
+        }}>
+          <img
+            src={qrImageUrl}
+            alt="紹介QRコード"
+            style={{ width: 180, height: 180, marginBottom: 8 }}
+          />
+          <p style={{ fontSize: 11, color: C.textSub, margin: 0, lineHeight: 1.5 }}>
+            相手のスマホカメラで読み取ると<br />紹介コード付きで登録画面が開きます
+          </p>
+        </div>
+      )}
 
       {/* 紹介実績 */}
       <div style={{
