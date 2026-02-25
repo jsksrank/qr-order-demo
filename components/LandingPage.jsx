@@ -350,7 +350,7 @@ export default function LandingPage() {
                 <ul className="pricing-features">
                   {plan.features.map((f, j) => <li key={j}>{f}</li>)}
                 </ul>
-                {plan.referral && {/* plan.referral && <div className="pricing-referral">🎁 {plan.referral}</div> */}}
+                {/* plan.referral && <div className="pricing-referral">🎁 {plan.referral}</div> */}
                 <a href={APP_URL} className={`pricing-btn ${plan.popular ? "pricing-btn-primary" : plan.promo ? "pricing-btn-promo" : "pricing-btn-outline"}`}>
                   {plan.promo ? "無料で始める →" : "プランを選択"}
                 </a>
