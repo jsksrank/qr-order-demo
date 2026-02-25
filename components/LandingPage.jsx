@@ -306,7 +306,7 @@ export default function LandingPage() {
             ].map((plan, i) => (
               <div className={`pricing-card anim${plan.popular ? " popular" : ""}${plan.promo ? " promo" : ""}`} key={i} style={{ transitionDelay: `${i * 0.08}s` }}>
                 {plan.popular && <div className="pricing-popular-badge">おすすめ</div>}
-                {plan.promo && <div className="pricing-promo-badge">🔥 先着100名 無料！残り90名</div>}
+                {plan.promo && <div className="pricing-promo-badge">🔥 先着100名 無料！残り100名</div>}
                 <div className="pricing-name">{plan.name}</div>
                 <div className="pricing-sku">{plan.sku}</div>
                 <div className="pricing-price">
@@ -321,7 +321,7 @@ export default function LandingPage() {
                 <ul className="pricing-features">
                   {plan.features.map((f, j) => <li key={j}>{f}</li>)}
                 </ul>
-                {plan.referral && <div className="pricing-referral">🎁 {plan.referral}</div>}
+                {plan.referral && <!--<div className="pricing-referral">🎁 {plan.referral}</div>-->}
                 <a href={APP_URL} className={`pricing-btn ${plan.popular ? "pricing-btn-primary" : plan.promo ? "pricing-btn-promo" : "pricing-btn-outline"}`}>
                   {plan.promo ? "無料で始める →" : "プランを選択"}
                 </a>
