@@ -74,6 +74,7 @@ export default function LandingPage() {
   };
 
   const APP_URL = "/app";
+  const FORM_URL = "https://forms.gle/KYf2N99PYUg1c4ke7";
 
   return (
     <div ref={rootRef}>
@@ -105,18 +106,28 @@ export default function LandingPage() {
       <section className="hero">
         <div className="hero-inner">
           <div className="hero-text">
-            <div className="hero-badge">美容室専用の在庫管理</div>
+            <div className="hero-badge">美容室・エステサロン専用の在庫管理</div>
             <h1>月次の棚卸し、<br /><em>やめられます。</em></h1>
-            <p className="hero-sub">
-              商品にQRタグを付けるだけ。<br />
-              開封したらスキャン → 発注リストが自動で完成。<br />
-              在庫を数える作業から、あなたのサロンを解放します。
-            </p>
+            <div className="hero-steps">
+              <div className="hero-step-item">
+                <span className="hero-step-num">1</span>
+                <span>カラー剤にQRタグを<strong>ゴム紐で引っかける</strong></span>
+              </div>
+              <div className="hero-step-item">
+                <span className="hero-step-num">2</span>
+                <span>開封するときタグを外して、<strong>カゴに集める</strong></span>
+              </div>
+              <div className="hero-step-item">
+                <span className="hero-step-num">3</span>
+                <span>閉店前にスマホで<strong>タグを読む</strong></span>
+              </div>
+            </div>
+            <p className="hero-sub-line">これだけで、在庫確認の残業から解放されます。</p>
             <div className="hero-actions">
               <a href={APP_URL} className="btn-primary">無料で始める →</a>
               <a href="#how" className="btn-secondary">仕組みを見る</a>
             </div>
-            <p className="hero-note">※ クレジットカード不要・10SKUまで永久無料</p>
+            <p className="hero-note">※ クレジットカード不要・先着100名は完全無料</p>
           </div>
           <div className="hero-visual">
             <div className="hero-phone">
@@ -150,7 +161,7 @@ export default function LandingPage() {
             </div>
             <div className="hero-float-tag">
               <span className="tag-icon">🏷️</span>
-              <span className="tag-text">QRタグをスキャン！</span>
+              <span className="tag-text">ゴム紐でチューブに引っかけるだけ！</span>
             </div>
           </div>
         </div>
@@ -162,12 +173,12 @@ export default function LandingPage() {
           <div className="pain-header anim">
             <span className="section-label">よくあるお悩み</span>
             <h2 className="section-title">その在庫管理、まだ手作業ですか？</h2>
-            <p className="section-desc">美容室の在庫管理に共通する3つの課題。あなたのサロンにも心当たりはありませんか？</p>
+            <p className="section-desc">美容室・エステサロンの在庫管理に共通する3つの課題。あなたのサロンにも心当たりはありませんか？</p>
           </div>
           <div className="pain-grid">
             {[
               { icon: "🌙", title: "深夜の棚卸し地獄", desc: "閉店後に100〜200種類のカラー剤を数える。月末の恒例行事とわかっていても、ため息が出る作業です。" },
-              { icon: "⚠️", title: "欠品で施術できない", desc: "「あの色、もうなかった…」お客様を目の前に、代替カラーで対応するしかない。信頼に関わる問題です。" },
+              { icon: "⚠️", title: "欠品で施術できない", desc: "「あの色、もうなかった…」お客様を目の前に、代替カラーで対応するしかない。カラー1回分の売上は約1万円。たった1本の欠品が、信頼と売上の両方を奪います。" },
               { icon: "💸", title: "発注の伝達ミス・過剰在庫", desc: "口頭やメモでの発注連絡で漏れが発生。不安から多めに頼んで、気づけば棚がパンパンに。" },
             ].map((p, i) => (
               <div className="pain-card anim" key={i} style={{ transitionDelay: `${i * 0.1}s` }}>
@@ -176,6 +187,13 @@ export default function LandingPage() {
                 <p>{p.desc}</p>
               </div>
             ))}
+          </div>
+          <div className="pain-ai-callout anim">
+            <div className="pain-ai-icon">🤖</div>
+            <div className="pain-ai-text">
+              <strong>AIが安全在庫を提案</strong>
+              <span>過去の消費ペースをもとに、商品ごとの「あと何本で発注すべきか」をAIが自動で提案。勘に頼らない発注点の設定を実現します。</span>
+            </div>
           </div>
         </div>
       </section>
@@ -186,11 +204,11 @@ export default function LandingPage() {
           <div className="how-header anim">
             <span className="section-label">仕組み</span>
             <h2 className="section-title">QRタグで発注を「自動化」する仕組み</h2>
-            <p className="section-desc">トヨタのカンバン方式をデジタル化。在庫を数えず、発注タイミングだけを検知します。</p>
+            <p className="section-desc">カンバン方式をデジタル化。在庫を数えず、発注タイミングだけを検知します。</p>
           </div>
           <div className="how-steps">
             {[
-              { icon: "🏷️", title: "タグを取り付ける", desc: "商品の後ろからN本目にQRタグを付けます。これが「発注点」です。" },
+              { icon: "🏷️", title: "タグをゴム紐で付ける", desc: "商品の後ろからN本目にQRタグをゴム紐で引っかけます。これが「発注点」です。" },
               { icon: "📦", title: "開封してタグを外す", desc: "タグ付き商品を開封＝発注点に到達。タグを外してカゴに入れるだけ。" },
               { icon: "📷", title: "まとめてスキャン", desc: "手が空いた時にカゴのタグをスキャン。発注リストに自動追加されます。" },
               { icon: "💬", title: "LINEで発注", desc: "完成したリストをLINEでディーラーに送信。転記ミスゼロ、聞き間違いゼロ。" },
@@ -210,17 +228,16 @@ export default function LandingPage() {
         <div className="container">
           <div className="features-header anim">
             <span className="section-label">特徴</span>
-            <h2 className="section-title">現場で使える、6つのこだわり</h2>
-            <p className="section-desc">施術の手を止めない。入力作業ゼロ。美容室の現場から逆算して設計しました。</p>
+            <h2 className="section-title">現場で使える、5つのこだわり</h2>
+            <p className="section-desc">施術の手を止めない。入力作業ゼロ。美容室・エステサロンの現場から逆算して設計しました。</p>
           </div>
           <div className="features-grid">
             {[
-              { icon: "🚫", title: "在庫を数えない設計", desc: "理論在庫の追跡を捨て、「発注が必要なタイミング」だけを物理的に検知する新発想。" },
+              { icon: "🚫", title: "在庫を数えない設計", desc: "理論在庫の追跡を捨て、「発注が必要なタイミング」だけを物理タグで検知する新発想。" },
               { icon: "📱", title: "スマホだけで完結", desc: "専用アプリのインストール不要。ブラウザでQRスキャンから発注まですべて完結します。" },
               { icon: "👥", title: "スタッフ全員で共有", desc: "1アカウントをスタッフで共有。誰がスキャンしても同じ発注リストに反映されます。" },
               { icon: "💬", title: "LINEでそのまま発注", desc: "発注リストをワンタップでLINEに送信。ディーラーさんにそのまま送れるテキスト形式。" },
-              { icon: "📊", title: "バーコードで商品登録", desc: "商品のバーコードをスキャンするだけで自動入力。手打ちの手間を大幅カット。" },
-              { icon: "🏷️", title: "QRタグをお届け", desc: "耐水性のQRタグを郵送でお届け。届いたら商品に付けるだけですぐ使えます。" },
+              { icon: "🏷️", title: "耐水QRタグをお届け", desc: "耐水性のユポ紙製QRタグをゴム紐付きで郵送。届いたら商品に引っかけるだけですぐ使えます。" },
             ].map((f, i) => (
               <div className="feature-card anim" key={i} style={{ transitionDelay: `${(i % 2) * 0.1}s` }}>
                 <div className="feature-icon">{f.icon}</div>
@@ -253,7 +270,7 @@ export default function LandingPage() {
               </thead>
               <tbody>
                 {[
-                  ["月額料金", "¥0", "¥5,000〜30,000", "¥0〜¥5,980"],
+                  ["月額料金", "¥0", "¥5,000〜30,000", "¥0〜¥9,800"],
                   ["棚卸し作業", "毎月必要", "毎月必要", "不要", true],
                   ["発注リスト自動作成", "✕", "✕", "✓", true],
                   ["導入の手軽さ", "すぐ", "数週間", "即日", true],
@@ -278,31 +295,71 @@ export default function LandingPage() {
           <div className="pricing-header anim">
             <span className="section-label">料金プラン</span>
             <h2 className="section-title">まずは無料で、試してみてください</h2>
-            <p className="section-desc">管理するSKU（商品種類）数に応じたシンプルな料金体系。すべての機能が使えます。</p>
+            <p className="section-desc">管理する商品数に応じたシンプルな料金体系。すべての機能が使えます。</p>
           </div>
-          <div className="pricing-grid">
+          <div className="pricing-grid-4">
             {[
-              { name: "無料", sku: "〜10 SKU", price: null, period: "ずっと無料", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "QRタグ10枚付き"], popular: false },
-              { name: "ライト", sku: "〜50 SKU", price: "1,980", period: "/ 月（税別）", features: ["無料プランの全機能", "QRタグ50枚付き", "メールサポート"], popular: false },
-              { name: "スタンダード", sku: "〜200 SKU", price: "3,980", period: "/ 月（税別）", features: ["無料プランの全機能", "QRタグ200枚付き", "優先サポート"], popular: true },
-              { name: "プロ", sku: "無制限", price: "5,980", period: "/ 月（税別）", features: ["無料プランの全機能", "QRタグ無制限", "優先サポート"], popular: false },
+              { name: "エントリー", sku: "〜30 商品", price: "500", period: "/ 月（税別）", tags: "QRタグ 36枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, referral: "紹介経由で ¥0", promo: true },
+              { name: "ライト", sku: "〜100 商品", price: "2,980", period: "/ 月（税別）", tags: "QRタグ 120枚付き", features: ["エントリーの全機能", "メールサポート"], popular: false, referral: "紹介経由で ¥2,480", promo: false },
+              { name: "スタンダード", sku: "〜300 商品", price: "5,980", period: "/ 月（税別）", tags: "QRタグ 360枚付き", features: ["エントリーの全機能", "優先サポート"], popular: true, referral: "紹介経由で ¥5,480", promo: false },
+              { name: "プロ", sku: "〜500 商品", price: "9,800", period: "/ 月（税別）", tags: "QRタグ 600枚付き", features: ["エントリーの全機能", "優先サポート"], popular: false, referral: "紹介経由で ¥9,300", promo: false },
             ].map((plan, i) => (
-              <div className={`pricing-card anim${plan.popular ? " popular" : ""}`} key={i} style={{ transitionDelay: `${i * 0.1}s` }}>
+              <div className={`pricing-card anim${plan.popular ? " popular" : ""}${plan.promo ? " promo" : ""}`} key={i} style={{ transitionDelay: `${i * 0.08}s` }}>
                 {plan.popular && <div className="pricing-popular-badge">おすすめ</div>}
+                {plan.promo && <div className="pricing-promo-badge">🔥 先着100名 無料！残り90名</div>}
                 <div className="pricing-name">{plan.name}</div>
                 <div className="pricing-sku">{plan.sku}</div>
                 <div className="pricing-price">
-                  {plan.price ? <><span className="yen">¥</span>{plan.price}</> : <span className="free-label">¥0</span>}
+                  {plan.promo ? (
+                    <><span className="price-original"><span className="yen">¥</span>{plan.price}</span><span className="free-label">¥0</span></>
+                  ) : (
+                    <><span className="yen">¥</span>{plan.price}</>
+                  )}
                 </div>
-                <div className="pricing-period">{plan.period}</div>
+                <div className="pricing-period">{plan.promo ? "先着終了後 ¥500 / 月" : plan.period}</div>
+                <div className="pricing-tags">{plan.tags}</div>
                 <ul className="pricing-features">
                   {plan.features.map((f, j) => <li key={j}>{f}</li>)}
                 </ul>
-                <a href={APP_URL} className={`pricing-btn ${plan.popular ? "pricing-btn-primary" : "pricing-btn-outline"}`}>
-                  {plan.price ? "プランを選択" : "無料で始める"}
+                {plan.referral && <div className="pricing-referral">🎁 {plan.referral}</div>}
+                <a href={APP_URL} className={`pricing-btn ${plan.popular ? "pricing-btn-primary" : plan.promo ? "pricing-btn-promo" : "pricing-btn-outline"}`}>
+                  {plan.promo ? "無料で始める →" : "プランを選択"}
                 </a>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ Referral Program ═══ */}
+      <section className="section referral-section">
+        <div className="container">
+          <div className="referral-card anim">
+            <div className="referral-icon">🎁</div>
+            <div className="referral-content">
+              <h2 className="referral-title">紹介プログラム</h2>
+              <p className="referral-desc">
+                お知り合いのサロンをご紹介いただくと、<strong>紹介された方は月額500円OFF</strong>、
+                <strong>紹介した方も毎月500円OFF</strong>が永続適用されます。
+              </p>
+              <div className="referral-steps-row">
+                <div className="referral-step">
+                  <div className="referral-step-num">1</div>
+                  <span>マイページから紹介リンクを発行</span>
+                </div>
+                <div className="referral-arrow">→</div>
+                <div className="referral-step">
+                  <div className="referral-step-num">2</div>
+                  <span>リンクをLINEやSNSでシェア</span>
+                </div>
+                <div className="referral-arrow">→</div>
+                <div className="referral-step">
+                  <div className="referral-step-num">3</div>
+                  <span>相手が有料プランに登録で双方割引</span>
+                </div>
+              </div>
+              <p className="referral-note">※ 紹介人数に上限はありません。紹介が増えるほど月額が安くなります。</p>
+            </div>
           </div>
         </div>
       </section>
@@ -316,12 +373,13 @@ export default function LandingPage() {
           </div>
           <div className="faq-list">
             {[
-              ["QRタグとは何ですか？どうやって使うの？", "耐水性のある小さなタグ（3cm×5.5cm）で、QRコードが印刷されています。商品の後ろからN本目にゴム紐で取り付けておき、その商品を開封した時にタグを外してカゴに入れます。後でまとめてスマホでスキャンすると、発注リストに自動追加されます。"],
+              ["QRタグとは何ですか？どうやって使うの？", "耐水性のユポ紙（3cm×5.5cm）にQRコードを印刷した小さなタグです。ゴム紐が付いており、カラー剤のチューブや箱に引っかけて使います。商品の後ろからN本目に付けておき、その商品を開封した時にタグを外してカゴに入れます。後でまとめてスマホでスキャンすると、発注リストに自動追加されます。"],
               ["アプリのインストールは必要ですか？", "いいえ、不要です。スマートフォンのブラウザ（Safari/Chrome）からそのままお使いいただけます。ホーム画面に追加すれば、アプリのように使えます。"],
               ["施術中にスキャンする必要がありますか？", "いいえ。タグ付き商品を開封したら、タグを外してカゴに入れるだけです。スキャンは手が空いた時にまとめて行えます。施術の流れを妨げません。"],
               ["スタッフ全員にアカウントが必要？", "いいえ。1店舗につき1アカウントです。スタッフ全員で同じアカウントを共有するので、追加料金はかかりません。"],
-              ["カラー剤以外にも使えますか？", "はい。シャンプー、トリートメント、2剤、スタイリング剤など、繰り返し発注が必要な商品すべてにお使いいただけます。"],
-              ["解約はすぐにできますか？", "はい。管理画面からいつでも解約できます。解約後は無料プラン（10 SKU）に自動で切り替わります。解約手数料は一切かかりません。"],
+              ["カラー剤以外にも使えますか？", "はい。シャンプー、トリートメント、2剤、スタイリング剤、エステの施術用オイルやパック剤など、繰り返し発注が必要な商品すべてにお使いいただけます。"],
+              ["エステサロンでも使えますか？", "はい。オイル、クリーム、パック剤などのボトルやチューブにゴム紐で取り付けられるため、エステサロンでもそのままお使いいただけます。"],
+              ["解約はすぐにできますか？", "はい。管理画面からいつでも解約できます。解約後はエントリープラン（30商品）に切り替わります。解約手数料は一切かかりません。"],
               ["QRタグを紛失した場合はどうすれば？", "予備タグを多めにお届けしています。予備が切れた場合は追加注文が可能です。緊急時はWebページから普通紙に印刷して応急的にお使いいただけます。"],
             ].map(([q, a], i) => (
               <div className="anim" key={i} style={{ transitionDelay: `${i * 0.05}s` }}>
@@ -337,7 +395,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="anim">
             <h2 className="cta-title">棚卸しのない日常を、<br />今日から始めよう</h2>
-            <p className="cta-desc">10 SKUまで永久無料。クレジットカードの登録は不要です。まずは試してみてください。</p>
+            <p className="cta-desc">先着100名はエントリープラン（30商品）が永久無料。クレジットカードの登録も不要です。</p>
             <a href={APP_URL} className="btn-cta-white">無料アカウントを作成 →</a>
             <p className="cta-sub">※ 30秒で登録完了。いつでも解約可能。</p>
           </div>
@@ -360,10 +418,10 @@ export default function LandingPage() {
               <a href="#" className="contact-btn btn-line">LINEで友だち追加</a>
             </div>
             <div className="contact-card anim" style={{ transitionDelay: "0.1s" }}>
-              <div className="contact-icon" style={{ background: "#dbeafe" }}>✉️</div>
-              <h3>メールで問い合わせ</h3>
+              <div className="contact-icon" style={{ background: "#dbeafe" }}>📝</div>
+              <h3>フォームで問い合わせ</h3>
               <p>24時間受付。通常1営業日以内にご返信いたします。</p>
-              <a href="mailto:info@zaiko-ban.com" className="contact-btn btn-mail">メールを送る</a>
+              <a href={FORM_URL} target="_blank" rel="noopener noreferrer" className="contact-btn btn-mail">お問い合わせフォーム</a>
             </div>
           </div>
         </div>
@@ -382,8 +440,8 @@ export default function LandingPage() {
             <li><a href="#faq">FAQ</a></li>
             <li><a href="#contact">お問い合わせ</a></li>
             <li><a href="/legal">運営者情報</a></li>
-                <li><a href="https://forms.gle/KYf2N99PYUg1c4ke7" target="_blank" rel="noopener noreferrer">お問い合わせ</a></li>
           </ul>
+          <div className="footer-trademark">※ QRコードは株式会社デンソーウェーブの登録商標です。</div>
           <div className="footer-copy">© 2026 株式会社コクシ・ムソー / 在庫番（zaiko-ban.com）</div>
         </div>
       </footer>
@@ -392,7 +450,7 @@ export default function LandingPage() {
 }
 
 // ══════════════════════════════════════════
-// CSS (template literal for scoped styles)
+// CSS
 // ══════════════════════════════════════════
 const lpStyles = `
 /* ── Reset ── */
@@ -495,14 +553,31 @@ html { scroll-behavior: smooth; }
 .hero h1 {
   font-family: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
   font-size: clamp(28px, 5vw, 46px); font-weight: 900; line-height: 1.3;
-  margin-bottom: 20px; letter-spacing: -0.02em;
+  margin-bottom: 24px; letter-spacing: -0.02em;
 }
 .hero h1 em { font-style: normal; color: ${V.accent}; position: relative; }
 .hero h1 em::after {
   content: ''; position: absolute; bottom: 2px; left: 0; right: 0; height: 8px;
   background: ${V.accentLight}; z-index: -1; border-radius: 4px;
 }
-.hero-sub { font-size: 16px; color: ${V.inkSub}; line-height: 1.9; margin-bottom: 36px; }
+
+/* Hero 3-step */
+.hero-steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.hero-step-item {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 15px; color: ${V.inkSub}; line-height: 1.7;
+}
+.hero-step-item strong { color: ${V.ink}; }
+.hero-step-num {
+  width: 28px; height: 28px; border-radius: 50%; background: ${V.accent}; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; flex-shrink: 0;
+}
+.hero-sub-line {
+  font-size: 16px; color: ${V.ink}; font-weight: 700; margin-bottom: 32px;
+  padding-left: 40px;
+}
+
 .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
 .btn-primary {
   display: inline-flex; align-items: center; gap: 8px; padding: 16px 32px;
@@ -547,14 +622,15 @@ html { scroll-behavior: smooth; }
   display: flex; align-items: center; gap: 8px;
 }
 .tag-icon { font-size: 20px; }
-.tag-text { font-size: 11px; font-weight: 700; color: ${V.accentDark}; }
+.tag-text { font-size: 11px; font-weight: 700; color: ${V.accentDark}; white-space: nowrap; }
 @media (max-width: 768px) {
   .hero { padding: 110px 0 60px; }
-  .hero-inner { grid-template-columns: 1fr; gap: 40px; text-align: center; }
-  .hero-actions { justify-content: center; }
+  .hero-inner { grid-template-columns: 1fr; gap: 40px; text-align: left; }
+  .hero-actions { justify-content: flex-start; }
   .hero-visual { order: -1; }
   .hero-phone { width: 240px; }
   .hero-float-tag { right: 10%; top: 10%; }
+  .hero-sub-line { padding-left: 0; }
 }
 
 /* ── Pain ── */
@@ -580,6 +656,18 @@ html { scroll-behavior: smooth; }
 .pain-card h3 { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 16px; font-weight: 800; margin-bottom: 8px; }
 .pain-card p { font-size: 13px; color: ${V.inkSub}; line-height: 1.8; }
 @media (max-width: 768px) { .pain-grid { grid-template-columns: 1fr; } }
+
+/* Pain AI Callout */
+.pain-ai-callout {
+  margin-top: 32px; display: flex; align-items: flex-start; gap: 16px;
+  padding: 24px 28px; border-radius: 16px;
+  background: linear-gradient(135deg, ${V.accentLight} 0%, #f0fdfa 100%);
+  border: 1.5px solid ${V.accent}20;
+}
+.pain-ai-icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+.pain-ai-text { display: flex; flex-direction: column; gap: 4px; }
+.pain-ai-text strong { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 15px; font-weight: 800; color: ${V.accentDark}; }
+.pain-ai-text span { font-size: 13px; color: ${V.inkSub}; line-height: 1.8; }
 
 /* ── How ── */
 .how-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; position: relative; }
@@ -633,26 +721,45 @@ html { scroll-behavior: smooth; }
 
 /* ── Pricing ── */
 .pricing { background: ${V.surface}; border-top: 1px solid ${V.border}; border-bottom: 1px solid ${V.border}; }
-.pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start; }
+.pricing-grid-4 {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start;
+}
 .pricing-card {
-  padding: 28px 22px; border-radius: 16px; border: 1.5px solid ${V.border}; background: ${V.bg};
+  padding: 26px 20px; border-radius: 16px; border: 1.5px solid ${V.border}; background: ${V.bg};
   text-align: center; transition: transform 0.2s, box-shadow 0.2s; position: relative;
 }
 .pricing-card:hover { transform: translateY(-4px); box-shadow: 0 4px 20px rgba(15,23,42,0.08); }
 .pricing-card.popular { border-color: ${V.accent}; background: ${V.surface}; box-shadow: 0 4px 20px rgba(15,23,42,0.08); }
+.pricing-card.promo { border-color: ${V.danger}; background: #fffbfb; }
 .pricing-popular-badge {
   position: absolute; top: -12px; left: 50%; transform: translateX(-50%); padding: 4px 16px;
   background: ${V.accent}; color: #fff; border-radius: 99px; font-size: 11px; font-weight: 700; white-space: nowrap;
 }
+.pricing-promo-badge {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%); padding: 5px 18px;
+  background: ${V.danger}; color: #fff; border-radius: 99px; font-size: 12px; font-weight: 800; white-space: nowrap;
+  box-shadow: 0 2px 12px rgba(225,29,72,0.3);
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+@keyframes pulse-badge {
+  0%, 100% { box-shadow: 0 2px 12px rgba(225,29,72,0.3); }
+  50% { box-shadow: 0 2px 20px rgba(225,29,72,0.5); }
+}
 .pricing-name { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 16px; font-weight: 800; margin-bottom: 4px; }
-.pricing-sku { font-size: 12px; color: ${V.inkMuted}; margin-bottom: 20px; }
-.pricing-price { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 36px; font-weight: 900; color: ${V.ink}; line-height: 1; margin-bottom: 4px; }
-.pricing-price .yen { font-size: 18px; font-weight: 700; }
-.pricing-price .free-label { font-size: 28px; color: ${V.accent}; }
-.pricing-period { font-size: 12px; color: ${V.inkMuted}; margin-bottom: 20px; }
-.pricing-features { list-style: none; text-align: left; margin-bottom: 24px; }
-.pricing-features li { font-size: 13px; color: ${V.inkSub}; padding: 5px 0; display: flex; align-items: baseline; gap: 8px; }
-.pricing-features li::before { content: '✓'; color: ${V.accent}; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+.pricing-sku { font-size: 12px; color: ${V.inkMuted}; margin-bottom: 16px; }
+.pricing-price { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 34px; font-weight: 900; color: ${V.ink}; line-height: 1; margin-bottom: 4px; display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+.pricing-price .yen { font-size: 17px; font-weight: 700; }
+.pricing-price .free-label { font-size: 34px; color: ${V.danger}; font-weight: 900; }
+.pricing-price .price-original { font-size: 16px; color: ${V.inkMuted}; text-decoration: line-through; font-weight: 500; }
+.pricing-period { font-size: 11px; color: ${V.inkMuted}; margin-bottom: 12px; }
+.pricing-tags { font-size: 12px; color: ${V.accentDark}; font-weight: 600; margin-bottom: 16px; padding: 6px 0; border-top: 1px solid ${V.border}; border-bottom: 1px solid ${V.border}; }
+.pricing-features { list-style: none; text-align: left; margin-bottom: 16px; }
+.pricing-features li { font-size: 13px; color: ${V.inkSub}; padding: 4px 0; display: flex; align-items: baseline; gap: 6px; }
+.pricing-features li::before { content: '✓'; color: ${V.accent}; font-weight: 700; font-size: 11px; flex-shrink: 0; }
+.pricing-referral {
+  font-size: 11px; font-weight: 700; color: ${V.warm}; background: ${V.warmLight};
+  padding: 6px 10px; border-radius: 8px; margin-bottom: 16px;
+}
 .pricing-btn {
   width: 100%; padding: 12px; border-radius: 8px; font-family: 'Noto Sans JP', sans-serif;
   font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; display: block; text-align: center; transition: all 0.2s;
@@ -661,8 +768,46 @@ html { scroll-behavior: smooth; }
 .pricing-btn-primary:hover { background: ${V.accentDark}; }
 .pricing-btn-outline { background: transparent; color: ${V.accent}; border: 1.5px solid ${V.accent}; }
 .pricing-btn-outline:hover { background: ${V.accentLight}; }
-@media (max-width: 900px) { .pricing-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 540px) { .pricing-grid { grid-template-columns: 1fr; max-width: 340px; margin: 0 auto; } }
+.pricing-btn-promo { background: ${V.danger}; color: #fff; border: none; font-size: 14px; padding: 14px; }
+.pricing-btn-promo:hover { background: #be123c; }
+@media (max-width: 900px) { .pricing-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .pricing-grid-4 { grid-template-columns: 1fr; max-width: 340px; margin: 0 auto; } }
+
+/* ── Referral ── */
+.referral-section { background: ${V.bg}; }
+.referral-card {
+  display: flex; gap: 28px; align-items: flex-start;
+  padding: 40px 36px; border-radius: 20px;
+  background: linear-gradient(135deg, ${V.warmLight} 0%, #fffbeb 50%, #fefce8 100%);
+  border: 1.5px solid #fcd34d40;
+  box-shadow: 0 2px 12px rgba(245,158,11,0.08);
+}
+.referral-icon { font-size: 40px; flex-shrink: 0; }
+.referral-content { flex: 1; }
+.referral-title {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 22px; font-weight: 900; color: ${V.ink}; margin-bottom: 10px;
+}
+.referral-desc { font-size: 15px; color: ${V.inkSub}; line-height: 1.8; margin-bottom: 24px; }
+.referral-desc strong { color: ${V.ink}; }
+.referral-steps-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.referral-step {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; background: ${V.surface}; border-radius: 10px;
+  border: 1px solid ${V.border}; font-size: 13px; color: ${V.inkSub};
+}
+.referral-step-num {
+  width: 24px; height: 24px; border-radius: 50%; background: ${V.warm}; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+.referral-arrow { color: ${V.inkMuted}; font-size: 16px; font-weight: 700; }
+.referral-note { font-size: 12px; color: ${V.inkMuted}; }
+@media (max-width: 768px) {
+  .referral-card { flex-direction: column; padding: 28px 24px; gap: 16px; }
+  .referral-steps-row { flex-direction: column; align-items: stretch; }
+  .referral-arrow { text-align: center; transform: rotate(90deg); }
+}
 
 /* ── FAQ ── */
 .faq-list { max-width: 720px; margin: 0 auto; }
@@ -740,8 +885,11 @@ html { scroll-behavior: smooth; }
 .footer-links { display: flex; gap: 24px; list-style: none; }
 .footer-links a { font-size: 12px; color: ${V.inkMuted}; text-decoration: none; transition: color 0.2s; }
 .footer-links a:hover { color: ${V.accent}; }
+.footer-trademark {
+  width: 100%; text-align: center; font-size: 10px; color: ${V.inkMuted};
+  margin-top: 20px; padding-top: 20px; border-top: 1px solid ${V.border};
+}
 .footer-copy {
-  width: 100%; text-align: center; font-size: 11px; color: ${V.inkMuted};
-  margin-top: 24px; padding-top: 24px; border-top: 1px solid ${V.border};
+  width: 100%; text-align: center; font-size: 11px; color: ${V.inkMuted}; margin-top: 8px;
 }
 `;
