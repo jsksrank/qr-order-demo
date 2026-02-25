@@ -258,7 +258,8 @@ export default function LandingPage() {
             <span className="section-label">比較</span>
             <h2 className="section-title">既存の方法と、何が違うのか</h2>
           </div>
-          <div className="comparison-table-wrap anim">
+          {/* Desktop: table */}
+          <div className="comparison-table-wrap anim comparison-desktop">
             <table className="comparison-table">
               <thead>
                 <tr>
@@ -285,6 +286,34 @@ export default function LandingPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+          {/* Mobile: cards */}
+          <div className="comparison-mobile anim">
+            {[
+              ["月額料金", "¥0", "¥5,000〜30,000", "¥0〜¥9,800"],
+              ["棚卸し作業", "毎月必要", "毎月必要", "不要", true],
+              ["発注リスト自動作成", "✕", "✕", "✓", true],
+              ["導入の手軽さ", "すぐ", "数週間", "即日", true],
+              ["入力作業", "手入力", "施術ごとに入力", "スキャンのみ", true],
+            ].map(([label, a, b, c, highlight], i) => (
+              <div className="comp-card" key={i}>
+                <div className="comp-card-label">{label}</div>
+                <div className="comp-card-row">
+                  <div className="comp-card-item">
+                    <span className="comp-card-method">手書き / Excel</span>
+                    <span className={`comp-card-value ${highlight ? "cross" : ""}`}>{a}</span>
+                  </div>
+                  <div className="comp-card-item">
+                    <span className="comp-card-method">POS一体型</span>
+                    <span className={`comp-card-value ${highlight ? "cross" : ""}`}>{b}</span>
+                  </div>
+                  <div className="comp-card-item comp-card-highlight">
+                    <span className="comp-card-method">在庫番</span>
+                    <span className={`comp-card-value ${highlight ? "check" : ""}`}>{c}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -321,7 +350,7 @@ export default function LandingPage() {
                 <ul className="pricing-features">
                   {plan.features.map((f, j) => <li key={j}>{f}</li>)}
                 </ul>
-                {plan.referral && <!--<div className="pricing-referral">🎁 {plan.referral}</div>-->}
+                {plan.referral && {/* plan.referral && <div className="pricing-referral">🎁 {plan.referral}</div> */}}
                 <a href={APP_URL} className={`pricing-btn ${plan.popular ? "pricing-btn-primary" : plan.promo ? "pricing-btn-promo" : "pricing-btn-outline"}`}>
                   {plan.promo ? "無料で始める →" : "プランを選択"}
                 </a>
