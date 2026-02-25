@@ -339,8 +339,8 @@ export default function LandingPage() {
             <div className="referral-content">
               <h2 className="referral-title">紹介プログラム</h2>
               <p className="referral-desc">
-                お知り合いのサロンをご紹介いただくと、<strong>紹介された方は月額500円OFF</strong>、
-                <strong>紹介した方も毎月500円OFF</strong>が永続適用されます。
+                お知り合いのサロンをご紹介いただくと、<strong>紹介した方もされた方も月額500円OFF</strong>、
+                永続適用されます。
               </p>
               <div className="referral-steps-row">
                 <div className="referral-step">
