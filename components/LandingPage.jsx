@@ -747,6 +747,36 @@ html { scroll-behavior: smooth; }
 .col-highlight { background: ${V.accentLight} !important; color: ${V.accentDark}; font-weight: 800 !important; }
 .check { color: ${V.accent}; font-weight: 700; }
 .cross { color: ${V.inkMuted}; }
+/* Desktop table / Mobile cards toggle */
+.comparison-mobile { display: none; }
+.comparison-desktop { display: block; }
+@media (max-width: 640px) {
+  .comparison-desktop { display: none; }
+  .comparison-mobile { display: flex; flex-direction: column; gap: 12px; }
+}
+
+/* Mobile comparison cards */
+.comp-card {
+  border-radius: 14px; border: 1px solid ${V.border}; background: ${V.surface};
+  overflow: hidden; box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+}
+.comp-card-label {
+  padding: 12px 16px; font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 13px; font-weight: 800; color: ${V.ink}; background: ${V.bg};
+  border-bottom: 1px solid ${V.border};
+}
+.comp-card-row { display: flex; }
+.comp-card-item {
+  flex: 1; padding: 14px 12px; display: flex; flex-direction: column; gap: 4px;
+  text-align: center; border-right: 1px solid ${V.border};
+}
+.comp-card-item:last-child { border-right: none; }
+.comp-card-highlight { background: ${V.accentLight}; }
+.comp-card-method { font-size: 10px; color: ${V.inkMuted}; font-weight: 600; }
+.comp-card-value { font-size: 14px; font-weight: 700; color: ${V.ink}; }
+.comp-card-value.check { color: ${V.accent}; }
+.comp-card-value.cross { color: ${V.inkMuted}; font-weight: 500; }
+.comp-card-highlight .comp-card-value { color: ${V.accentDark}; }
 
 /* ── Pricing ── */
 .pricing { background: ${V.surface}; border-top: 1px solid ${V.border}; border-bottom: 1px solid ${V.border}; }
