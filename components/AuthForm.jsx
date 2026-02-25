@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../lib/auth-context";
 
 const C = {
@@ -45,8 +45,24 @@ export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
+  // ★ 紹介コード
+  const [referrerCode, setReferrerCode] = useState("");
+  const [referralFromUrl, setReferralFromUrl] = useState(false);
 
   const displayError = localError || authError;
+
+  // ★ URLパラメータ ?ref=XXXX から紹介コードを自動読み込み
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const refCode = params.get("ref");
+      if (refCode) {
+        setReferrerCode(refCode.toUpperCase());
+        setReferralFromUrl(true);
+        setMode("signup"); // 紹介リンクからの場合は新規登録モードに
+      }
+    }
+  }, []);
 
   // 郵便番号から住所を自動入力（zipcloud API）
   const lookupAddress = async (code) => {
@@ -131,11 +147,12 @@ export default function AuthForm() {
     if (mode === "login") {
       await signIn(email.trim(), password);
     } else {
+      // ★ 第5引数に紹介コードを渡す
       await signUp(email.trim(), password, shopName.trim(), {
         postalCode: postalCode.trim(),
         address: address.trim(),
         phone: phone.trim(),
-      });
+      }, referrerCode.trim());
     }
     setLoading(false);
   };
@@ -161,6 +178,18 @@ export default function AuthForm() {
         <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>在庫番</h1>
         <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>美容室向け発注管理</p>
       </div>
+
+      {/* ★ 紹介コード経由の場合のバナー */}
+      {mode === "signup" && referralFromUrl && referrerCode && (
+        <div style={{
+          padding: "10px 14px", background: "#f0fdf4", borderRadius: 12,
+          border: "1px solid #bbf7d0", marginBottom: 16, textAlign: "center",
+        }}>
+          <span style={{ fontSize: 13, color: "#166534", fontWeight: 600 }}>
+            🎉 紹介コード「{referrerCode}」が適用されています（月額¥500 OFF）
+          </span>
+        </div>
+      )}
 
       {/* カード */}
       <div style={{
@@ -266,6 +295,26 @@ export default function AuthForm() {
                       onFocus={(e) => (e.target.style.borderColor = C.primary)}
                       onBlur={(e) => (e.target.style.borderColor = C.border)}
                     />
+                  </InputField>
+
+                  {/* ★ 紹介コード（任意） */}
+                  <InputField label="紹介コード（お持ちの方）">
+                    <input
+                      type="text"
+                      value={referrerCode}
+                      onChange={(e) => setReferrerCode(e.target.value.toUpperCase())}
+                      placeholder="例：ZB-A3K7XN"
+                      maxLength={12}
+                      style={{
+                        ...inputBaseStyle,
+                        background: referralFromUrl ? "#f0fdf4" : "#fff",
+                      }}
+                      onFocus={(e) => (e.target.style.borderColor = C.primary)}
+                      onBlur={(e) => (e.target.style.borderColor = C.border)}
+                    />
+                    <p style={{ fontSize: 10, color: C.textMuted, marginTop: 4 }}>
+                      紹介コードがあれば有料プラン永久¥500 OFF
+                    </p>
                   </InputField>
 
                   {/* 区切り線 */}
