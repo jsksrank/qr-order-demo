@@ -299,10 +299,10 @@ export default function LandingPage() {
           </div>
           <div className="pricing-grid-4">
             {[
-              { name: "エントリー", sku: "〜30 商品", price: "500", period: "/ 月（税別）", tags: "QRタグ 36枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, referral: "紹介経由で ¥0", promo: true },
-              { name: "ライト", sku: "〜100 商品", price: "2,980", period: "/ 月（税別）", tags: "QRタグ 120枚付き", features: ["エントリーの全機能", "メールサポート"], popular: false, referral: "紹介経由で ¥2,480", promo: false },
-              { name: "スタンダード", sku: "〜300 商品", price: "5,980", period: "/ 月（税別）", tags: "QRタグ 360枚付き", features: ["エントリーの全機能", "優先サポート"], popular: true, referral: "紹介経由で ¥5,480", promo: false },
-              { name: "プロ", sku: "〜500 商品", price: "9,800", period: "/ 月（税別）", tags: "QRタグ 600枚付き", features: ["エントリーの全機能", "優先サポート"], popular: false, referral: "紹介経由で ¥9,300", promo: false },
+              { name: "エントリー", sku: "30 商品まで管理可能", price: "500", period: "/ 月（税別）", tags: "QRタグ 36枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, referral: "紹介経由で ¥0", promo: true },
+              { name: "ライト", sku: "100 商品まで管理可能", price: "2,980", period: "/ 月（税別）", tags: "QRタグ 120枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, referral: "紹介経由で ¥2,480", promo: false },
+              { name: "スタンダード", sku: "300 商品まで管理可能", price: "5,980", period: "/ 月（税別）", tags: "QRタグ 360枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: true, referral: "紹介経由で ¥5,480", promo: false },
+              { name: "プロ", sku: "500 商品まで管理可能", price: "9,800", period: "/ 月（税別）", tags: "QRタグ 600枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, referral: "紹介経由で ¥9,300", promo: false },
             ].map((plan, i) => (
               <div className={`pricing-card anim${plan.popular ? " popular" : ""}${plan.promo ? " promo" : ""}`} key={i} style={{ transitionDelay: `${i * 0.08}s` }}>
                 {plan.popular && <div className="pricing-popular-badge">おすすめ</div>}
