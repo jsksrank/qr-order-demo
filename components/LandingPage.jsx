@@ -318,24 +318,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ Pricing ═══ */}
+      {/* ═══ Pricing (B案: CTA統一) ═══ */}
       <section className="section pricing" id="pricing">
         <div className="container">
           <div className="pricing-header anim">
             <span className="section-label">料金プラン</span>
             <h2 className="section-title">まずは無料で、試してみてください</h2>
-            <p className="section-desc">管理する商品数に応じたシンプルな料金体系。すべての機能が使えます。</p>
+            <p className="section-desc">先着100名はクレジットカード不要で30商品まで無料。商品数が増えたらアプリ内でいつでもアップグレードできます。</p>
           </div>
+
+          {/* ★ B案: メインCTAを1つに集約 */}
+          <div className="pricing-main-cta anim">
+            <a href={APP_URL} className="btn-pricing-cta">
+              無料アカウントを作成する →
+            </a>
+            <p className="pricing-cta-note">※ クレジットカード不要・30秒で登録完了</p>
+          </div>
+
           <div className="pricing-grid-4">
             {[
-              { name: "エントリー", sku: "30 商品まで管理可能", price: "500", period: "/ 月（税別）", tags: "QRタグ 36枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, referral: "紹介経由で ¥0", promo: true },
-              { name: "ライト", sku: "100 商品まで管理可能", price: "2,980", period: "/ 月（税別）", tags: "QRタグ 120枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, referral: "紹介経由で ¥2,480", promo: false },
-              { name: "スタンダード", sku: "300 商品まで管理可能", price: "5,980", period: "/ 月（税別）", tags: "QRタグ 360枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: true, referral: "紹介経由で ¥5,480", promo: false },
-              { name: "プロ", sku: "500 商品まで管理可能", price: "9,800", period: "/ 月（税別）", tags: "QRタグ 600枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, referral: "紹介経由で ¥9,300", promo: false },
+              { name: "エントリー", sku: "30 商品まで", price: "500", period: "/ 月（税別）", tags: "QRタグ 36枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, promo: true },
+              { name: "ライト", sku: "100 商品まで", price: "2,980", period: "/ 月（税別）", tags: "QRタグ 120枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, promo: false },
+              { name: "スタンダード", sku: "300 商品まで", price: "5,980", period: "/ 月（税別）", tags: "QRタグ 360枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: true, promo: false },
+              { name: "プロ", sku: "500 商品まで", price: "9,800", period: "/ 月（税別）", tags: "QRタグ 600枚付き", features: ["QRスキャン", "発注リスト自動作成", "LINE送信", "メールサポート"], popular: false, promo: false },
             ].map((plan, i) => (
               <div className={`pricing-card anim${plan.popular ? " popular" : ""}${plan.promo ? " promo" : ""}`} key={i} style={{ transitionDelay: `${i * 0.08}s` }}>
                 {plan.popular && <div className="pricing-popular-badge">おすすめ</div>}
-                {plan.promo && <div className="pricing-promo-badge">🔥 先着100名 無料！残り100名</div>}
+                {plan.promo && <div className="pricing-promo-badge">🔥 先着100名 無料！</div>}
                 <div className="pricing-name">{plan.name}</div>
                 <div className="pricing-sku">{plan.sku}</div>
                 <div className="pricing-price">
@@ -350,13 +359,11 @@ export default function LandingPage() {
                 <ul className="pricing-features">
                   {plan.features.map((f, j) => <li key={j}>{f}</li>)}
                 </ul>
-                {/* plan.referral && <div className="pricing-referral">🎁 {plan.referral}</div> */}
-                <a href={APP_URL} className={`pricing-btn ${plan.popular ? "pricing-btn-primary" : plan.promo ? "pricing-btn-promo" : "pricing-btn-outline"}`}>
-                  {plan.promo ? "無料で始める →" : "プランを選択"}
-                </a>
+                {/* ★ B案: 個別ボタン廃止 — アップグレードはアプリ内で */}
               </div>
             ))}
           </div>
+          <p className="pricing-upgrade-note anim">アップグレード・ダウングレードはアプリ内からいつでも変更できます。</p>
         </div>
       </section>
 
@@ -747,7 +754,6 @@ html { scroll-behavior: smooth; }
 .col-highlight { background: ${V.accentLight} !important; color: ${V.accentDark}; font-weight: 800 !important; }
 .check { color: ${V.accent}; font-weight: 700; }
 .cross { color: ${V.inkMuted}; }
-/* Desktop table / Mobile cards toggle */
 .comparison-mobile { display: none; }
 .comparison-desktop { display: block; }
 @media (max-width: 640px) {
@@ -780,6 +786,22 @@ html { scroll-behavior: smooth; }
 
 /* ── Pricing ── */
 .pricing { background: ${V.surface}; border-top: 1px solid ${V.border}; border-bottom: 1px solid ${V.border}; }
+
+/* ★ B案: メインCTA */
+.pricing-main-cta {
+  text-align: center; margin-bottom: 48px;
+}
+.btn-pricing-cta {
+  display: inline-flex; align-items: center; gap: 8px; padding: 20px 48px;
+  background: ${V.accent}; color: #fff; border: none; border-radius: 14px;
+  font-family: 'Noto Sans JP', sans-serif; font-size: 17px; font-weight: 800;
+  cursor: pointer; text-decoration: none; transition: all 0.2s;
+  box-shadow: 0 6px 24px rgba(13,148,136,0.3);
+}
+.btn-pricing-cta:hover { background: ${V.accentDark}; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(13,148,136,0.4); }
+.pricing-cta-note { font-size: 12px; color: ${V.inkMuted}; margin-top: 12px; }
+.pricing-upgrade-note { text-align: center; font-size: 13px; color: ${V.inkMuted}; margin-top: 24px; }
+
 .pricing-grid-4 {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start;
 }
@@ -812,23 +834,9 @@ html { scroll-behavior: smooth; }
 .pricing-price .price-original { font-size: 16px; color: ${V.inkMuted}; text-decoration: line-through; font-weight: 500; }
 .pricing-period { font-size: 11px; color: ${V.inkMuted}; margin-bottom: 12px; }
 .pricing-tags { font-size: 12px; color: ${V.accentDark}; font-weight: 600; margin-bottom: 16px; padding: 6px 0; border-top: 1px solid ${V.border}; border-bottom: 1px solid ${V.border}; }
-.pricing-features { list-style: none; text-align: left; margin-bottom: 16px; }
+.pricing-features { list-style: none; text-align: left; margin-bottom: 0; }
 .pricing-features li { font-size: 13px; color: ${V.inkSub}; padding: 4px 0; display: flex; align-items: baseline; gap: 6px; }
 .pricing-features li::before { content: '✓'; color: ${V.accent}; font-weight: 700; font-size: 11px; flex-shrink: 0; }
-.pricing-referral {
-  font-size: 11px; font-weight: 700; color: ${V.warm}; background: ${V.warmLight};
-  padding: 6px 10px; border-radius: 8px; margin-bottom: 16px;
-}
-.pricing-btn {
-  width: 100%; padding: 12px; border-radius: 8px; font-family: 'Noto Sans JP', sans-serif;
-  font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; display: block; text-align: center; transition: all 0.2s;
-}
-.pricing-btn-primary { background: ${V.accent}; color: #fff; border: none; }
-.pricing-btn-primary:hover { background: ${V.accentDark}; }
-.pricing-btn-outline { background: transparent; color: ${V.accent}; border: 1.5px solid ${V.accent}; }
-.pricing-btn-outline:hover { background: ${V.accentLight}; }
-.pricing-btn-promo { background: ${V.danger}; color: #fff; border: none; font-size: 14px; padding: 14px; }
-.pricing-btn-promo:hover { background: #be123c; }
 @media (max-width: 900px) { .pricing-grid-4 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .pricing-grid-4 { grid-template-columns: 1fr; max-width: 340px; margin: 0 auto; } }
 
