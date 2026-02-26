@@ -67,19 +67,13 @@ async function sendLineAdminNotification(message) {
    ★ Stripe Customerからメール取得（フォールバック用）
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 async function getEmailFallback(customerId, storeEmail) {
-  // 1. storesテーブルにemailがあればそれを使う
   if (storeEmail) return storeEmail;
-
-  // 2. Stripe Customerオブジェクトから取得
   try {
     const customer = await stripe.customers.retrieve(customerId);
-    if (customer && customer.email) {
-      return customer.email;
-    }
+    if (customer && customer.email) return customer.email;
   } catch (err) {
     console.error('Stripe customer email lookup failed:', err.message);
   }
-
   return '（メール不明）';
 }
 
@@ -140,10 +134,12 @@ async function handleSubscriptionChange(subscription, eventType) {
   const priceId = subscription.items.data[0]?.price?.id;
   const planInfo = getPlanByPriceId(priceId);
 
-  // ★ プラン変更検知のため、DB更新前に旧プラン情報を取得
+  // ★ 修正: selectカラム名をauth-context.jsのINSERTに合わせる
+  //    旧: address_prefecture, address_city, address_line（存在しないカラム）
+  //    新: postal_code, address（auth-context.jsで実際に保存しているカラム）
   const { data: oldStoreData, error: oldStoreError } = await supabaseAdmin
     .from('stores')
-    .select('id, plan, max_sku, store_name, email, referred_by, address_prefecture, address_city, address_line, phone')
+    .select('id, plan, max_sku, store_name, email, referred_by, postal_code, address, phone')
     .eq('stripe_customer_id', customerId)
     .single();
 
@@ -184,23 +180,17 @@ async function handleSubscriptionChange(subscription, eventType) {
       const newTagQuota = TAG_QUOTA[newPlan] || 0;
       const additionalTags = Math.max(0, newTagQuota - oldTagQuota);
 
-      // 配送先住所
-      const address = [
-        oldStoreData?.address_prefecture,
-        oldStoreData?.address_city,
-        oldStoreData?.address_line,
-      ].filter(Boolean).join('') || '（住所未登録）';
+      // ★ 修正: postal_code + address 単一カラムで住所を組み立てる
+      const postalCode = oldStoreData?.postal_code || '';
+      const addressText = oldStoreData?.address || '';
+      const fullAddress = postalCode
+        ? `〒${postalCode} ${addressText}`
+        : (addressText || '（住所未登録）');
       const phone = oldStoreData?.phone || '（電話未登録）';
-
-      // ★ 住所未登録の場合のアクション指示を追加
-      const hasAddress = oldStoreData?.address_prefecture;
-      const addressAction = hasAddress
-        ? `→ タグを準備・郵送してください`
-        : `⚠️ 住所未登録！ユーザーに設定画面から住所登録を依頼してください`;
+      const hasAddress = !!addressText;
 
       let message;
       if (isNewSubscription) {
-        // 新規課金開始
         message = [
           '🎉 新規課金開始！',
           '',
@@ -210,7 +200,7 @@ async function handleSubscriptionChange(subscription, eventType) {
           `タグ配布: ${newTagQuota}枚`,
           '',
           `📮 配送先:`,
-          `${address}`,
+          `${fullAddress}`,
           `TEL: ${phone}`,
           '',
           hasAddress
@@ -218,7 +208,6 @@ async function handleSubscriptionChange(subscription, eventType) {
             : `⚠️ 住所未登録！\n→ ${email} に住所登録を依頼してください\n→ 住所登録後にタグ${newTagQuota}枚を郵送`,
         ].join('\n');
       } else if (isPlanChanged) {
-        // プラン変更
         const isUpgrade = (planInfo.max_sku || 0) > (oldStoreData?.max_sku || 0);
 
         if (isUpgrade) {
@@ -231,7 +220,7 @@ async function handleSubscriptionChange(subscription, eventType) {
             `追加タグ: ${additionalTags}枚`,
             '',
             `📮 配送先:`,
-            `${address}`,
+            `${fullAddress}`,
             `TEL: ${phone}`,
             '',
             additionalTags > 0
@@ -241,7 +230,6 @@ async function handleSubscriptionChange(subscription, eventType) {
               : `→ タグ追加不要`,
           ].join('\n');
         } else {
-          // ダウングレード
           message = [
             '⬇️ プランダウングレード',
             '',
@@ -260,11 +248,10 @@ async function handleSubscriptionChange(subscription, eventType) {
       }
     }
   } catch (notifyErr) {
-    // 通知失敗はログのみ（サブスクリプション処理は成功させる）
     console.error('Plan change notification error (non-fatal):', notifyErr);
   }
 
-  // ★ タグ自動生成＋紹介者割引（既存ロジック）
+  // ★ タグ自動生成＋紹介者割引（既存ロジック・変更なし）
   try {
     const storeId = oldStoreData?.id;
     const referredBy = oldStoreData?.referred_by;
@@ -272,7 +259,6 @@ async function handleSubscriptionChange(subscription, eventType) {
     if (!storeId) {
       console.error('Store lookup for tag generation failed:', oldStoreError);
     } else {
-      // --- タグ自動生成 ---
       const { count: existingTagCount, error: countError } = await supabaseAdmin
         .from('qr_tags')
         .select('id', { count: 'exact', head: true })
@@ -307,7 +293,6 @@ async function handleSubscriptionChange(subscription, eventType) {
         }
       }
 
-      // ★ 紹介者への割引適用
       if (referredBy && subscription.status === 'active') {
         try {
           await applyReferrerDiscount(referredBy);
@@ -381,14 +366,12 @@ async function applyReferrerDiscount(referrerStoreId) {
 async function handleSubscriptionDeleted(subscription) {
   const customerId = subscription.customer;
 
-  // 解約前の情報を取得（通知用）
   const { data: storeData } = await supabaseAdmin
     .from('stores')
     .select('store_name, email, plan')
     .eq('stripe_customer_id', customerId)
     .single();
 
-  // ★ 修正: emailフォールバック
   const email = await getEmailFallback(customerId, storeData?.email);
 
   const { error } = await supabaseAdmin
@@ -407,7 +390,6 @@ async function handleSubscriptionDeleted(subscription) {
     throw error;
   }
 
-  // LINE通知
   try {
     const storeName = storeData?.store_name || '（不明）';
     const oldPlan = storeData?.plan || '（不明）';
@@ -434,14 +416,12 @@ async function handleSubscriptionDeleted(subscription) {
 async function handlePaymentFailed(invoice) {
   const customerId = invoice.customer;
 
-  // 店舗情報取得（通知用）
   const { data: storeData } = await supabaseAdmin
     .from('stores')
     .select('store_name, email, plan')
     .eq('stripe_customer_id', customerId)
     .single();
 
-  // ★ 修正: emailフォールバック
   const email = await getEmailFallback(customerId, storeData?.email);
 
   const { error } = await supabaseAdmin
@@ -454,7 +434,6 @@ async function handlePaymentFailed(invoice) {
     throw error;
   }
 
-  // LINE通知
   try {
     const storeName = storeData?.store_name || '（不明）';
 
