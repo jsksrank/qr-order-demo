@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // ── Color Tokens ──
 const V = {
@@ -56,6 +56,15 @@ function FaqItem({ q, a }) {
 // ── Main Component ──
 export default function LandingPage() {
   const rootRef = useScrollReveal();
+
+  // ★ 残り○名の動的取得
+  const [remaining, setRemaining] = useState(null);
+  useEffect(() => {
+    fetch('/api/remaining')
+      .then(res => res.json())
+      .then(data => { if (data.remaining !== null) setRemaining(data.remaining); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -325,6 +334,18 @@ export default function LandingPage() {
             <span className="section-label">料金プラン</span>
             <h2 className="section-title">まずは無料で、試してみてください</h2>
             <p className="section-desc">先着100名はクレジットカード不要で30商品まで無料。商品数が増えたらアプリ内でいつでもアップグレードできます。</p>
+            {/* ★ 残り○名バッジ */}
+            {remaining !== null && remaining > 0 && (
+              <div style={{ marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 8, background: remaining <= 20 ? '#fff1f2' : '#f0fdf4', border: '1.5px solid ' + (remaining <= 20 ? '#fecaca' : '#bbf7d0'), borderRadius: 999, padding: '10px 24px' }}>
+                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: remaining <= 20 ? '#e11d48' : '#059669', animation: 'pulse-dot 2s infinite' }} />
+                <span style={{ fontSize: 15, fontWeight: 800, color: remaining <= 20 ? '#e11d48' : '#059669' }}>先着100名無料 — 残り{remaining}名</span>
+              </div>
+            )}
+            {remaining !== null && remaining <= 0 && (
+              <div style={{ marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 999, padding: '10px 24px' }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#64748b' }}>先着100名枠は終了しました（紹介コードで同等特典あり）</span>
+              </div>
+            )}
           </div>
 
           {/* ★ B案: メインCTAを1つに集約 */}
@@ -359,7 +380,6 @@ export default function LandingPage() {
                 <ul className="pricing-features">
                   {plan.features.map((f, j) => <li key={j}>{f}</li>)}
                 </ul>
-                {/* ★ B案: 個別ボタン廃止 — アップグレードはアプリ内で */}
               </div>
             ))}
           </div>
@@ -523,6 +543,7 @@ html { scroll-behavior: smooth; }
 /* ── Animations ── */
 @keyframes fadeUp { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
 @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+@keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.3} }
 .anim {
   opacity: 0; transform: translateY(28px);
   transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1);
