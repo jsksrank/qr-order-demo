@@ -64,6 +64,26 @@ async function sendLineAdminNotification(message) {
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ★ Stripe Customerからメール取得（フォールバック用）
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+async function getEmailFallback(customerId, storeEmail) {
+  // 1. storesテーブルにemailがあればそれを使う
+  if (storeEmail) return storeEmail;
+
+  // 2. Stripe Customerオブジェクトから取得
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if (customer && customer.email) {
+      return customer.email;
+    }
+  } catch (err) {
+    console.error('Stripe customer email lookup failed:', err.message);
+  }
+
+  return '（メール不明）';
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    Webhook エントリーポイント
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 export async function POST(request) {
@@ -156,7 +176,8 @@ async function handleSubscriptionChange(subscription, eventType) {
 
     if (isNewSubscription || isPlanChanged) {
       const storeName = oldStoreData?.store_name || '（店舗名未設定）';
-      const email = oldStoreData?.email || '（メール不明）';
+      // ★ 修正: emailフォールバック（stores → Stripe Customer）
+      const email = await getEmailFallback(customerId, oldStoreData?.email);
 
       // 追加タグ枚数を計算
       const oldTagQuota = TAG_QUOTA[oldPlan] || 0;
@@ -170,6 +191,12 @@ async function handleSubscriptionChange(subscription, eventType) {
         oldStoreData?.address_line,
       ].filter(Boolean).join('') || '（住所未登録）';
       const phone = oldStoreData?.phone || '（電話未登録）';
+
+      // ★ 住所未登録の場合のアクション指示を追加
+      const hasAddress = oldStoreData?.address_prefecture;
+      const addressAction = hasAddress
+        ? `→ タグを準備・郵送してください`
+        : `⚠️ 住所未登録！ユーザーに設定画面から住所登録を依頼してください`;
 
       let message;
       if (isNewSubscription) {
@@ -186,7 +213,9 @@ async function handleSubscriptionChange(subscription, eventType) {
           `${address}`,
           `TEL: ${phone}`,
           '',
-          `→ タグ${newTagQuota}枚を準備・郵送してください`,
+          hasAddress
+            ? `→ タグ${newTagQuota}枚を準備・郵送してください`
+            : `⚠️ 住所未登録！\n→ ${email} に住所登録を依頼してください\n→ 住所登録後にタグ${newTagQuota}枚を郵送`,
         ].join('\n');
       } else if (isPlanChanged) {
         // プラン変更
@@ -206,7 +235,9 @@ async function handleSubscriptionChange(subscription, eventType) {
             `TEL: ${phone}`,
             '',
             additionalTags > 0
-              ? `→ 追加タグ${additionalTags}枚を準備・郵送してください`
+              ? (hasAddress
+                  ? `→ 追加タグ${additionalTags}枚を準備・郵送してください`
+                  : `⚠️ 住所未登録！\n→ ${email} に住所登録を依頼してください\n→ 住所登録後に追加タグ${additionalTags}枚を郵送`)
               : `→ タグ追加不要`,
           ].join('\n');
         } else {
@@ -357,6 +388,9 @@ async function handleSubscriptionDeleted(subscription) {
     .eq('stripe_customer_id', customerId)
     .single();
 
+  // ★ 修正: emailフォールバック
+  const email = await getEmailFallback(customerId, storeData?.email);
+
   const { error } = await supabaseAdmin
     .from('stores')
     .update({
@@ -376,7 +410,6 @@ async function handleSubscriptionDeleted(subscription) {
   // LINE通知
   try {
     const storeName = storeData?.store_name || '（不明）';
-    const email = storeData?.email || '（不明）';
     const oldPlan = storeData?.plan || '（不明）';
 
     await sendLineAdminNotification([
@@ -408,6 +441,9 @@ async function handlePaymentFailed(invoice) {
     .eq('stripe_customer_id', customerId)
     .single();
 
+  // ★ 修正: emailフォールバック
+  const email = await getEmailFallback(customerId, storeData?.email);
+
   const { error } = await supabaseAdmin
     .from('stores')
     .update({ subscription_status: 'past_due' })
@@ -421,7 +457,6 @@ async function handlePaymentFailed(invoice) {
   // LINE通知
   try {
     const storeName = storeData?.store_name || '（不明）';
-    const email = storeData?.email || '（不明）';
 
     await sendLineAdminNotification([
       '⚠️ 支払い失敗',
