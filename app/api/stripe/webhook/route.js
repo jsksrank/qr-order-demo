@@ -363,7 +363,7 @@ async function handleSubscriptionDeleted(subscription) {
       stripe_subscription_id: null,
       stripe_price_id: null,
       plan: 'free',
-      max_sku: 10,
+      max_sku: 30,
       subscription_status: 'canceled',
     })
     .eq('stripe_customer_id', customerId);
