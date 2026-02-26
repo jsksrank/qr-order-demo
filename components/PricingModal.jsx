@@ -8,7 +8,7 @@ const PLANS = [
     id: 'entry',
     name: 'エントリー',
     price: '¥500',
-    sku: '30 SKU',
+    sku: '30商品',
     priceId: 'price_1T4w0SAhbUNgyEJI4FwYN1k7',
     features: ['商品30点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
   },
@@ -16,7 +16,7 @@ const PLANS = [
     id: 'light',
     name: 'ライト',
     price: '¥2,980',
-    sku: '100 SKU',
+    sku: '100商品',
     priceId: 'price_1T4wT5AhbUNgyEJIijNChOkl',
     features: ['商品100点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
   },
@@ -24,7 +24,7 @@ const PLANS = [
     id: 'standard',
     name: 'スタンダード',
     price: '¥5,980',
-    sku: '300 SKU',
+    sku: '300商品',
     popular: true,
     priceId: 'price_1T4wHYAhbUNgyEJIDebcXfLJ',
     features: ['商品300点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
@@ -33,7 +33,7 @@ const PLANS = [
     id: 'pro',
     name: 'プロ',
     price: '¥9,800',
-    sku: '500 SKU',
+    sku: '500商品',
     priceId: 'price_1T4w6MAhbUNgyEJITZzQG7LP',
     features: ['商品500点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
   },
@@ -141,7 +141,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, accessToken
           <p style={{ fontSize: 12, color: C.textSub, margin: 0 }}>
             {isPaid
               ? `現在のプラン：${PLANS.find(p => p.id === currentPlan)?.name || currentPlan}`
-              : '無料プランをご利用中です（10 SKUまで）'
+              : '無料プランをご利用中です（30商品まで）'
             }
           </p>
         </div>
