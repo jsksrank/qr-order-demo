@@ -3,41 +3,44 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-const PLANS = [
+/* ━━━ プラン定義 ━━━ */
+const ALL_PLANS = [
   {
     id: 'entry',
     name: 'エントリー',
-    price: '¥500',
+    price: 500,
     sku: '30商品',
     priceId: 'price_1T4w0SAhbUNgyEJI4FwYN1k7',
-    features: ['商品30点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
+    features: ['商品30点まで管理', 'QRスキャン無制限', 'LINE送信'],
   },
   {
     id: 'light',
     name: 'ライト',
-    price: '¥2,980',
+    price: 2980,
     sku: '100商品',
     priceId: 'price_1T4wT5AhbUNgyEJIijNChOkl',
-    features: ['商品100点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
+    features: ['商品100点まで管理', 'QRスキャン無制限', 'LINE送信'],
   },
   {
     id: 'standard',
     name: 'スタンダード',
-    price: '¥5,980',
+    price: 5980,
     sku: '300商品',
     popular: true,
     priceId: 'price_1T4wHYAhbUNgyEJIDebcXfLJ',
-    features: ['商品300点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
+    features: ['商品300点まで管理', 'QRスキャン無制限', 'LINE送信'],
   },
   {
     id: 'pro',
     name: 'プロ',
-    price: '¥9,800',
+    price: 9800,
     sku: '500商品',
     priceId: 'price_1T4w6MAhbUNgyEJITZzQG7LP',
-    features: ['商品500点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
+    features: ['商品500点まで管理', 'QRスキャン無制限', 'LINE送信'],
   },
 ];
+
+const VIP_DISCOUNT = 500; // ¥500 OFF
 
 const C = {
   primary: '#2563eb',
@@ -48,12 +51,27 @@ const C = {
   border: '#e5e7eb',
   card: '#fff',
   success: '#059669',
+  danger: '#dc2626',
 };
 
-export default function PricingModal({ isOpen, onClose, currentPlan, accessToken }) {
+function formatPrice(amount) {
+  return `¥${amount.toLocaleString()}`;
+}
+
+export default function PricingModal({ isOpen, onClose, currentPlan, accessToken, isFreeAccess = false }) {
   const [loading, setLoading] = useState(null);
 
   if (!isOpen) return null;
+
+  // ★ S31: フリーアクセスユーザー（先着100名 or 紹介）はEntry不要（既に同等の無料枠あり）
+  // → Light以上を表示。割引あり。
+  // 通常ユーザー（Entry課金済み）→ Light以上を表示。割引なし。
+  const visiblePlans = ALL_PLANS.filter((p) => {
+    // Entryは表示しない（フリーアクセスなら不要、Entry課金済みなら現プラン）
+    if (p.id === 'entry') return false;
+    // 現在のプランより上のプランのみ（同プランは「現在のプラン」表示）
+    return true;
+  });
 
   const handleSubscribe = async (plan) => {
     const priceId = plan.priceId;
@@ -136,19 +154,27 @@ export default function PricingModal({ isOpen, onClose, currentPlan, accessToken
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div style={{ fontSize: 32, marginBottom: 6 }}>🚀</div>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: '0 0 4px' }}>
-            プランを選択
+            プランをアップグレード
           </h2>
-          <p style={{ fontSize: 12, color: C.textSub, margin: 0 }}>
-            {isPaid
-              ? `現在のプラン：${PLANS.find(p => p.id === currentPlan)?.name || currentPlan}`
-              : '無料プランをご利用中です（30商品まで）'
-            }
+          <p style={{ fontSize: 12, color: C.textSub, margin: '0 0 4px' }}>
+            30商品を超えて管理するにはアップグレードが必要です
           </p>
+          {/* ★ S31: VIP割引バナー */}
+          {isFreeAccess && (
+            <div style={{
+              marginTop: 10, padding: '8px 14px', background: '#fef3c7',
+              borderRadius: 10, border: '1px solid #fde68a',
+              fontSize: 12, fontWeight: 600, color: '#92400e',
+            }}>
+              🎁 VIP特典：全プラン永久 {formatPrice(VIP_DISCOUNT)} OFF 適用中
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {PLANS.map((plan) => {
+          {visiblePlans.map((plan) => {
             const isCurrent = currentPlan === plan.id;
+            const discountedPrice = isFreeAccess ? plan.price - VIP_DISCOUNT : plan.price;
 
             return (
               <div
@@ -179,7 +205,20 @@ export default function PricingModal({ isOpen, onClose, currentPlan, accessToken
                     <div style={{ fontSize: 11, color: C.textSub }}>{plan.sku}まで</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: C.text }}>{plan.price}</div>
+                    {isFreeAccess ? (
+                      <>
+                        <div style={{ fontSize: 12, color: C.textMuted, textDecoration: 'line-through' }}>
+                          {formatPrice(plan.price)}
+                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: C.danger }}>
+                          {formatPrice(discountedPrice)}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: 20, fontWeight: 800, color: C.text }}>
+                        {formatPrice(plan.price)}
+                      </div>
+                    )}
                     <div style={{ fontSize: 10, color: C.textSub }}>/月（税込）</div>
                   </div>
                 </div>
@@ -218,6 +257,16 @@ export default function PricingModal({ isOpen, onClose, currentPlan, accessToken
               </div>
             );
           })}
+        </div>
+
+        {/* 比較メッセージ */}
+        <div style={{
+          marginTop: 14, padding: '10px 14px', background: '#f8fafc',
+          borderRadius: 10, border: '1px solid #e5e7eb',
+          fontSize: 11, color: C.textSub, lineHeight: 1.7, textAlign: 'center',
+        }}>
+          💡 カラー剤1本の欠品＝約¥10,000の機会損失。<br/>
+          在庫番で欠品ゼロを実現しましょう。
         </div>
 
         {isPaid && (
