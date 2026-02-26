@@ -5,34 +5,39 @@ import { supabase } from '../lib/supabase';
 
 const PLANS = [
   {
+    id: 'entry',
+    name: 'エントリー',
+    price: '¥500',
+    sku: '30 SKU',
+    priceId: 'price_1T4w0SAhbUNgyEJI4FwYN1k7',
+    features: ['商品30点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
+  },
+  {
     id: 'light',
     name: 'ライト',
-    price: '¥1,980',
-    sku: '50 SKU',
-    features: ['商品50点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
+    price: '¥2,980',
+    sku: '100 SKU',
+    priceId: 'price_1T4wT5AhbUNgyEJIijNChOkl',
+    features: ['商品100点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
   },
   {
     id: 'standard',
     name: 'スタンダード',
-    price: '¥3,980',
-    sku: '200 SKU',
+    price: '¥5,980',
+    sku: '300 SKU',
     popular: true,
-    features: ['商品200点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
+    priceId: 'price_1T4wHYAhbUNgyEJIDebcXfLJ',
+    features: ['商品300点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
   },
   {
     id: 'pro',
     name: 'プロ',
-    price: '¥5,980',
-    sku: '無制限',
-    features: ['商品数無制限', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
+    price: '¥9,800',
+    sku: '500 SKU',
+    priceId: 'price_1T4w6MAhbUNgyEJITZzQG7LP',
+    features: ['商品500点まで管理', 'QRスキャン無制限', 'LINE送信', 'クーポン利用可'],
   },
 ];
-
-const PRICE_IDS = {
-  light: process.env.NEXT_PUBLIC_STRIPE_PRICE_LIGHT,
-  standard: process.env.NEXT_PUBLIC_STRIPE_PRICE_STANDARD,
-  pro: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO,
-};
 
 const C = {
   primary: '#2563eb',
@@ -50,14 +55,14 @@ export default function PricingModal({ isOpen, onClose, currentPlan, accessToken
 
   if (!isOpen) return null;
 
-  const handleSubscribe = async (planId) => {
-    const priceId = PRICE_IDS[planId];
+  const handleSubscribe = async (plan) => {
+    const priceId = plan.priceId;
     if (!priceId) {
       alert('料金設定が見つかりません。管理者に連絡してください。');
       return;
     }
 
-    setLoading(planId);
+    setLoading(plan.id);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -196,7 +201,7 @@ export default function PricingModal({ isOpen, onClose, currentPlan, accessToken
                   </div>
                 ) : (
                   <button
-                    onClick={() => handleSubscribe(plan.id)}
+                    onClick={() => handleSubscribe(plan)}
                     disabled={loading !== null}
                     style={{
                       width: '100%', padding: '12px', border: 'none', borderRadius: 10,
