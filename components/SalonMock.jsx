@@ -4,10 +4,9 @@ import { useAuth } from "../lib/auth-context";
 import { supabase } from "../lib/supabase";
 import dynamic from "next/dynamic";
 import PricingModal from "./PricingModal";
-import SettingsScreen from "./SettingsScreen"; // ★STEP6 追加
-import TagManagementScreen from "./TagManagementScreen"; // ★STEP7 追加
+import SettingsScreen from "./SettingsScreen";
+import TagManagementScreen from "./TagManagementScreen";
 
-// SSR セーフ：html5-qrcode はブラウザ専用なので SSR を無効化
 const QrScanner = dynamic(() => import("./QrScanner"), { ssr: false });
 
 // ——— Constants ———
@@ -35,49 +34,31 @@ const C = {
 
 // ——— DB ↔ JS field mapping ———
 const dbToJs = (row) => ({
-  id: row.id,
-  name: row.name,
-  category: row.category,
-  location: row.location,
-  manufacturer: row.manufacturer,
-  janCode: row.jan_code,
-  defaultOrderQty: row.default_order_qty,
-  reorderPoint: row.reorder_point,
-  isActive: row.is_active,
+  id: row.id, name: row.name, category: row.category, location: row.location,
+  manufacturer: row.manufacturer, janCode: row.jan_code,
+  defaultOrderQty: row.default_order_qty, reorderPoint: row.reorder_point, isActive: row.is_active,
 });
 
 const jsToDb = (item, storeId) => ({
-  store_id: storeId,
-  name: item.name,
-  category: item.category,
-  location: item.location,
-  manufacturer: item.manufacturer || "",
-  jan_code: item.janCode || null,
-  default_order_qty: item.defaultOrderQty || 1,
-  reorder_point: item.reorderPoint || null,
+  store_id: storeId, name: item.name, category: item.category, location: item.location,
+  manufacturer: item.manufacturer || "", jan_code: item.janCode || null,
+  default_order_qty: item.defaultOrderQty || 1, reorder_point: item.reorderPoint || null,
   is_active: item.isActive !== false,
 });
 
-// ——— Order item mapping ———
 const orderItemFromDb = (row) => ({
-  id: row.id,
-  productId: row.product_id,
-  name: row.products?.name || "不明な商品",
-  category: row.products?.category || "",
-  location: row.products?.location || "",
-  quantity: row.quantity,
-  status: row.status,
+  id: row.id, productId: row.product_id, name: row.products?.name || "不明な商品",
+  category: row.products?.category || "", location: row.products?.location || "",
+  quantity: row.quantity, status: row.status,
   scannedAt: row.scanned_at ? formatDate(row.scanned_at) : "",
   orderedAt: row.ordered_at ? formatShortDate(row.ordered_at) : "",
-  receivedAt: row.received_at,
-  checked: false,
+  receivedAt: row.received_at, checked: false,
 });
 
 function formatDate(isoStr) {
   const d = new Date(isoStr);
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
-
 function formatShortDate(isoStr) {
   const d = new Date(isoStr);
   return `${d.getMonth() + 1}/${d.getDate()}`;
@@ -87,8 +68,7 @@ function formatShortDate(isoStr) {
 function Badge({ count, color }) {
   if (!count) return null;
   return (
-    <span style={{
-      minWidth: 22, height: 22, borderRadius: 11, background: color, color: "#fff",
+    <span style={{ minWidth: 22, height: 22, borderRadius: 11, background: color, color: "#fff",
       display: "inline-flex", alignItems: "center", justifyContent: "center",
       fontSize: 12, fontWeight: 700, flexShrink: 0, padding: "0 6px",
     }}>{count}</span>
@@ -97,10 +77,8 @@ function Badge({ count, color }) {
 
 function QuantityStepper({ value, onChange, min = 1, max = 99 }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 0,
-      border: `1.5px solid ${C.border}`, borderRadius: 10, overflow: "hidden",
-      background: C.card, flexShrink: 0,
+    <div style={{ display: "flex", alignItems: "center", gap: 0,
+      border: `1.5px solid ${C.border}`, borderRadius: 10, overflow: "hidden", background: C.card, flexShrink: 0,
     }}>
       <button onClick={(e) => { e.stopPropagation(); onChange(Math.max(min, value - 1)); }}
         style={{ width: 36, height: 36, border: "none", background: "transparent",
@@ -130,7 +108,77 @@ function EmptyState({ icon, message }) {
 }
 
 // ======================================================================
-// OverLimitBanner（SKU上限超過時のブロック画面）
+// ★ S31: TrialGateModal（101人目以降・紹介なし用のブロッキングモーダル）
+// ======================================================================
+function TrialGateModal({ onStartTrial, loading }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 300, padding: 20,
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 24, padding: "32px 24px", maxWidth: 380, width: "100%",
+        textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+      }}>
+        <div style={{ fontSize: 52, marginBottom: 12 }}>🏷️</div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: C.text, margin: "0 0 8px" }}>
+          在庫番を始めましょう
+        </h2>
+        <p style={{ fontSize: 14, color: C.textSub, lineHeight: 1.7, margin: "0 0 24px" }}>
+          30日間無料でお試しいただけます
+        </p>
+
+        <div style={{
+          background: C.bg, borderRadius: 14, padding: 16, marginBottom: 20,
+          textAlign: "left",
+        }}>
+          {[
+            "商品30点まで管理",
+            "QRスキャン・発注リスト",
+            "LINEで発注送信",
+            "物理QRタグを郵送",
+          ].map((f, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 3 ? 8 : 0 }}>
+              <span style={{ color: C.success, fontSize: 14, fontWeight: 700 }}>✓</span>
+              <span style={{ fontSize: 13, color: C.text }}>{f}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          padding: "12px 16px", background: C.primaryLight, borderRadius: 12,
+          marginBottom: 20, border: `1px solid ${C.primaryBorder}`,
+        }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: C.primary }}>¥0</div>
+          <div style={{ fontSize: 12, color: C.textSub }}>30日間無料 → 月額¥500（税込）</div>
+        </div>
+
+        <button
+          onClick={onStartTrial}
+          disabled={loading}
+          style={{
+            width: "100%", padding: "16px", border: "none", borderRadius: 14,
+            background: loading ? C.textMuted : C.primary,
+            color: "#fff", fontSize: 16, fontWeight: 700,
+            cursor: loading ? "default" : "pointer",
+            boxShadow: loading ? "none" : "0 4px 16px rgba(37,99,235,0.3)",
+          }}
+        >
+          {loading ? "処理中..." : "30日間無料で始める"}
+        </button>
+
+        <p style={{ fontSize: 11, color: C.textMuted, marginTop: 14, lineHeight: 1.6 }}>
+          クレジットカードの登録が必要です。<br/>
+          30日以内に解約すれば料金は発生しません。
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ======================================================================
+// OverLimitBanner
 // ======================================================================
 function OverLimitBanner({ activeCount, skuLimit, onUpgrade }) {
   return (
@@ -163,8 +211,6 @@ function OverLimitBanner({ activeCount, skuLimit, onUpgrade }) {
 
 // ======================================================================
 // Top Screen
-// ★STEP6: 設定ボタンを追加
-// ★STEP7: タグ管理ボタンを追加
 // ======================================================================
 function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCount }) {
   return (
@@ -212,7 +258,6 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
         <span style={{ color: C.textMuted, fontSize: 16 }}>›</span>
       </button>
 
-      {/* ★STEP7 追加：タグ管理ボタン */}
       <button onClick={() => onNavigate("tags")} style={{
         width: "100%", marginTop: 10, padding: "14px 18px",
         background: C.card, border: `1px solid ${C.border}`, borderRadius: 14,
@@ -229,7 +274,6 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
         <span style={{ color: C.textMuted, fontSize: 16 }}>›</span>
       </button>
 
-      {/* ★STEP6 追加：設定ボタン */}
       <button onClick={() => onNavigate("settings")} style={{
         width: "100%", marginTop: 10, padding: "14px 18px",
         background: C.card, border: `1px solid ${C.border}`, borderRadius: 14,
@@ -269,7 +313,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
 }
 
 // ======================================================================
-// Scan Screen（実カメラQRスキャン + デモ併設）
+// Scan Screen
 // ======================================================================
 function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit, skuLimit, activeCount, onShowPricing }) {
   const [cameraActive, setCameraActive] = useState(false);
@@ -302,7 +346,6 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
         if (product) {
           await onAddOrderItem(product);
           await supabase.from("qr_tags").update({ status: "removed" }).eq("id", tag.id);
-
           const time = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
           setScanned((prev) => [...prev, { name: product.name, category: product.category, location: product.location, time }]);
           setScanResult({ type: "success", name: product.name, message: "読み取り完了！" });
@@ -311,7 +354,6 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
         }
       }
     }
-
     setScanResult({ type: "error", name: decodedText, message: "未登録のQRタグです。商品管理でタグを紐付けてください。" });
     setTimeout(() => setScanResult(null), 4000);
   };
@@ -349,10 +391,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
           {scanning ? (
             <>
               <div style={{ width: 170, height: 170, border: "3px solid #2563eb", borderRadius: 12, position: "relative" }}>
-                <div style={{
-                  position: "absolute", top: 0, left: 0, right: 0, height: 3,
-                  background: "#2563eb", animation: "scanLine 1.2s ease-in-out infinite",
-                }} />
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "#2563eb", animation: "scanLine 1.2s ease-in-out infinite" }} />
               </div>
               <style>{`@keyframes scanLine { 0%{top:0} 50%{top:calc(100% - 3px)} 100%{top:0} }`}</style>
               <p style={{ color: "#fff", fontSize: 13, marginTop: 14 }}>スキャン中...</p>
@@ -367,10 +406,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
             </div>
           ) : (
             <>
-              <div style={{
-                width: 170, height: 170, border: "2px dashed #4b5563", borderRadius: 12,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
+              <div style={{ width: 170, height: 170, border: "2px dashed #4b5563", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ fontSize: 12, color: "#6b7280" }}>QRをここに合わせる</span>
               </div>
               <p style={{ color: "#9ca3af", fontSize: 12, marginTop: 10 }}>カゴに貯めたタグをまとめてスキャン</p>
@@ -420,8 +456,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
           {scanned.map((item, i) => (
             <div key={i} style={{
               display: "flex", alignItems: "center", gap: 10, padding: "11px 14px",
-              background: C.successLight, borderRadius: 10, marginBottom: 5,
-              border: `1px solid ${C.successBorder}`,
+              background: C.successLight, borderRadius: 10, marginBottom: 5, border: `1px solid ${C.successBorder}`,
             }}>
               <span style={{ fontSize: 18 }}>✅</span>
               <div style={{ flex: 1 }}>
@@ -462,7 +497,6 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit
   const toggleCheck = (id) => {
     setPendingItems((prev) => prev.map((i) => i.id === id ? { ...i, checked: !i.checked } : i));
   };
-
   const updateQty = (id, qty) => {
     setPendingItems((prev) => prev.map((i) => i.id === id ? { ...i, quantity: qty } : i));
   };
@@ -483,15 +517,9 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit
   return (
     <div style={{ padding: "0 20px" }}>
       {showConfirm && (
-        <div style={{
-          padding: "11px 14px", background: "#dcfce7", borderRadius: 10,
-          border: "1px solid #86efac", marginBottom: 14,
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
+        <div style={{ padding: "11px 14px", background: "#dcfce7", borderRadius: 10, border: "1px solid #86efac", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 18 }}>✅</span>
-          <span style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>
-            {lastOrderedCount}件を発注処理しました
-          </span>
+          <span style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>{lastOrderedCount}件を発注処理しました</span>
         </div>
       )}
 
@@ -502,10 +530,8 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit
             <span style={{ fontSize: 12, color: C.textSub, marginLeft: 8 }}>{pendingItems.length}件</span>
           </div>
           {pendingItems.length > 0 && (
-            <button
-              onClick={() => setPendingItems((prev) => prev.map((i) => ({ ...i, checked: !pendingItems.every((x) => x.checked) })))}
-              style={{ fontSize: 11, color: C.primary, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}
-            >
+            <button onClick={() => setPendingItems((prev) => prev.map((i) => ({ ...i, checked: !pendingItems.every((x) => x.checked) })))}
+              style={{ fontSize: 11, color: C.primary, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
               {pendingItems.every((i) => i.checked) ? "選択解除" : "すべて選択"}
             </button>
           )}
@@ -518,8 +544,7 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit
             <div key={item.id} style={{
               display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
               background: item.checked ? C.primaryLight : C.card, borderRadius: 10, marginBottom: 6,
-              border: item.checked ? `1.5px solid ${C.primary}` : `1px solid ${C.border}`,
-              cursor: "pointer",
+              border: item.checked ? `1.5px solid ${C.primary}` : `1px solid ${C.border}`, cursor: "pointer",
             }} onClick={() => toggleCheck(item.id)}>
               <div style={{
                 width: 20, height: 20, borderRadius: 6, flexShrink: 0,
@@ -531,9 +556,7 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
-                <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
-                  {item.category} · {item.location} · {item.scannedAt}
-                </div>
+                <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>{item.category} · {item.location} · {item.scannedAt}</div>
               </div>
               <QuantityStepper value={item.quantity} onChange={(v) => updateQty(item.id, v)} />
             </div>
@@ -567,11 +590,7 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit
               <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>📋 発注リスト送信</h3>
               <button onClick={() => { setShowLinePopup(false); setCopied(false); }} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>✕</button>
             </div>
-            <div style={{
-              padding: 14, background: C.bg, borderRadius: 12,
-              fontFamily: "monospace", fontSize: 12, lineHeight: 1.8,
-              whiteSpace: "pre-wrap", color: "#333", maxHeight: 200, overflowY: "auto",
-            }}>
+            <div style={{ padding: 14, background: C.bg, borderRadius: 12, fontFamily: "monospace", fontSize: 12, lineHeight: 1.8, whiteSpace: "pre-wrap", color: "#333", maxHeight: 200, overflowY: "auto" }}>
               {generateLineText()}
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
@@ -584,8 +603,7 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, isOverLimit
                 });
               }} style={{
                 flex: 1, padding: "14px", border: "none", borderRadius: 12,
-                background: copied ? C.success : C.primary, color: "#fff",
-                fontSize: 14, fontWeight: 700, cursor: "pointer",
+                background: copied ? C.success : C.primary, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer",
               }}>
                 {copied ? "✅ コピー済み！" : "📋 テキストをコピー"}
               </button>
@@ -618,28 +636,13 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
   const handleQrScan = useCallback(async (decodedText, format) => {
     if (supabase && storeId) {
       const { data: tag } = await supabase
-        .from("qr_tags")
-        .select("id, product_id")
-        .eq("tag_code", decodedText)
-        .eq("store_id", storeId)
-        .maybeSingle();
-
-      if (!tag) {
-        setScanError("未登録のタグです");
-        setTimeout(() => setScanError(null), 3000);
-        return;
-      }
-
+        .from("qr_tags").select("id, product_id")
+        .eq("tag_code", decodedText).eq("store_id", storeId).maybeSingle();
+      if (!tag) { setScanError("未登録のタグです"); setTimeout(() => setScanError(null), 3000); return; }
       const target = orderedItems.find((i) => i.productId === tag.product_id);
-      if (!target) {
-        setScanError("この商品の発注データがありません");
-        setTimeout(() => setScanError(null), 3000);
-        return;
-      }
-
+      if (!target) { setScanError("この商品の発注データがありません"); setTimeout(() => setScanError(null), 3000); return; }
       await onMarkReceived(target);
       await supabase.from("qr_tags").update({ status: "attached" }).eq("id", tag.id);
-
       setScanError(null);
       setLastReceived(target.name);
       setTimeout(() => setLastReceived(null), 4000);
@@ -664,11 +667,7 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
   return (
     <div style={{ padding: "0 20px" }}>
       {lastReceived && (
-        <div style={{
-          padding: "11px 14px", background: "#dcfce7", borderRadius: 10,
-          border: "1px solid #86efac", marginBottom: 14,
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
+        <div style={{ padding: "11px 14px", background: "#dcfce7", borderRadius: 10, border: "1px solid #86efac", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 18 }}>📦</span>
           <div>
             <div style={{ fontSize: 13, color: C.successDark, fontWeight: 600 }}>受取完了！</div>
@@ -677,34 +676,24 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
           </div>
         </div>
       )}
-
       {scanError && (
-        <div style={{
-          padding: "11px 14px", background: C.dangerLight, borderRadius: 10,
-          border: `1px solid ${C.dangerBorder}`, marginBottom: 14,
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
+        <div style={{ padding: "11px 14px", background: C.dangerLight, borderRadius: 10, border: `1px solid ${C.dangerBorder}`, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 18 }}>❌</span>
           <span style={{ fontSize: 13, color: C.danger, fontWeight: 600 }}>{scanError}</span>
         </div>
       )}
-
       {cameraActive && (
         <div style={{ marginBottom: 14 }}>
           <QrScanner mode="qr" active={cameraActive} onScan={handleQrScan} />
         </div>
       )}
-
-      <button onClick={() => setCameraActive(!cameraActive)}
-        disabled={orderedItems.length === 0 && !cameraActive}
-        style={{
-          width: "100%", padding: "14px", border: "none", borderRadius: 12,
+      <button onClick={() => setCameraActive(!cameraActive)} disabled={orderedItems.length === 0 && !cameraActive}
+        style={{ width: "100%", padding: "14px", border: "none", borderRadius: 12,
           background: cameraActive ? "#dc2626" : orderedItems.length === 0 ? "#d1d5db" : C.success,
           color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 8,
         }}>
         {cameraActive ? "⏹ カメラを停止" : orderedItems.length === 0 ? "すべて受取済み ✅" : "📷 届いた商品のタグをスキャン"}
       </button>
-
       {!cameraActive && orderedItems.length > 0 && (
         <button onClick={simulateReceive} disabled={scanning} style={{
           width: "100%", padding: "12px", border: `1.5px solid ${C.border}`,
@@ -714,7 +703,6 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
           {scanning ? "読み取り中..." : "🔧 デモ受取（カメラなしでテスト）"}
         </button>
       )}
-
       <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 10 }}>
         受取待ち <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{orderedItems.length}件</span>
       </div>
@@ -722,10 +710,7 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
         <EmptyState icon="✅" message="すべて受取済みです" />
       ) : (
         orderedItems.map((item) => (
-          <div key={item.id} style={{
-            display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
-            background: C.card, borderRadius: 10, marginBottom: 5, border: `1px solid ${C.border}`,
-          }}>
+          <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: C.card, borderRadius: 10, marginBottom: 5, border: `1px solid ${C.border}` }}>
             <span style={{ fontSize: 18 }}>📦</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
@@ -734,16 +719,11 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
           </div>
         ))
       )}
-
       {receivedItems.length > 0 && (
         <div style={{ marginTop: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, marginBottom: 8 }}>受取済み（直近）</div>
           {receivedItems.slice(0, 5).map((item) => (
-            <div key={item.id} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-              background: C.successLight, borderRadius: 10, marginBottom: 4,
-              border: `1px solid ${C.successBorder}`, opacity: 0.5,
-            }}>
+            <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: C.successLight, borderRadius: 10, marginBottom: 4, border: `1px solid ${C.successBorder}`, opacity: 0.5 }}>
               <span style={{ fontSize: 16 }}>✅</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, textDecoration: "line-through" }}>{item.name}</div>
@@ -753,7 +733,6 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
           ))}
         </div>
       )}
-
       {receivedItems.length > 0 && (
         <div style={{ marginTop: 16, padding: 12, background: C.warnLight, borderRadius: 10, border: `1px solid ${C.warnBorder}` }}>
           <p style={{ fontSize: 12, color: C.warnDark, margin: 0, lineHeight: 1.6 }}>
@@ -788,17 +767,9 @@ function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, cur
     return (
       <ProductForm
         product={view === "edit" ? editProduct : null}
-        onSave={async (p) => {
-          await onSaveProduct(p, view === "edit");
-          setView("list");
-          setEditProduct(null);
-        }}
+        onSave={async (p) => { await onSaveProduct(p, view === "edit"); setView("list"); setEditProduct(null); }}
         onCancel={() => { setView("list"); setEditProduct(null); }}
-        onDelete={view === "edit" ? async () => {
-          await onDeleteProduct(editProduct.id);
-          setView("list");
-          setEditProduct(null);
-        } : null}
+        onDelete={view === "edit" ? async () => { await onDeleteProduct(editProduct.id); setView("list"); setEditProduct(null); } : null}
       />
     );
   }
@@ -807,13 +778,8 @@ function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, cur
     <div style={{ padding: "0 20px" }}>
       <div style={{ position: "relative", marginBottom: 12 }}>
         <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: C.textMuted }}>🔍</span>
-        <input value={search} onChange={(e) => setSearch(e.target.value)}
-          placeholder="商品名・メーカーで検索"
-          style={{
-            width: "100%", padding: "11px 12px 11px 38px", border: `1px solid ${C.border}`,
-            borderRadius: 10, fontSize: 13, outline: "none", background: C.card, boxSizing: "border-box",
-          }}
-        />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="商品名・メーカーで検索"
+          style={{ width: "100%", padding: "11px 12px 11px 38px", border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 13, outline: "none", background: C.card, boxSizing: "border-box" }} />
       </div>
 
       <div style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 14, paddingBottom: 4 }}>
@@ -834,19 +800,14 @@ function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, cur
       {filtered.map((p) => (
         <div key={p.id} onClick={() => { setEditProduct(p); setView("edit"); }} style={{
           display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-          background: C.card, borderRadius: 10, marginBottom: 6,
-          border: `1px solid ${C.border}`, cursor: "pointer",
+          background: C.card, borderRadius: 10, marginBottom: 6, border: `1px solid ${C.border}`, cursor: "pointer",
         }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8, background: C.bg,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, fontWeight: 700, color: C.primary, flexShrink: 0,
-          }}>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.primary, flexShrink: 0 }}>
             {p.category.slice(0, 2)}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
-<div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
+            <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
               {tagMap[p.id] ? <span style={{ color: C.primary, fontWeight: 600 }}>{tagMap[p.id]}</span> : <span style={{ color: C.textMuted }}>タグなし</span>}
               {" · "}{p.manufacturer} · {p.location}
             </div>
@@ -854,15 +815,11 @@ function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, cur
           <span style={{ color: C.textMuted, fontSize: 14 }}>›</span>
         </div>
       ))}
-
       {filtered.length === 0 && <EmptyState icon="🔭" message="該当する商品がありません" />}
 
       <button onClick={() => {
         const activeCount = products.filter(p => p.isActive).length;
-        if (activeCount >= skuLimit) {
-          onShowPricing();
-          return;
-        }
+        if (activeCount >= skuLimit) { onShowPricing(); return; }
         setView("add");
       }} style={{
         position: "fixed", bottom: 80, right: "calc(50% - 190px)",
@@ -903,24 +860,14 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
     setTimeout(() => {
       setShowBarcodeScan(false);
       setBarcodeResult("4954835325141");
-      setForm((f) => ({
-        ...f,
-        name: "ミルボン オルディーブ アディクシー GP7",
-        manufacturer: "ミルボン",
-        category: "カラー剤",
-        janCode: "4954835325141",
-      }));
+      setForm((f) => ({ ...f, name: "ミルボン オルディーブ アディクシー GP7", manufacturer: "ミルボン", category: "カラー剤", janCode: "4954835325141" }));
     }, 1500);
   };
 
   const handleSave = async () => {
     if (!isValid) return;
     setSaving(true);
-    try {
-      await onSave(form);
-    } finally {
-      setSaving(false);
-    }
+    try { await onSave(form); } finally { setSaving(false); }
   };
 
   return (
@@ -928,63 +875,42 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
       <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 16 }}>
         {product ? "商品を編集" : "新しい商品を登録"}
       </div>
-
       {!product && (
         <>
           {barcodeScanActive ? (
             <div style={{ marginBottom: 16 }}>
               <QrScanner mode="barcode" active={barcodeScanActive} onScan={handleBarcodeScan} />
               <button onClick={() => setBarcodeScanActive(false)} style={{
-                width: "100%", padding: "12px", border: `1.5px solid ${C.danger}`,
-                borderRadius: 12, background: C.dangerLight, color: C.danger,
+                width: "100%", padding: "12px", border: `1.5px solid ${C.danger}`, borderRadius: 12, background: C.dangerLight, color: C.danger,
                 fontSize: 13, fontWeight: 600, cursor: "pointer", marginTop: 8,
-              }}>
-                ✕ スキャンを中止
-              </button>
+              }}>✕ スキャンを中止</button>
             </div>
           ) : (
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               <button onClick={() => setBarcodeScanActive(true)} style={{
-                flex: 1, padding: "14px", border: `1.5px dashed ${C.primary}`,
-                borderRadius: 12, background: C.primaryLight, color: C.primary,
-                fontSize: 13, fontWeight: 600, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              }}>
-                📷 バーコード読取
-              </button>
+                flex: 1, padding: "14px", border: `1.5px dashed ${C.primary}`, borderRadius: 12, background: C.primaryLight, color: C.primary,
+                fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              }}>📷 バーコード読取</button>
               <button onClick={simulateBarcodeScan} disabled={showBarcodeScan} style={{
-                padding: "14px 16px", border: `1.5px solid ${C.border}`,
-                borderRadius: 12, background: C.card, color: C.textSub,
-                fontSize: 13, fontWeight: 600, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-              }}>
-                {showBarcodeScan ? "⏳" : "🔧"} デモ
-              </button>
+                padding: "14px 16px", border: `1.5px solid ${C.border}`, borderRadius: 12, background: C.card, color: C.textSub,
+                fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+              }}>{showBarcodeScan ? "⏳" : "🔧"} デモ</button>
             </div>
           )}
           {barcodeResult && (
-            <div style={{
-              padding: "10px 14px", background: C.successLight, borderRadius: 10,
-              border: `1px solid ${C.successBorder}`, marginBottom: 16,
-              fontSize: 12, color: C.successDark,
-            }}>
+            <div style={{ padding: "10px 14px", background: C.successLight, borderRadius: 10, border: `1px solid ${C.successBorder}`, marginBottom: 16, fontSize: 12, color: C.successDark }}>
               ✅ バーコード読み取り成功: {barcodeResult}
             </div>
           )}
         </>
       )}
-
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <FormField label="商品名" required>
-          <input value={form.name} onChange={(e) => update("name", e.target.value)}
-            placeholder="例：イルミナカラー オーシャン 6" style={inputStyle} />
+          <input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="例：イルミナカラー オーシャン 6" style={inputStyle} />
         </FormField>
-
         <FormField label="メーカー">
-          <input value={form.manufacturer} onChange={(e) => update("manufacturer", e.target.value)}
-            placeholder="例：ウエラ" style={inputStyle} />
+          <input value={form.manufacturer} onChange={(e) => update("manufacturer", e.target.value)} placeholder="例：ウエラ" style={inputStyle} />
         </FormField>
-
         <div style={{ display: "flex", gap: 10 }}>
           <FormField label="カテゴリ" style={{ flex: 1 }}>
             <select value={form.category} onChange={(e) => update("category", e.target.value)} style={{ ...inputStyle, appearance: "auto" }}>
@@ -997,7 +923,6 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
             </select>
           </FormField>
         </div>
-
         <div style={{ display: "flex", gap: 10 }}>
           <FormField label="デフォルト発注数" style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1012,40 +937,28 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
             </div>
           </FormField>
         </div>
-
         {form.janCode && (
           <FormField label="JANコード">
             <div style={{ ...inputStyle, background: C.bg, color: C.textSub }}>{form.janCode}</div>
           </FormField>
         )}
       </div>
-
       {!product && (
         <div style={{ marginTop: 20, padding: 12, background: C.primaryLight, borderRadius: 10, border: `1px solid ${C.primaryBorder}` }}>
           <p style={{ fontSize: 12, color: C.primary, margin: 0, lineHeight: 1.6 }}>
-            🏷️ 保存すると未割当のQRタグが自動で紐付けされます。
-        タグ管理画面で対応表を確認し、物理タグを商品に取り付けてください。
+            🏷️ 保存すると未割当のQRタグが自動で紐付けされます。タグ管理画面で対応表を確認し、物理タグを商品に取り付けてください。
           </p>
         </div>
       )}
-
       <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
         <button onClick={handleSave} disabled={!isValid || saving} style={{
           width: "100%", padding: "14px", border: "none", borderRadius: 12,
           background: isValid && !saving ? C.primary : "#d1d5db", color: "#fff",
           fontSize: 14, fontWeight: 700, cursor: isValid && !saving ? "pointer" : "default",
-        }}>
-          {saving ? "保存中..." : product ? "保存する" : "商品を登録する"}
-        </button>
-        <button onClick={onCancel} style={{
-          width: "100%", padding: "14px", border: `1px solid ${C.border}`, borderRadius: 12,
-          background: C.card, color: C.textSub, fontSize: 14, fontWeight: 600, cursor: "pointer",
-        }}>キャンセル</button>
+        }}>{saving ? "保存中..." : product ? "保存する" : "商品を登録する"}</button>
+        <button onClick={onCancel} style={{ width: "100%", padding: "14px", border: `1px solid ${C.border}`, borderRadius: 12, background: C.card, color: C.textSub, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>キャンセル</button>
         {onDelete && (
-          <button onClick={onDelete} style={{
-            width: "100%", padding: "12px", border: "none", borderRadius: 12,
-            background: "transparent", color: C.danger, fontSize: 13, fontWeight: 600, cursor: "pointer",
-          }}>この商品を削除する</button>
+          <button onClick={onDelete} style={{ width: "100%", padding: "12px", border: "none", borderRadius: 12, background: "transparent", color: C.danger, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>この商品を削除する</button>
         )}
       </div>
     </div>
@@ -1086,19 +999,21 @@ function StockoutButton() {
       width: "100%", padding: "12px", border: `1.5px solid ${C.danger}`,
       borderRadius: 12, background: C.card, color: C.danger,
       fontSize: 13, fontWeight: 700, cursor: "pointer",
-    }}>
-      ⚠️ 在庫が切れた商品を報告する
-    </button>
+    }}>⚠️ 在庫が切れた商品を報告する</button>
   );
 }
 
 // ======================================================================
-// Main App
-// ★STEP6: settings画面追加、ヘッダーメニューに設定導線追加
-// ★STEP7: tags画面追加、ホームにタグ管理ボタン追加
+// Main App ★ S31: 課金導線（TrialGate + isFreeAccess + checkout success handling）
 // ======================================================================
 export default function SalonMock() {
-  const { storeId, storeName, storePlan, storeMaxSku, storeBonusSku, signOut, isAuthenticated, isSupabaseConnected, user } = useAuth();
+  const {
+    storeId, storeName, storePlan, storeMaxSku, storeBonusSku,
+    subscriptionStatus, signOut, isAuthenticated, isSupabaseConnected, user,
+    refreshStore,
+    isEarlyBird, storeReferredBy,
+  } = useAuth();
+
   const [screen, setScreen] = useState("top");
   const [products, setProducts] = useState(DEMO_PRODUCTS);
   const [pendingItems, setPendingItems] = useState([]);
@@ -1107,51 +1022,84 @@ export default function SalonMock() {
   const [dbConnected, setDbConnected] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
-  const [tagCount, setTagCount] = useState(0); // ★STEP7 追加
-  const [tagMap, setTagMap] = useState({}); // ★S21：productId → tag_code のマップ
+  const [tagCount, setTagCount] = useState(0);
+  const [tagMap, setTagMap] = useState({});
+  const [trialLoading, setTrialLoading] = useState(false); // ★ S31
 
   const isDbMode = isSupabaseConnected && isAuthenticated && dbConnected;
 
-  const skuLimit = (storeMaxSku || 10) + (storeBonusSku || 0);
+  const skuLimit = (storeMaxSku || 30) + (storeBonusSku || 0);
   const activeProductCount = products.filter((p) => p.isActive).length;
   const isOverLimit = activeProductCount > skuLimit;
+
+  // ★ S31: フリーアクセス判定（先着100名 or 紹介経由）
+  const isFreeAccess = isEarlyBird || !!storeReferredBy;
+
+  // ★ S31: トライアルゲート判定（101人目以降・紹介なし・未課金）
+  // subscription_status が null/undefined = まだ一度も課金していない
+  // 'trialing' や 'active' なら課金手続き済みなのでゲート不要
+  const needsTrialGate = !isFreeAccess && storePlan === "free" && !subscriptionStatus;
+
+  // ★ S31: Checkout成功時にstore情報を再取得
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("checkout") === "success") {
+        window.history.replaceState({}, "", window.location.pathname);
+        // Webhookの処理完了を待つため少し遅延してrefresh
+        const timer = setTimeout(() => {
+          if (refreshStore) refreshStore();
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [refreshStore]);
+
+  // ★ S31: 30日無料トライアル開始（101人目以降・紹介なし用）
+  const handleStartTrial = async () => {
+    setTrialLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId: "price_1T4w0SAhbUNgyEJI4FwYN1k7", // Entry ¥500
+          accessToken: token,
+          trialDays: 30,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "エラーが発生しました");
+      }
+    } catch (err) {
+      alert("通信エラーが発生しました");
+    } finally {
+      setTrialLoading(false);
+    }
+  };
 
   // ——— Fetch products from Supabase ———
   const fetchProducts = useCallback(async () => {
     if (!supabase || !storeId) return;
     try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("store_id", storeId)
-        .order("created_at", { ascending: true });
+      const { data, error } = await supabase.from("products").select("*").eq("store_id", storeId).order("created_at", { ascending: true });
       if (error) throw error;
-      if (data && data.length > 0) {
-        setProducts(data.map(dbToJs));
-        setDbConnected(true);
-      } else {
-        setProducts([]);
-        setDbConnected(true);
-      }
-    } catch (e) {
-      console.error("Products fetch error:", e);
-      setProducts(DEMO_PRODUCTS);
-      setDbConnected(false);
-    }
+      if (data && data.length > 0) { setProducts(data.map(dbToJs)); setDbConnected(true); }
+      else { setProducts([]); setDbConnected(true); }
+    } catch (e) { console.error("Products fetch error:", e); setProducts(DEMO_PRODUCTS); setDbConnected(false); }
   }, [storeId]);
 
-  // ——— Fetch order items from Supabase ———
   const fetchOrderItems = useCallback(async () => {
     if (!supabase || !storeId) return;
     try {
-      const { data, error } = await supabase
-        .from("order_items")
-        .select(`
-          *,
-          products (name, category, location, manufacturer)
-        `)
-        .eq("store_id", storeId)
-        .order("scanned_at", { ascending: false });
+      const { data, error } = await supabase.from("order_items")
+        .select(`*, products (name, category, location, manufacturer)`)
+        .eq("store_id", storeId).order("scanned_at", { ascending: false });
       if (error) throw error;
       if (data) {
         const items = data.map(orderItemFromDb);
@@ -1159,101 +1107,49 @@ export default function SalonMock() {
         setOrderedItems(items.filter((i) => i.status === "ordered"));
         setReceivedItems(items.filter((i) => i.status === "received"));
       }
-    } catch (e) {
-      console.error("Order items fetch error:", e);
-    }
+    } catch (e) { console.error("Order items fetch error:", e); }
   }, [storeId]);
 
-  // ★STEP7 追加：タグ数を取得
-const fetchTagCount = useCallback(async () => {
+  const fetchTagCount = useCallback(async () => {
     if (!supabase || !storeId) return;
     try {
-      const { count, error } = await supabase
-        .from("qr_tags")
-        .select("*", { count: "exact", head: true })
-        .eq("store_id", storeId);
+      const { count, error } = await supabase.from("qr_tags").select("*", { count: "exact", head: true }).eq("store_id", storeId);
       if (!error) setTagCount(count || 0);
-
-      // ★S21：商品→タグコードのマップを構築
-      const { data: tags } = await supabase
-        .from("qr_tags")
-        .select("product_id, tag_code")
-        .eq("store_id", storeId)
-        .not("product_id", "is", null);
-      if (tags) {
-        const map = {};
-        tags.forEach(t => { map[t.product_id] = t.tag_code; });
-        setTagMap(map);
-      }
-    } catch (e) {
-      console.error("Tag count fetch error:", e);
-    }
+      const { data: tags } = await supabase.from("qr_tags").select("product_id, tag_code").eq("store_id", storeId).not("product_id", "is", null);
+      if (tags) { const map = {}; tags.forEach(t => { map[t.product_id] = t.tag_code; }); setTagMap(map); }
+    } catch (e) { console.error("Tag count fetch error:", e); }
   }, [storeId]);
 
-  // ——— Initial data load ———
   useEffect(() => {
-    if (storeId) {
-      fetchProducts();
-      fetchOrderItems();
-      fetchTagCount(); // ★STEP7 追加
-    }
+    if (storeId) { fetchProducts(); fetchOrderItems(); fetchTagCount(); }
   }, [storeId, fetchProducts, fetchOrderItems, fetchTagCount]);
 
   // ——— Product CRUD ———
   const handleSaveProduct = async (formData, isEdit) => {
     if (!supabase || !storeId) {
-      if (isEdit) {
-        setProducts((prev) => prev.map((x) => x.id === formData.id ? { ...formData, isActive: true } : x));
-      } else {
-        setProducts((prev) => [...prev, { ...formData, id: Date.now(), isActive: true }]);
-      }
+      if (isEdit) { setProducts((prev) => prev.map((x) => x.id === formData.id ? { ...formData, isActive: true } : x)); }
+      else { setProducts((prev) => [...prev, { ...formData, id: Date.now(), isActive: true }]); }
       return;
     }
-
     try {
       if (isEdit) {
-        const { error } = await supabase
-          .from("products")
-          .update(jsToDb(formData, storeId))
-          .eq("id", formData.id)
-          .eq("store_id", storeId);
+        const { error } = await supabase.from("products").update(jsToDb(formData, storeId)).eq("id", formData.id).eq("store_id", storeId);
         if (error) throw error;
       } else {
-        // ★S21：insert後にIDを取得（自動タグ紐付け用）
-        const { data: newProduct, error } = await supabase
-          .from("products")
-          .insert(jsToDb(formData, storeId))
-          .select("id")
-          .single();
+        const { data: newProduct, error } = await supabase.from("products").insert(jsToDb(formData, storeId)).select("id").single();
         if (error) throw error;
-
-        // ★S21：未割当タグの最若番を自動紐付け
         if (newProduct) {
-          const { data: freeTag } = await supabase
-            .from("qr_tags")
-            .select("id, tag_code")
-            .eq("store_id", storeId)
-            .eq("status", "unassigned")
-            .is("product_id", null)
-            .order("tag_code", { ascending: true })
-            .limit(1)
-            .maybeSingle();
-
+          const { data: freeTag } = await supabase.from("qr_tags").select("id, tag_code")
+            .eq("store_id", storeId).eq("status", "unassigned").is("product_id", null)
+            .order("tag_code", { ascending: true }).limit(1).maybeSingle();
           if (freeTag) {
-            await supabase
-              .from("qr_tags")
-              .update({ product_id: newProduct.id, status: "attached" })
-              .eq("id", freeTag.id);
-            console.log(`★S21 自動タグ紐付け: ${freeTag.tag_code} → ${formData.name}`);
+            await supabase.from("qr_tags").update({ product_id: newProduct.id, status: "attached" }).eq("id", freeTag.id);
           }
         }
       }
       await fetchProducts();
-      await fetchTagCount(); // ★S21：タグ数を更新
-    } catch (e) {
-      console.error("Product save error:", e);
-      alert("保存に失敗しました: " + e.message);
-    }
+      await fetchTagCount();
+    } catch (e) { console.error("Product save error:", e); alert("保存に失敗しました: " + e.message); }
   };
 
   const handleDeleteProduct = async (productId) => {
@@ -1261,55 +1157,27 @@ const fetchTagCount = useCallback(async () => {
       setProducts((prev) => prev.map((x) => x.id === productId ? { ...x, isActive: false } : x));
       return;
     }
-
     try {
-  // ★S21：商品に紐付いたタグを解除（unassignedに戻す）
-  await supabase
-    .from("qr_tags")
-    .update({ product_id: null, status: "unassigned" })
-    .eq("store_id", storeId)
-    .eq("product_id", productId);
-
-  const { error } = await supabase
-    .from("products")
-    .update({ is_active: false })
-    .eq("id", productId)
-    .eq("store_id", storeId);
-  if (error) throw error;
-  await fetchProducts();
-  await fetchTagCount(); // ★S21：タグ数を更新
-} catch (e) {
-  console.error("Product delete error:", e);
-  alert("削除に失敗しました: " + e.message);
-}
+      await supabase.from("qr_tags").update({ product_id: null, status: "unassigned" }).eq("store_id", storeId).eq("product_id", productId);
+      const { error } = await supabase.from("products").update({ is_active: false }).eq("id", productId).eq("store_id", storeId);
+      if (error) throw error;
+      await fetchProducts();
+      await fetchTagCount();
+    } catch (e) { console.error("Product delete error:", e); alert("削除に失敗しました: " + e.message); }
   };
 
   // ——— Order Item operations ———
   const handleAddOrderItem = async (product) => {
     if (!supabase || !storeId) {
-      const newItem = {
-        id: Date.now(), productId: product.id, name: product.name,
-        category: product.category, location: product.location,
-        quantity: product.defaultOrderQty, status: "scanned",
-        scannedAt: formatDate(new Date().toISOString()), checked: false,
-      };
+      const newItem = { id: Date.now(), productId: product.id, name: product.name, category: product.category, location: product.location, quantity: product.defaultOrderQty, status: "scanned", scannedAt: formatDate(new Date().toISOString()), checked: false };
       setPendingItems((prev) => [...prev, newItem]);
       return;
     }
-
     try {
-      const { error } = await supabase.from("order_items").insert({
-        store_id: storeId,
-        product_id: product.id,
-        status: "scanned",
-        quantity: product.defaultOrderQty,
-        scanned_at: new Date().toISOString(),
-      });
+      const { error } = await supabase.from("order_items").insert({ store_id: storeId, product_id: product.id, status: "scanned", quantity: product.defaultOrderQty, scanned_at: new Date().toISOString() });
       if (error) throw error;
       await fetchOrderItems();
-    } catch (e) {
-      console.error("Add order item error:", e);
-    }
+    } catch (e) { console.error("Add order item error:", e); }
   };
 
   const handleMarkOrdered = async (items) => {
@@ -1318,24 +1186,13 @@ const fetchTagCount = useCallback(async () => {
       setOrderedItems((prev) => [...prev, ...items.map((i) => ({ ...i, status: "ordered", orderedAt: formatShortDate(new Date().toISOString()) }))]);
       return;
     }
-
     try {
       for (const item of items) {
-        const { error } = await supabase
-          .from("order_items")
-          .update({
-            status: "ordered",
-            quantity: item.quantity,
-            ordered_at: new Date().toISOString(),
-          })
-          .eq("id", item.id)
-          .eq("store_id", storeId);
+        const { error } = await supabase.from("order_items").update({ status: "ordered", quantity: item.quantity, ordered_at: new Date().toISOString() }).eq("id", item.id).eq("store_id", storeId);
         if (error) throw error;
       }
       await fetchOrderItems();
-    } catch (e) {
-      console.error("Mark ordered error:", e);
-    }
+    } catch (e) { console.error("Mark ordered error:", e); }
   };
 
   const handleMarkReceived = async (item) => {
@@ -1344,48 +1201,37 @@ const fetchTagCount = useCallback(async () => {
       setReceivedItems((prev) => [...prev, { ...item, status: "received" }]);
       return;
     }
-
     try {
-      const { error } = await supabase
-        .from("order_items")
-        .update({
-          status: "received",
-          received_at: new Date().toISOString(),
-        })
-        .eq("id", item.id)
-        .eq("store_id", storeId);
+      const { error } = await supabase.from("order_items").update({ status: "received", received_at: new Date().toISOString() }).eq("id", item.id).eq("store_id", storeId);
       if (error) throw error;
       await fetchOrderItems();
-    } catch (e) {
-      console.error("Mark received error:", e);
-    }
+    } catch (e) { console.error("Mark received error:", e); }
   };
 
-  // ——— Counts ———
   const pendingCount = pendingItems.length;
   const waitingCount = orderedItems.length;
   const activeProducts = activeProductCount;
 
-  const screenTitle = { top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち", products: "商品管理", tags: "タグ管理", settings: "設定" }; // ★STEP7: tags追加
+  const screenTitle = { top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち", products: "商品管理", tags: "タグ管理", settings: "設定" };
+
+  // ★ S31: トライアルゲート（101人目以降・紹介なし・未課金 → ブロッキングモーダル）
+  if (needsTrialGate && isDbMode) {
+    return (
+      <div style={{ maxWidth: 420, margin: "0 auto", minHeight: "100vh", background: C.bg, fontFamily: "'Noto Sans JP', system-ui, sans-serif" }}>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        <TrialGateModal onStartTrial={handleStartTrial} loading={trialLoading} />
+      </div>
+    );
+  }
 
   return (
-    <div style={{
-      maxWidth: 420, margin: "0 auto", minHeight: "100vh",
-      background: C.bg, fontFamily: "'Noto Sans JP', system-ui, sans-serif",
-      position: "relative",
-    }}>
+    <div style={{ maxWidth: 420, margin: "0 auto", minHeight: "100vh", background: C.bg, fontFamily: "'Noto Sans JP', system-ui, sans-serif", position: "relative" }}>
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&display=swap" rel="stylesheet" />
 
       {/* Header */}
-      <div style={{
-        padding: "14px 20px", background: C.card, borderBottom: `1px solid ${C.border}`,
-        display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 50,
-      }}>
+      <div style={{ padding: "14px 20px", background: C.card, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 50 }}>
         {screen !== "top" && (
-          <button onClick={() => setScreen("top")}
-            style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: "4px", color: "#555" }}>
-            ←
-          </button>
+          <button onClick={() => setScreen("top")} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: "4px", color: "#555" }}>←</button>
         )}
         <div style={{ flex: 1 }}>
           {screen === "top" ? (
@@ -1422,31 +1268,20 @@ const fetchTagCount = useCallback(async () => {
                 <div style={{
                   position: "absolute", right: 0, top: "100%", marginTop: 4,
                   background: C.card, borderRadius: 10, border: `1px solid ${C.border}`,
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 180, zIndex: 70,
-                  overflow: "hidden",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 180, zIndex: 70, overflow: "hidden",
                 }}>
                   <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{storeName || "マイサロン"}</div>
-                    <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>
-                      {isDbMode ? "Supabase接続中" : "デモモード"}
-                    </div>
+                    <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>{isDbMode ? "Supabase接続中" : "デモモード"}</div>
                   </div>
-                  {/* ★STEP6 追加：設定メニュー */}
                   <button onClick={() => { setScreen("settings"); setShowMenu(false); }} style={{
-                    width: "100%", padding: "12px 16px", border: "none",
-                    background: "transparent", textAlign: "left",
-                    fontSize: 13, color: C.text, cursor: "pointer",
-                    borderBottom: `1px solid ${C.border}`,
-                  }}>
-                    ⚙️ 設定
-                  </button>
+                    width: "100%", padding: "12px 16px", border: "none", background: "transparent", textAlign: "left",
+                    fontSize: 13, color: C.text, cursor: "pointer", borderBottom: `1px solid ${C.border}`,
+                  }}>⚙️ 設定</button>
                   <button onClick={() => { signOut(); setShowMenu(false); }} style={{
-                    width: "100%", padding: "12px 16px", border: "none",
-                    background: "transparent", textAlign: "left",
+                    width: "100%", padding: "12px 16px", border: "none", background: "transparent", textAlign: "left",
                     fontSize: 13, color: C.danger, cursor: "pointer",
-                  }}>
-                    ログアウト
-                  </button>
+                  }}>ログアウト</button>
                 </div>
               </>
             )}
@@ -1456,39 +1291,13 @@ const fetchTagCount = useCallback(async () => {
 
       {/* Content */}
       <div style={{ paddingTop: 16, paddingBottom: 90 }}>
-        {screen === "top" && (
-          <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} tagCount={tagCount} />
-        )}
-        {screen === "scan" && (
-          <ScanScreen onNavigate={setScreen} products={products} onAddOrderItem={handleAddOrderItem} storeId={storeId}
-            isOverLimit={isOverLimit} skuLimit={skuLimit} activeCount={activeProductCount}
-            onShowPricing={() => setShowPricing(true)}
-          />
-        )}
-        {screen === "order" && (
-          <OrderScreen pendingItems={pendingItems} setPendingItems={setPendingItems} onMarkOrdered={handleMarkOrdered}
-            isOverLimit={isOverLimit} skuLimit={skuLimit} activeCount={activeProductCount}
-            onShowPricing={() => setShowPricing(true)}
-          />
-        )}
-        {screen === "receive" && (
-          <ReceiveScreen orderedItems={orderedItems} receivedItems={receivedItems} onMarkReceived={handleMarkReceived} storeId={storeId} products={products} />
-        )}
-{screen === "products" && (
-          <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct}
-            skuLimit={skuLimit}
-            currentPlan={storePlan || "free"}
-            onShowPricing={() => setShowPricing(true)}
-            tagMap={tagMap}
-          />
-        )}        {/* ★STEP7 追加：タグ管理画面 */}
-        {screen === "tags" && (
-          <TagManagementScreen products={products} />
-        )}
-        {/* ★STEP6 追加：設定画面 */}
-        {screen === "settings" && (
-          <SettingsScreen activeProductCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />
-        )}
+        {screen === "top" && <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} tagCount={tagCount} />}
+        {screen === "scan" && <ScanScreen onNavigate={setScreen} products={products} onAddOrderItem={handleAddOrderItem} storeId={storeId} isOverLimit={isOverLimit} skuLimit={skuLimit} activeCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />}
+        {screen === "order" && <OrderScreen pendingItems={pendingItems} setPendingItems={setPendingItems} onMarkOrdered={handleMarkOrdered} isOverLimit={isOverLimit} skuLimit={skuLimit} activeCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />}
+        {screen === "receive" && <ReceiveScreen orderedItems={orderedItems} receivedItems={receivedItems} onMarkReceived={handleMarkReceived} storeId={storeId} products={products} />}
+        {screen === "products" && <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct} skuLimit={skuLimit} currentPlan={storePlan || "free"} onShowPricing={() => setShowPricing(true)} tagMap={tagMap} />}
+        {screen === "tags" && <TagManagementScreen products={products} />}
+        {screen === "settings" && <SettingsScreen activeProductCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />}
       </div>
 
       {/* Bottom nav */}
@@ -1523,14 +1332,14 @@ const fetchTagCount = useCallback(async () => {
         ))}
       </div>
 
-      {/* Pricing Modal */}
+      {/* ★ S31: PricingModal に isFreeAccess を渡す */}
       <PricingModal
         isOpen={showPricing}
         onClose={() => setShowPricing(false)}
         currentPlan={storePlan || "free"}
         accessToken={null}
+        isFreeAccess={isFreeAccess}
       />
-
     </div>
   );
 }
