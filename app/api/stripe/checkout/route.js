@@ -75,7 +75,6 @@ export async function POST(request) {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
-      allow_promotion_codes: discounts.length === 0, // VIP割引がない場合のみプロモコード入力可
       success_url: `${origin}/app?checkout=success`,
       cancel_url: `${origin}/app?checkout=canceled`,
       metadata: {
@@ -88,6 +87,8 @@ export async function POST(request) {
     // discountsがある場合のみ追加
     if (discounts.length > 0) {
       sessionParams.discounts = discounts;
+    } else {
+      sessionParams.allow_promotion_codes = true;
     }
 
     // ★ S31: トライアル期間の設定（101人目以降・紹介なし用）
