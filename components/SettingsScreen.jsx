@@ -15,6 +15,7 @@ const C = {
 
 const PLAN_LABELS = {
   free: { name: "無料プラン", color: C.textSub, bg: "#f3f4f6" },
+  entry: { name: "エントリー", color: "#059669", bg: "#f0fdf4" },
   light: { name: "ライト", color: "#7c3aed", bg: "#f5f3ff" },
   standard: { name: "スタンダード", color: C.primary, bg: C.primaryLight },
   pro: { name: "プロ", color: "#d97706", bg: "#fffbeb" },
@@ -207,7 +208,6 @@ function ReferralCard({ referralCode, referralCount }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // フォールバック
       const textArea = document.createElement("textarea");
       textArea.value = referralCode;
       document.body.appendChild(textArea);
@@ -220,7 +220,6 @@ function ReferralCard({ referralCode, referralCount }) {
   };
 
   const shareLink = async () => {
-    // Web Share API対応の場合（モバイル）
     if (navigator.share) {
       try {
         await navigator.share({
@@ -229,11 +228,8 @@ function ReferralCard({ referralCode, referralCount }) {
           url: referralUrl,
         });
         return;
-      } catch {
-        // キャンセルまたは非対応→クリップボードにフォールバック
-      }
+      } catch {}
     }
-    // クリップボードにコピー
     try {
       await navigator.clipboard.writeText(referralUrl);
       setCopiedLink(true);
@@ -369,7 +365,7 @@ export default function SettingsScreen({ activeProductCount, onShowPricing }) {
   const {
     user, storeName, storePlan, storeMaxSku, storeBonusSku, subscriptionStatus,
     signOut, updateStoreName,
-    referralCode, referralCount,
+    referralCode, referralCount, isEarlyBird,
   } = useAuth();
 
   const [showEditName, setShowEditName] = useState(false);
@@ -378,6 +374,11 @@ export default function SettingsScreen({ activeProductCount, onShowPricing }) {
   const [portalLoading, setPortalLoading] = useState(false);
 
   const planInfo = PLAN_LABELS[storePlan] || PLAN_LABELS.free;
+  // ★ Early Bird の free ユーザーは「エントリー（先着無料）」と表示
+  const planDisplayName = (storePlan === "free" && isEarlyBird) ? "エントリー（先着無料）" : planInfo.name;
+  const planDisplayColor = (storePlan === "free" && isEarlyBird) ? "#059669" : planInfo.color;
+  const planDisplayBg = (storePlan === "free" && isEarlyBird) ? "#f0fdf4" : planInfo.bg;
+
   const totalSku = (storeMaxSku || 10) + (storeBonusSku || 0);
   const skuUsage = activeProductCount || 0;
 
@@ -422,7 +423,7 @@ export default function SettingsScreen({ activeProductCount, onShowPricing }) {
       }}>
         <div style={{
           width: 64, height: 64, borderRadius: 32,
-          background: planInfo.bg, border: `2px solid ${planInfo.color}20`,
+          background: planDisplayBg, border: `2px solid ${planDisplayColor}20`,
           display: "flex", alignItems: "center", justifyContent: "center",
           margin: "0 auto 12px", fontSize: 28,
         }}>💇</div>
@@ -430,17 +431,17 @@ export default function SettingsScreen({ activeProductCount, onShowPricing }) {
         <p style={{ fontSize: 12, color: C.textSub, margin: "0 0 12px" }}>{user?.email || ""}</p>
         <span style={{
           display: "inline-block", padding: "4px 14px", borderRadius: 20,
-          fontSize: 12, fontWeight: 700, color: planInfo.color, background: planInfo.bg,
-        }}>{planInfo.name}</span>
+          fontSize: 12, fontWeight: 700, color: planDisplayColor, background: planDisplayBg,
+        }}>{planDisplayName}</span>
       </div>
 
-      {/* SKU使用状況 */}
+      {/* 商品数 使用状況 */}
       <div style={{
         background: C.card, borderRadius: 14, padding: 16,
         border: `1px solid ${C.border}`, marginBottom: 20,
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>SKU使用状況</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>商品数</span>
           <span style={{ fontSize: 13, fontWeight: 700, color: skuUsage >= totalSku ? C.danger : C.primary }}>
             {skuUsage} / {totalSku >= 99999 ? "∞" : totalSku}
           </span>
@@ -455,7 +456,7 @@ export default function SettingsScreen({ activeProductCount, onShowPricing }) {
         </div>
         {skuUsage >= totalSku && (
           <p style={{ fontSize: 11, color: C.danger, marginTop: 6, fontWeight: 600 }}>
-            SKU上限に達しています。プランをアップグレードしてください。
+            上限に達しています。プランをアップグレードしてください。
           </p>
         )}
       </div>
@@ -485,7 +486,7 @@ export default function SettingsScreen({ activeProductCount, onShowPricing }) {
       </div>
 
       <div style={{ textAlign: "center", marginTop: 24, marginBottom: 20 }}>
-        <p style={{ fontSize: 11, color: C.textMuted }}>QRオーダー v0.1.0（MVP）</p>
+        <p style={{ fontSize: 11, color: C.textMuted }}>在庫番 v0.1.0</p>
       </div>
 
       {/* モーダル */}
