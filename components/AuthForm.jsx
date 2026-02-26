@@ -45,7 +45,7 @@ export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
-  // ★ 紹介コード
+  // ★ 紹介コード（URLパラメータからの自動読み込みのみ）
   const [referrerCode, setReferrerCode] = useState("");
   const [referralFromUrl, setReferralFromUrl] = useState(false);
 
@@ -147,7 +147,7 @@ export default function AuthForm() {
     if (mode === "login") {
       await signIn(email.trim(), password);
     } else {
-      // ★ 第5引数に紹介コードを渡す
+      // ★ 第5引数に紹介コードを渡す（URLパラメータから自動取得済み）
       await signUp(email.trim(), password, shopName.trim(), {
         postalCode: postalCode.trim(),
         address: address.trim(),
@@ -295,26 +295,6 @@ export default function AuthForm() {
                       onFocus={(e) => (e.target.style.borderColor = C.primary)}
                       onBlur={(e) => (e.target.style.borderColor = C.border)}
                     />
-                  </InputField>
-
-                  {/* ★ 紹介コード（任意） */}
-                  <InputField label="紹介コード（お持ちの方）">
-                    <input
-                      type="text"
-                      value={referrerCode}
-                      onChange={(e) => setReferrerCode(e.target.value.toUpperCase())}
-                      placeholder="例：ZB-A3K7XN"
-                      maxLength={12}
-                      style={{
-                        ...inputBaseStyle,
-                        background: referralFromUrl ? "#f0fdf4" : "#fff",
-                      }}
-                      onFocus={(e) => (e.target.style.borderColor = C.primary)}
-                      onBlur={(e) => (e.target.style.borderColor = C.border)}
-                    />
-                    <p style={{ fontSize: 10, color: C.textMuted, marginTop: 4 }}>
-                      紹介コードがあれば有料プラン永久¥500 OFF
-                    </p>
                   </InputField>
 
                   {/* 区切り線 */}
