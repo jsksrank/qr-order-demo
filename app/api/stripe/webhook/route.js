@@ -170,7 +170,12 @@ async function handleSubscriptionChange(subscription, eventType) {
     const isNewSubscription = eventType === 'customer.subscription.created';
     const isPlanChanged = oldPlan !== newPlan;
 
-    if (isNewSubscription || isPlanChanged) {
+    // ★ 重複通知防止: created直後にupdatedも発火するため、
+    //    作成から60秒以内のupdatedイベントは通知をスキップ（DB更新・タグ生成は実行済み）
+    const isRecentlyCreated = (Math.floor(Date.now() / 1000) - (subscription.created || 0)) < 60;
+    if (!isNewSubscription && isRecentlyCreated) {
+      console.log('Skipping LINE notification: updated event within 60s of creation (already notified via created event)');
+    } else if (isNewSubscription || isPlanChanged) {
       const storeName = oldStoreData?.store_name || '（店舗名未設定）';
       // ★ 修正: emailフォールバック（stores → Stripe Customer）
       const email = await getEmailFallback(customerId, oldStoreData?.email);
