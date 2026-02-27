@@ -210,7 +210,7 @@ function OverLimitBanner({ activeCount, skuLimit, onUpgrade }) {
 }
 
 // ======================================================================
-// Top Screen ★ S34: 欠品報告ボタン → 欠品報告画面への遷移に変更
+// Top Screen ★ S35: バッジを「未対応の欠品報告件数」に変更
 // ======================================================================
 function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCount, stockoutCount }) {
   return (
@@ -242,7 +242,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
         ))}
       </div>
 
-      {/* ★ S34: 欠品報告ボタン */}
+      {/* ★ S35: バッジは「未対応の欠品報告」件数 */}
       <button onClick={() => onNavigate("stockout")} style={{
         width: "100%", marginTop: 16, padding: "14px 18px",
         background: C.card, border: `1.5px solid ${C.danger}30`, borderRadius: 14,
@@ -996,9 +996,9 @@ const inputStyle = {
 };
 
 // ======================================================================
-// ★ S34: Stockout Screen（欠品報告画面）
+// ★ S35: Stockout Screen（欠品報告画面）— acknowledged ベースに改修
 // ======================================================================
-function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
+function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts, onStockoutCountChange }) {
   const [cameraActive, setCameraActive] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1007,15 +1007,43 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [scanResult, setScanResult] = useState(null);
   const [reporting, setReporting] = useState(false);
-  // ★ S34: 発注点変更の提案
-  // { productId, productName, currentPoint, newPoint }
+  // ★ S35: 発注点変更の提案（reportId を追加）
   const [reorderProposal, setReorderProposal] = useState(null);
   const [applyingProposal, setApplyingProposal] = useState(false);
+
+  // ★ S35: 未対応の欠品報告を取得して提案を復元
+  const fetchUnacknowledged = useCallback(async () => {
+    if (!supabase || !storeId) return;
+    try {
+      const { data, error } = await supabase
+        .from("stockout_reports")
+        .select("id, product_id, reported_at, products(name, reorder_point)")
+        .eq("store_id", storeId)
+        .eq("acknowledged", false)
+        .order("reported_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!error && data && data.products) {
+        // 現在表示中の提案がなければ、未対応の報告から提案を復元
+        const currentPoint = data.products.reorder_point || 1;
+        setReorderProposal({
+          reportId: data.id,
+          productId: data.product_id,
+          productName: data.products.name,
+          currentPoint,
+          newPoint: currentPoint + 1,
+        });
+      }
+    } catch (e) {
+      console.error("Fetch unacknowledged error:", e);
+    }
+  }, [storeId]);
 
   // 過去の欠品報告を取得
   useEffect(() => {
     fetchHistory();
-  }, [storeId]);
+    fetchUnacknowledged();
+  }, [storeId, fetchUnacknowledged]);
 
   const fetchHistory = async () => {
     if (!supabase || !storeId) {
@@ -1025,7 +1053,7 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
     try {
       const { data, error } = await supabase
         .from("stockout_reports")
-        .select("id, product_id, reported_at, days_since_order, products(name, category)")
+        .select("id, product_id, reported_at, days_since_order, acknowledged, products(name, category)")
         .eq("store_id", storeId)
         .order("reported_at", { ascending: false })
         .limit(30);
@@ -1036,6 +1064,20 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
       console.error("Stockout history fetch error:", e);
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  // ★ S35: acknowledged を true に更新する共通関数
+  const acknowledgeReport = async (reportId) => {
+    if (!supabase || !storeId || !reportId) return;
+    try {
+      await supabase
+        .from("stockout_reports")
+        .update({ acknowledged: true })
+        .eq("id", reportId)
+        .eq("store_id", storeId);
+    } catch (e) {
+      console.error("Acknowledge error:", e);
     }
   };
 
@@ -1059,6 +1101,7 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
     try {
       let lastOrderedAt = null;
       let daysSinceOrder = null;
+      let insertedReportId = null;
 
       if (supabase && storeId) {
         // 直近の発注日を取得（ordered or received のうち最新）
@@ -1079,8 +1122,8 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
           );
         }
 
-        // stockout_reports に insert
-        const { error: insertError } = await supabase
+        // ★ S35: acknowledged: false で insert し、ID を取得
+        const { data: insertedData, error: insertError } = await supabase
           .from("stockout_reports")
           .insert({
             store_id: storeId,
@@ -1088,7 +1131,10 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
             reported_at: new Date().toISOString(),
             last_ordered_at: lastOrderedAt,
             days_since_order: daysSinceOrder,
-          });
+            acknowledged: false,
+          })
+          .select("id")
+          .single();
 
         if (insertError) {
           console.error("Stockout report insert error:", insertError);
@@ -1096,6 +1142,8 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
           setTimeout(() => setScanResult(null), 3000);
           return;
         }
+
+        insertedReportId = insertedData?.id;
       }
 
       // セッション内の報告リストに追加
@@ -1113,17 +1161,19 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
       setScanResult({ type: "success", name: product.name, message: "欠品を記録しました" });
       setTimeout(() => setScanResult(null), 2500);
 
-      // ★ S34: 発注点 +1 の提案を表示
+      // ★ S35: 発注点 +1 の提案を表示（reportId を含む）
       const currentPoint = product.reorderPoint || 1;
       setReorderProposal({
+        reportId: insertedReportId,
         productId: product.id,
         productName: product.name,
         currentPoint,
         newPoint: currentPoint + 1,
       });
 
-      // 履歴を再取得
+      // 履歴を再取得 + 親のバッジカウント更新
       await fetchHistory();
+      if (onStockoutCountChange) onStockoutCountChange();
     } catch (e) {
       console.error("Stockout report error:", e);
       setScanResult({ type: "error", message: "エラーが発生しました" });
@@ -1166,6 +1216,15 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
           (p.category || "").toLowerCase().includes(searchQuery.toLowerCase())
       )
     : activeProducts;
+
+  // ★ S35: 提案を処理した後に次の未対応を確認
+  const handleAfterProposal = async () => {
+    setReorderProposal(null);
+    if (onStockoutCountChange) onStockoutCountChange();
+    await fetchHistory();
+    // 次の未対応があれば提案を復元
+    await fetchUnacknowledged();
+  };
 
   return (
     <div style={{ padding: "0 20px" }}>
@@ -1215,7 +1274,7 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
         </div>
       )}
 
-      {/* ★ S34: 発注点変更の提案バー */}
+      {/* ★ S35: 発注点変更の提案バー（acknowledged ベース） */}
       {reorderProposal && (
         <div style={{
           padding: "14px 16px", marginBottom: 12, borderRadius: 12,
@@ -1246,15 +1305,17 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
                       return;
                     }
                   }
+                  // ★ S35: acknowledged = true に更新
+                  await acknowledgeReport(reorderProposal.reportId);
                   setScanResult({
                     type: "success",
                     name: reorderProposal.productName,
                     message: `発注点を${reorderProposal.newPoint}本目に変更しました`,
                   });
                   setTimeout(() => setScanResult(null), 3000);
-                  setReorderProposal(null);
                   // 親の商品リストを再取得
                   if (onRefreshProducts) await onRefreshProducts();
+                  await handleAfterProposal();
                 } finally {
                   setApplyingProposal(false);
                 }
@@ -1269,7 +1330,11 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
               {applyingProposal ? "更新中..." : `✅ ${reorderProposal.newPoint}本目に変更`}
             </button>
             <button
-              onClick={() => setReorderProposal(null)}
+              onClick={async () => {
+                // ★ S35: スキップでも acknowledged = true
+                await acknowledgeReport(reorderProposal.reportId);
+                await handleAfterProposal();
+              }}
               style={{
                 padding: "10px 16px", border: `1px solid ${C.border}`, borderRadius: 10,
                 background: C.card, color: C.textSub, fontSize: 13, fontWeight: 600, cursor: "pointer",
@@ -1431,13 +1496,19 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
             {history.slice(0, 10).map((h) => (
               <div key={h.id} style={{
                 display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-                background: C.card, borderRadius: 10, marginBottom: 4,
-                border: `1px solid ${C.border}`,
+                background: h.acknowledged === false ? C.warnLight : C.card,
+                borderRadius: 10, marginBottom: 4,
+                border: `1px solid ${h.acknowledged === false ? C.warnBorder : C.border}`,
               }}>
-                <span style={{ fontSize: 14, color: C.textMuted }}>⚠️</span>
+                <span style={{ fontSize: 14, color: h.acknowledged === false ? C.warn : C.textMuted }}>
+                  {h.acknowledged === false ? "🔔" : "✅"}
+                </span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>
                     {h.products?.name || "不明な商品"}
+                    {h.acknowledged === false && (
+                      <span style={{ fontSize: 10, color: C.warn, fontWeight: 700, marginLeft: 6 }}>未対応</span>
+                    )}
                   </div>
                   <div style={{ fontSize: 10, color: C.textSub }}>
                     {h.products?.category || ""}
@@ -1476,8 +1547,7 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
 }
 
 // ======================================================================
-// Main App ★ S31: 課金導線（TrialGate + isFreeAccess + checkout success handling）
-// ★ S34: StockoutScreen 追加
+// Main App ★ S35: stockoutCount を acknowledged=false ベースに変更
 // ======================================================================
 export default function SalonMock() {
   const {
@@ -1498,7 +1568,7 @@ export default function SalonMock() {
   const [tagCount, setTagCount] = useState(0);
   const [tagMap, setTagMap] = useState({});
   const [trialLoading, setTrialLoading] = useState(false);
-  const [stockoutCount, setStockoutCount] = useState(0); // ★ S34
+  const [stockoutCount, setStockoutCount] = useState(0);
 
   const isDbMode = isSupabaseConnected && isAuthenticated && dbConnected;
 
@@ -1587,16 +1657,15 @@ export default function SalonMock() {
     } catch (e) { console.error("Tag count fetch error:", e); }
   }, [storeId]);
 
-  // ★ S34: 直近30日の欠品報告件数を取得
+  // ★ S35: 未対応（acknowledged=false）の欠品報告件数を取得
   const fetchStockoutCount = useCallback(async () => {
     if (!supabase || !storeId) return;
     try {
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { count, error } = await supabase
         .from("stockout_reports")
         .select("*", { count: "exact", head: true })
         .eq("store_id", storeId)
-        .gte("reported_at", thirtyDaysAgo);
+        .eq("acknowledged", false);
       if (!error) setStockoutCount(count || 0);
     } catch (e) {
       console.error("Stockout count fetch error:", e);
@@ -1784,7 +1853,7 @@ export default function SalonMock() {
         {screen === "products" && <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct} skuLimit={skuLimit} currentPlan={storePlan || "free"} onShowPricing={() => setShowPricing(true)} tagMap={tagMap} />}
         {screen === "tags" && <TagManagementScreen products={products} />}
         {screen === "settings" && <SettingsScreen activeProductCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />}
-        {screen === "stockout" && <StockoutScreen products={products} storeId={storeId} isDbMode={isDbMode} onRefreshProducts={fetchProducts} />}
+        {screen === "stockout" && <StockoutScreen products={products} storeId={storeId} isDbMode={isDbMode} onRefreshProducts={fetchProducts} onStockoutCountChange={fetchStockoutCount} />}
       </div>
 
       {/* Bottom nav */}
