@@ -309,7 +309,7 @@ export default function LandingPage() {
             {/* ★ 3/31期間限定バッジ（完全静的 = ハイドレーションエラーなし） */}
             <div className="campaign-badge">
               <span className="campaign-badge-dot" />
-              <span className="campaign-badge-text">🎉 3/31まで — エントリープラン無料キャンペーン中！</span>
+              <span className="campaign-badge-text">🎉 3/31までの登録で、エントリープランがずっと無料！</span>
             </div>
           </div>
 
@@ -330,7 +330,7 @@ export default function LandingPage() {
             ].map((plan, i) => (
               <div className={`pricing-card anim${plan.popular ? " popular" : ""}${plan.promo ? " promo" : ""}`} key={i} style={{ transitionDelay: `${i * 0.08}s` }}>
                 {plan.popular && <div className="pricing-popular-badge">おすすめ</div>}
-                {plan.promo && <div className="pricing-promo-badge">🔥 3/31まで無料！</div>}
+                {plan.promo && <div className="pricing-promo-badge">🔥 今なら永久無料！</div>}
                 <div className="pricing-name">{plan.name}</div>
                 <div className="pricing-sku">{plan.sku}</div>
                 <div className="pricing-price">
@@ -340,7 +340,7 @@ export default function LandingPage() {
                     <><span className="yen">¥</span>{plan.price}</>
                   )}
                 </div>
-                <div className="pricing-period">{plan.promo ? "4/1以降 ¥500 / 月" : plan.period}</div>
+                <div className="pricing-period">{plan.promo ? "3/31までの登録で永久無料" : plan.period}</div>
                 <div className="pricing-tags">{plan.tags}</div>
                 <ul className="pricing-features">
                   {plan.features.map((f, j) => <li key={j}>{f}</li>)}
