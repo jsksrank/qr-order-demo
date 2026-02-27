@@ -998,7 +998,7 @@ const inputStyle = {
 // ======================================================================
 // ★ S34: Stockout Screen（欠品報告画面）
 // ======================================================================
-function StockoutScreen({ products, storeId, isDbMode }) {
+function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
   const [cameraActive, setCameraActive] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1007,6 +1007,10 @@ function StockoutScreen({ products, storeId, isDbMode }) {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [scanResult, setScanResult] = useState(null);
   const [reporting, setReporting] = useState(false);
+  // ★ S34: 発注点変更の提案
+  // { productId, productName, currentPoint, newPoint }
+  const [reorderProposal, setReorderProposal] = useState(null);
+  const [applyingProposal, setApplyingProposal] = useState(false);
 
   // 過去の欠品報告を取得
   useEffect(() => {
@@ -1109,6 +1113,15 @@ function StockoutScreen({ products, storeId, isDbMode }) {
       setScanResult({ type: "success", name: product.name, message: "欠品を記録しました" });
       setTimeout(() => setScanResult(null), 2500);
 
+      // ★ S34: 発注点 +1 の提案を表示
+      const currentPoint = product.reorderPoint || 1;
+      setReorderProposal({
+        productId: product.id,
+        productName: product.name,
+        currentPoint,
+        newPoint: currentPoint + 1,
+      });
+
       // 履歴を再取得
       await fetchHistory();
     } catch (e) {
@@ -1198,6 +1211,72 @@ function StockoutScreen({ products, storeId, isDbMode }) {
             {scanResult.name && (
               <div style={{ fontSize: 11, color: C.textSub }}>{scanResult.name}</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ★ S34: 発注点変更の提案バー */}
+      {reorderProposal && (
+        <div style={{
+          padding: "14px 16px", marginBottom: 12, borderRadius: 12,
+          background: C.primaryLight, border: `1.5px solid ${C.primaryBorder}`,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.primary, marginBottom: 6 }}>
+            💡 発注点の変更を提案
+          </div>
+          <div style={{ fontSize: 12, color: C.text, lineHeight: 1.6, marginBottom: 10 }}>
+            <strong>{reorderProposal.productName}</strong> で欠品が発生しました。
+            発注点を <strong style={{ color: C.danger }}>{reorderProposal.currentPoint}本目</strong> →{" "}
+            <strong style={{ color: C.primary }}>{reorderProposal.newPoint}本目</strong> に引き上げますか？
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={async () => {
+                setApplyingProposal(true);
+                try {
+                  if (supabase && storeId) {
+                    const { error } = await supabase
+                      .from("products")
+                      .update({ reorder_point: reorderProposal.newPoint })
+                      .eq("id", reorderProposal.productId)
+                      .eq("store_id", storeId);
+                    if (error) {
+                      console.error("Reorder point update error:", error);
+                      alert("更新に失敗しました");
+                      return;
+                    }
+                  }
+                  setScanResult({
+                    type: "success",
+                    name: reorderProposal.productName,
+                    message: `発注点を${reorderProposal.newPoint}本目に変更しました`,
+                  });
+                  setTimeout(() => setScanResult(null), 3000);
+                  setReorderProposal(null);
+                  // 親の商品リストを再取得
+                  if (onRefreshProducts) await onRefreshProducts();
+                } finally {
+                  setApplyingProposal(false);
+                }
+              }}
+              disabled={applyingProposal}
+              style={{
+                flex: 1, padding: "10px", border: "none", borderRadius: 10,
+                background: applyingProposal ? C.textMuted : C.primary,
+                color: "#fff", fontSize: 13, fontWeight: 700, cursor: applyingProposal ? "default" : "pointer",
+              }}
+            >
+              {applyingProposal ? "更新中..." : `✅ ${reorderProposal.newPoint}本目に変更`}
+            </button>
+            <button
+              onClick={() => setReorderProposal(null)}
+              style={{
+                padding: "10px 16px", border: `1px solid ${C.border}`, borderRadius: 10,
+                background: C.card, color: C.textSub, fontSize: 13, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              スキップ
+            </button>
           </div>
         </div>
       )}
@@ -1379,21 +1458,19 @@ function StockoutScreen({ products, storeId, isDbMode }) {
         )}
       </div>
 
-      {/* AI提案への導線（Step B で実装予定） */}
-      {history.length >= 3 && (
-        <div style={{
-          marginTop: 16, padding: 14, background: C.primaryLight,
-          borderRadius: 12, border: `1px solid ${C.primaryBorder}`,
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, marginBottom: 4 }}>
-            💡 AIが発注点を分析中...
-          </div>
-          <div style={{ fontSize: 11, color: C.textSub, lineHeight: 1.6 }}>
-            欠品報告が蓄積されると、商品ごとの最適な発注点をAIが提案します。
-            商品管理画面から確認できます。
-          </div>
+      {/* AI発注点補正の説明 */}
+      <div style={{
+        marginTop: 16, padding: 14, background: C.primaryLight,
+        borderRadius: 12, border: `1px solid ${C.primaryBorder}`,
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, marginBottom: 4 }}>
+          💡 AIが発注点を自動補正
         </div>
-      )}
+        <div style={{ fontSize: 11, color: C.textSub, lineHeight: 1.6 }}>
+          欠品を報告するたびに、該当商品の発注点（タグを付ける位置）を1つ手前にずらすことを提案します。
+          承認すると次回から早めに発注リストに入るため、同じ欠品を防げます。
+        </div>
+      </div>
     </div>
   );
 }
@@ -1707,7 +1784,7 @@ export default function SalonMock() {
         {screen === "products" && <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct} skuLimit={skuLimit} currentPlan={storePlan || "free"} onShowPricing={() => setShowPricing(true)} tagMap={tagMap} />}
         {screen === "tags" && <TagManagementScreen products={products} />}
         {screen === "settings" && <SettingsScreen activeProductCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />}
-        {screen === "stockout" && <StockoutScreen products={products} storeId={storeId} isDbMode={isDbMode} />}
+        {screen === "stockout" && <StockoutScreen products={products} storeId={storeId} isDbMode={isDbMode} onRefreshProducts={fetchProducts} />}
       </div>
 
       {/* Bottom nav */}
