@@ -253,7 +253,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
         <span style={{ fontSize: 28 }}>🚨</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.danger }}>欠品報告</div>
-          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>在庫切れの商品を記録 → AIが発注点を改善</div>
+          <div style={{ fontSize: 11, color: C.textSub, marginTop: 1 }}>在庫切れの商品を記録 → 発注点を自動補正</div>
         </div>
         {stockoutCount > 0 && <Badge count={stockoutCount} color={C.danger} />}
         <span style={{ color: C.textMuted, fontSize: 16 }}>›</span>
@@ -1178,7 +1178,7 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
           🚨 在庫切れの商品を報告
         </div>
         <div style={{ fontSize: 11, color: C.textSub, lineHeight: 1.6 }}>
-          欠品データを元にAIが発注点を自動で見直します。
+          欠品データをもとに発注点を自動で見直します。
           タグをスキャンするか、商品を検索して報告してください。
         </div>
       </div>
@@ -1425,7 +1425,7 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
             読み込み中...
           </div>
         ) : history.length === 0 ? (
-          <EmptyState icon="📊" message="まだ欠品報告はありません。報告が蓄積されるとAIが発注点を改善します。" />
+          <EmptyState icon="📊" message="まだ欠品報告はありません。報告が蓄積されると発注点を自動で改善します。" />
         ) : (
           <>
             {history.slice(0, 10).map((h) => (
@@ -1458,13 +1458,13 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts }) {
         )}
       </div>
 
-      {/* AI発注点補正の説明 */}
+      {/* 発注点自動補正の説明 */}
       <div style={{
         marginTop: 16, padding: 14, background: C.primaryLight,
         borderRadius: 12, border: `1px solid ${C.primaryBorder}`,
       }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, marginBottom: 4 }}>
-          💡 AIが発注点を自動補正
+          💡 使うほど賢くなる自動補正
         </div>
         <div style={{ fontSize: 11, color: C.textSub, lineHeight: 1.6 }}>
           欠品を報告するたびに、該当商品の発注点（タグを付ける位置）を1つ手前にずらすことを提案します。
