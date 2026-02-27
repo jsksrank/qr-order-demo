@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import "./landing.css";
+import "../app/landing.css";
 
 // ── Scroll Animation Hook ──
 function useScrollReveal() {
