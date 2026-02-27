@@ -142,7 +142,7 @@ export default function LandingPage() {
             </div>
             <div className="hero-float-tag">
               <span className="tag-icon">🏷️</span>
-              <span className="tag-text">ゴム紐でチューブに引っかけるだけ！</span>
+              <span className="tag-text">タグを商品にかけるだけ！</span>
             </div>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function LandingPage() {
             {[
               { icon: "🌙", title: "深夜の棚卸し地獄", desc: "閉店後に100〜200種類のカラー剤を数える。月末の恒例行事とわかっていても、ため息が出る作業です。" },
               { icon: "⚠️", title: "欠品で施術できない", desc: "「あの色、もうなかった…」お客様を目の前に、代替カラーで対応するしかない。カラー1回分の売上は約1万円。たった1本の欠品が、信頼と売上の両方を奪います。" },
-              { icon: "💸", title: "発注の伝達ミス・過剰在庫", desc: "口頭やメモでの発注連絡で漏れが発生。不安から多めに頼んで、気づけば棚がパンパンに。" },
+              { icon: "💸", title: "発注の伝達ミス・過剰在庫", desc: "口頭やメモでの発注連絡で漏れが発生。不安から多めに頼んで、気づけば棚がパンパンに。在庫番ではAIが消費ペースから適正な発注点を提案し、勘に頼らない発注を実現します。" },
             ].map((p, i) => (
               <div className="pain-card anim" key={i} style={{ transitionDelay: `${i * 0.1}s` }}>
                 <div className="pain-icon">{p.icon}</div>
@@ -168,13 +168,6 @@ export default function LandingPage() {
                 <p>{p.desc}</p>
               </div>
             ))}
-          </div>
-          <div className="pain-ai-callout anim">
-            <div className="pain-ai-icon">🤖</div>
-            <div className="pain-ai-text">
-              <strong>AIが安全在庫を提案</strong>
-              <span>過去の消費ペースをもとに、商品ごとの「あと何本で発注すべきか」をAIが自動で提案。勘に頼らない発注点の設定を実現します。</span>
-            </div>
           </div>
         </div>
       </section>
@@ -190,9 +183,9 @@ export default function LandingPage() {
           <div className="how-steps">
             {[
               { icon: "🏷️", title: "タグをゴム紐で付ける", desc: "商品の後ろからN本目にQRタグをゴム紐で引っかけます。これが「発注点」です。" },
-              { icon: "📦", title: "開封してタグを外す", desc: "タグ付き商品を開封＝発注点に到達。タグを外してカゴに入れるだけ。" },
-              { icon: "📷", title: "まとめてスキャン", desc: "手が空いた時にカゴのタグをスキャン。発注リストに自動追加されます。" },
-              { icon: "💬", title: "LINEで発注", desc: "完成したリストをLINEでディーラーに送信。転記ミスゼロ、聞き間違いゼロ。" },
+              { icon: "📦", title: "開封してタグを外す", desc: "タグ付き商品を開封＝発注点に到達。タグを外してまとめて置くだけ。" },
+              { icon: "📷", title: "まとめてスキャン", desc: "手が空いた時に外したタグをスマホでスキャン。発注リストに自動追加されます。" },
+              { icon: "💬", title: "発注", desc: "完成したリストから、メールやLINEで発注。転記ミス・聞き間違いを防ぎます。" },
             ].map((s, i) => (
               <div className="how-step anim" key={i} style={{ transitionDelay: `${i * 0.1}s` }}>
                 <div className="step-number">{s.icon}</div>
@@ -209,7 +202,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="features-header anim">
             <span className="section-label">特徴</span>
-            <h2 className="section-title">現場で使える、5つのこだわり</h2>
+            <h2 className="section-title">現場で使える、6つのこだわり</h2>
             <p className="section-desc">施術の手を止めない。入力作業ゼロ。美容室・エステサロンの現場から逆算して設計しました。</p>
           </div>
           <div className="features-grid">
@@ -217,8 +210,9 @@ export default function LandingPage() {
               { icon: "🚫", title: "在庫を数えない設計", desc: "理論在庫の追跡を捨て、「発注が必要なタイミング」だけを物理タグで検知する新発想。" },
               { icon: "📱", title: "スマホだけで完結", desc: "専用アプリのインストール不要。ブラウザでQRスキャンから発注まですべて完結します。" },
               { icon: "👥", title: "スタッフ全員で共有", desc: "1アカウントをスタッフで共有。誰がスキャンしても同じ発注リストに反映されます。" },
-              { icon: "💬", title: "LINEでそのまま発注", desc: "発注リストをワンタップでLINEに送信。ディーラーさんにそのまま送れるテキスト形式。" },
-              { icon: "🏷️", title: "耐水QRタグをお届け", desc: "耐水性のユポ紙製QRタグをゴム紐付きで郵送。届いたら商品に引っかけるだけですぐ使えます。" },
+              { icon: "📋", title: "発注リストをそのまま送信", desc: "完成した発注リストをメールやLINEでそのまま送信。手書きの転記ミスや聞き間違いを防ぎます。" },
+              { icon: "🤖", title: "AIが発注点を自動補正", desc: "在庫切れを起こした商品は、AIが消費ペースを分析して発注点を自動で見直し。欠品リスクを減らします。" },
+              { icon: "🏷️", title: "QRタグは郵送でお届け", desc: "必要なQRタグは郵送でお届け。届いたら商品にかけるだけ。印刷や準備の手間はいりません。" },
             ].map((f, i) => (
               <div className="feature-card anim" key={i} style={{ transitionDelay: `${(i % 2) * 0.1}s` }}>
                 <div className="feature-icon">{f.icon}</div>
