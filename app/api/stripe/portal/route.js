@@ -11,6 +11,7 @@ export async function POST(request) {
   try {
     const authHeader = request.headers.get('authorization');
     const accessToken = authHeader?.replace('Bearer ', '');
+
     if (!accessToken) {
       return NextResponse.json({ error: 'Missing access token' }, { status: 401 });
     }
@@ -19,6 +20,7 @@ export async function POST(request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
+
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser(accessToken);
 
     if (authError || !user) {
@@ -39,16 +41,19 @@ export async function POST(request) {
     }
 
     const origin = request.headers.get('origin') || 'http://localhost:3000';
+
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: store.stripe_customer_id,
       return_url: `${origin}/app`,
     });
 
     return NextResponse.json({ url: portalSession.url });
+
   } catch (error) {
     console.error('Portal error:', error);
+    // ★ S1: 内部エラー詳細をクライアントに返さない
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: 'ポータルの表示中にエラーが発生しました' },
       { status: 500 }
     );
   }
