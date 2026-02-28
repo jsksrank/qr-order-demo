@@ -103,8 +103,9 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Checkout error:', error);
+    // ★ S1: 内部エラー詳細をクライアントに返さない
     return NextResponse.json(
-      { error: error.message || 'Internal server error' },
+      { error: 'チェックアウトの処理中にエラーが発生しました' },
       { status: 500 }
     );
   }
