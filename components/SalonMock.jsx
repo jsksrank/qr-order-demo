@@ -644,8 +644,9 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
     }
   }, [storeId, orderedItems, onMarkReceived]);
 
-  {/* ★ S37: タップで受取完了 */}
+  {/* ★ S37: タップで受取完了（確認ダイアログ付き） */}
   const handleTapReceive = async (item) => {
+    if (!confirm(`「${item.name}」を受取完了にしますか？`)) return;
     setReceivingId(item.id);
     try {
       await onMarkReceived(item);
