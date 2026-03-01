@@ -13,11 +13,11 @@ export default function OwnerGuidePage() {
   const faqs = [
     {
       q: 'タグを紛失・破損した場合は？',
-      a: '3段階で対応できます。① 予備タグを使う（お届け時にSKU数の20〜30%分の予備を同梱しています）。② 予備がなくなったら、LINEまたはメールで追加タグを注文できます。③ 緊急時は、アプリから普通紙に応急タグを印刷できます（今後対応予定）。'
+      a: '3段階で対応できます。① 予備タグを使う（お届け時に6枚の予備を同梱しています）。② 予備がなくなったら、LINEまたはメールで追加タグを注文できます。③ 緊急時は、アプリから普通紙に応急タグを印刷できます（今後対応予定）。'
     },
     {
-      q: '「後ろからN本目」のNはいくつにすべき？',
-      a: '一般的な目安は「残り2〜3本」です。発注から届くまでの消費量を考えて設定します。例えば、週2本消費する商品で発注から届くまで1週間なら、N=3（安全在庫込み）が適切です。最初は多めに設定し、在庫切れ報告のデータを見ながら調整するのがおすすめです。'
+      q: '「後ろからN個目」のNはいくつにすべき？',
+      a: '「常に新品をいくつ手元に置いておきたいか」がNの数字です。例えば、カラー剤を常に新品2個はキープしたいなら、後ろから2個目にタグを付けます。前から使っていき、タグ付きの商品を開封した瞬間＝新品が2個を下回った瞬間なので、自動で発注リストに追加されます。迷ったら「2」か「3」で始めて、在庫切れ報告のデータを見ながら調整するのがおすすめです。'
     },
     {
       q: 'スタッフは何人でも使える？',
@@ -29,7 +29,7 @@ export default function OwnerGuidePage() {
     },
     {
       q: 'バーコード（JAN）で商品登録できる？',
-      a: 'はい。商品登録画面でバーコードをスキャンすると、商品名が自動入力されます（対応している商品の場合）。手入力でも登録できます。'
+      a: '現在は手入力での登録のみとなっています。バーコードスキャンによる自動登録は今後のアップデートで対応予定です。'
     },
     {
       q: 'プランを変更したい',
@@ -169,11 +169,11 @@ export default function OwnerGuidePage() {
                 <div style={styles.checkList}>
                   <div style={styles.checkItem}>
                     <span style={styles.checkIcon}>✓</span>
-                    <span>QRタグ（プランに応じた枚数＋予備）</span>
+                    <span>QRタグ 36枚（30枚＋予備6枚）※ゴム紐付き</span>
                   </div>
                   <div style={styles.checkItem}>
                     <span style={styles.checkIcon}>✓</span>
-                    <span>ゴム紐（予備含む）</span>
+                    <span>予備のゴム紐（数本）</span>
                   </div>
                   <div style={styles.checkItem}>
                     <span style={styles.checkIcon}>✓</span>
@@ -206,18 +206,13 @@ export default function OwnerGuidePage() {
                 <p style={styles.guideText}>
                   管理したい商品を登録します。まずは発注頻度が高い上位10〜20商品だけでOKです。
                 </p>
-                <div style={styles.methodBox}>
-                  <div style={styles.methodItem}>
-                    <div style={styles.methodBadge}>方法①</div>
-                    <div style={styles.methodText}>
-                      <strong>バーコードスキャン</strong>：商品のバーコード（JANコード）をカメラで読み取ると、商品名が自動入力されます。
-                    </div>
-                  </div>
-                  <div style={styles.methodItem}>
-                    <div style={styles.methodBadge}>方法②</div>
-                    <div style={styles.methodText}>
-                      <strong>手動入力</strong>：商品名・カテゴリ・保管場所を入力して登録します。
-                    </div>
+                <p style={styles.guideText}>
+                  ホーム画面の「商品管理」→「＋ 新規登録」から、商品名・カテゴリ・保管場所などを入力して登録します。登録すると、QRタグが自動で紐付けられます。
+                </p>
+                <div style={styles.tipBox}>
+                  <div style={styles.tipIcon}>💡</div>
+                  <div style={styles.tipText}>
+                    全商品を一度に登録する必要はありません。よく発注するものだけ先に登録して、慣れてきたら追加していくのがおすすめです。
                   </div>
                 </div>
               </div>
@@ -227,12 +222,39 @@ export default function OwnerGuidePage() {
             <div style={styles.guideCard}>
               <div style={styles.guideStep}>
                 <div style={styles.guideStepNum}>4</div>
-                <h3 style={styles.guideStepTitle}>QRタグを商品に紐付ける</h3>
+                <h3 style={styles.guideStepTitle}>タグを商品に取り付ける</h3>
               </div>
               <div style={styles.guideBody}>
                 <p style={styles.guideText}>
-                  商品登録時に、QRタグが自動で紐付けられます。タグ管理画面で、どのタグがどの商品に紐付いているか確認できます。
+                  QRタグを商品の「後ろからN個目」に取り付けます。ゴム紐はタグに結ばれた状態でお届けしますので、そのまま商品に掛けてください。
                 </p>
+                <div style={styles.highlightBox}>
+                  <div style={styles.highlightIcon}>💡</div>
+                  <div>
+                    <p style={styles.highlightTitle}>「後ろからN個目」とは？</p>
+                    <p style={styles.highlightText}>
+                      Nは「常に新品をいくつキープしておきたいか」の数字です。
+                    </p>
+                    <div style={styles.exampleBox}>
+                      <p style={styles.exampleTitle}>例：カラー剤を常に新品2個はキープしたい場合</p>
+                      <div style={styles.exampleSteps}>
+                        <p style={styles.exampleStep}>→ 後ろから<strong>2個目</strong>にタグを付ける</p>
+                        <p style={styles.exampleStep}>→ 前から順に使っていく</p>
+                        <p style={styles.exampleStep}>→ タグ付きの商品を開封した瞬間＝<strong>「新品が2個を下回った」</strong>瞬間</p>
+                        <p style={styles.exampleStep}>→ 自動で発注リストに追加される</p>
+                      </div>
+                    </div>
+                    <p style={{...styles.highlightText, marginTop: 10}}>
+                      迷ったら「2」か「3」で始めましょう。在庫切れが起きた商品は、報告データをもとにNの数を増やしていけばOKです。
+                    </p>
+                  </div>
+                </div>
+                <div style={styles.tipBox}>
+                  <div style={styles.tipIcon}>📌</div>
+                  <div style={styles.tipText}>
+                    タグは棚に固定するものではなく、商品間を移動する「着脱式」です。商品を受け取ったら、新しい在庫のN個目の位置に付け直してください。
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -240,34 +262,6 @@ export default function OwnerGuidePage() {
             <div style={styles.guideCard}>
               <div style={styles.guideStep}>
                 <div style={styles.guideStepNum}>5</div>
-                <h3 style={styles.guideStepTitle}>タグを商品に取り付ける</h3>
-              </div>
-              <div style={styles.guideBody}>
-                <p style={styles.guideText}>
-                  QRタグにゴム紐を通し、商品の「後ろからN本目」に取り付けます。
-                </p>
-                <div style={styles.highlightBox}>
-                  <div style={styles.highlightIcon}>💡</div>
-                  <div>
-                    <p style={styles.highlightTitle}>「後ろからN本目」とは？</p>
-                    <p style={styles.highlightText}>
-                      在庫の最後尾からN本目の位置にタグを付けます。その商品を開封した瞬間が「発注点に到達した」という意味になります。Nは商品ごとの消費スピードと発注リードタイムで決めてください。迷ったら「2」か「3」で始めましょう。
-                    </p>
-                  </div>
-                </div>
-                <div style={styles.tipBox}>
-                  <div style={styles.tipIcon}>📌</div>
-                  <div style={styles.tipText}>
-                    タグは棚に固定するものではなく、商品間を移動する「着脱式」です。商品を受け取ったら、新しい在庫のN本目の位置に付け直してください。
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 6 */}
-            <div style={styles.guideCard}>
-              <div style={styles.guideStep}>
-                <div style={styles.guideStepNum}>6</div>
                 <h3 style={styles.guideStepTitle}>スタッフに使い方を共有</h3>
               </div>
               <div style={styles.guideBody}>
@@ -314,7 +308,7 @@ export default function OwnerGuidePage() {
                   <div style={{...styles.dailyNum, background: '#FFF3E0', color: '#E65100'}}>3</div>
                   <div>
                     <p style={styles.dailyStepTitle}>商品が届いたら → タップで受取 → タグ付け直し</p>
-                    <p style={styles.dailyStepSub}>受取画面で商品をタップし、タグを新在庫のN本目に移動</p>
+                    <p style={styles.dailyStepSub}>受取画面で商品をタップし、タグを新在庫のN個目に移動</p>
                   </div>
                 </div>
               </div>
@@ -340,7 +334,7 @@ export default function OwnerGuidePage() {
             <div style={styles.guideCard}>
               <h3 style={styles.dailyTitle}>在庫切れが起きたとき</h3>
               <p style={styles.guideText}>
-                タグが付いていなかった商品が切れてしまった場合は、アプリのホーム画面から「欠品報告」を行ってください。報告データが蓄積されると、システムが最適な発注点（N本目）を提案します。
+                タグが付いていなかった商品が切れてしまった場合は、アプリのホーム画面から「欠品報告」を行ってください。報告データが蓄積されると、システムが最適な発注点（N個目）を提案します。
               </p>
               <div style={styles.tipBox}>
                 <div style={styles.tipIcon}>📊</div>
@@ -817,6 +811,31 @@ const styles = {
     fontSize: 13,
     color: '#555',
     lineHeight: 1.8,
+  },
+
+  // Example box (inside highlight)
+  exampleBox: {
+    background: '#fff',
+    border: '1px solid #F0E6C8',
+    borderRadius: 10,
+    padding: '14px 16px',
+    marginTop: 10,
+  },
+  exampleTitle: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#1a1a1a',
+    marginBottom: 10,
+  },
+  exampleSteps: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+  },
+  exampleStep: {
+    fontSize: 13,
+    color: '#444',
+    lineHeight: 1.6,
   },
 
   // Tip box
