@@ -32,11 +32,45 @@ function InputField({ label, required, children }) {
   );
 }
 
+{/* ★ パスワード入力コンポーネント（表示トグル付き） */}
+function PasswordInput({ value, onChange, placeholder, autoComplete, onKeyDown }) {
+  const [showPassword, setShowPassword] = useState(false);
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        type={showPassword ? "text" : "password"}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        style={{ ...inputBaseStyle, paddingRight: 44 }}
+        onFocus={(e) => (e.target.style.borderColor = C.primary)}
+        onBlur={(e) => (e.target.style.borderColor = C.border)}
+        onKeyDown={onKeyDown}
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        style={{
+          position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)",
+          background: "none", border: "none", cursor: "pointer",
+          padding: 6, fontSize: 18, color: C.textMuted, lineHeight: 1,
+        }}
+        tabIndex={-1}
+        aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
+      >
+        {showPassword ? "🙈" : "👁️"}
+      </button>
+    </div>
+  );
+}
+
 export default function AuthForm() {
   const { signIn, signUp, resetPassword, error: authError } = useAuth();
   const [mode, setMode] = useState("login"); // "login" | "signup" | "reset"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState(""); // ★ パスワード確認用
   const [shopName, setShopName] = useState("");
   const [postalCode, setPostalCode] = useState("");
   const [address, setAddress] = useState("");
@@ -44,6 +78,7 @@ export default function AuthForm() {
   const [localError, setLocalError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [signupSent, setSignupSent] = useState(false); // ★ 確認メール送信完了
   const [addressLoading, setAddressLoading] = useState(false);
   // ★ 紹介コード（URLパラメータからの自動読み込みのみ）
   const [referrerCode, setReferrerCode] = useState("");
@@ -124,7 +159,13 @@ export default function AuthForm() {
       setLocalError("パスワードは6文字以上にしてください");
       return;
     }
+
+    // ★ 新規登録時：パスワード一致チェック
     if (mode === "signup") {
+      if (password !== passwordConfirm) {
+        setLocalError("パスワードが一致しません。もう一度入力してください");
+        return;
+      }
       if (!shopName.trim()) {
         setLocalError("店舗名を入力してください");
         return;
@@ -148,11 +189,17 @@ export default function AuthForm() {
       await signIn(email.trim(), password);
     } else {
       // ★ 第5引数に紹介コードを渡す（URLパラメータから自動取得済み）
-      await signUp(email.trim(), password, shopName.trim(), {
+      const result = await signUp(email.trim(), password, shopName.trim(), {
         postalCode: postalCode.trim(),
         address: address.trim(),
         phone: phone.trim(),
       }, referrerCode.trim());
+
+      // ★ Confirm email ONの場合、サインアップ成功後に確認メール案内を表示
+      // signUpがエラーを返さなければ成功とみなす
+      if (!result?.error) {
+        setSignupSent(true);
+      }
     }
     setLoading(false);
   };
@@ -161,6 +208,8 @@ export default function AuthForm() {
     setMode(newMode);
     setLocalError(null);
     setResetSent(false);
+    setSignupSent(false);
+    setPasswordConfirm(""); // ★ モード切替時に確認パスワードをクリア
   };
 
   return (
@@ -176,11 +225,12 @@ export default function AuthForm() {
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <div style={{ fontSize: 48, marginBottom: 8 }}>🏷️</div>
         <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>在庫番</h1>
-        <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>美容室向け発注管理</p>
+        {/* ★ 変更：「美容室向け発注管理」→「在庫管理システム」 */}
+        <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>在庫管理システム</p>
       </div>
 
       {/* ★ 紹介コード経由の場合のバナー */}
-      {mode === "signup" && referralFromUrl && referrerCode && (
+      {mode === "signup" && referralFromUrl && referrerCode && !signupSent && (
         <div style={{
           padding: "10px 14px", background: "#f0fdf4", borderRadius: 12,
           border: "1px solid #bbf7d0", marginBottom: 16, textAlign: "center",
@@ -198,12 +248,45 @@ export default function AuthForm() {
       }}>
         <h2 style={{ fontSize: 17, fontWeight: 700, color: C.text, margin: "0 0 20px", textAlign: "center" }}>
           {mode === "login" && "ログイン"}
-          {mode === "signup" && "新規登録"}
+          {mode === "signup" && !signupSent && "新規登録"}
+          {mode === "signup" && signupSent && "確認メールを送信しました"}
           {mode === "reset" && "パスワードをリセット"}
         </h2>
 
-        {/* パスワードリセット完了メッセージ */}
-        {mode === "reset" && resetSent ? (
+        {/* ★ 新規登録後の確認メール送信完了画面 */}
+        {mode === "signup" && signupSent ? (
+          <div style={{ textAlign: "center", padding: "16px 0" }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>📧</div>
+            <p style={{ fontSize: 14, color: C.text, fontWeight: 600, marginBottom: 8 }}>
+              確認メールを送信しました
+            </p>
+            <p style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6, marginBottom: 4 }}>
+              <strong>{email}</strong> 宛に確認メールを送信しました。
+            </p>
+            <p style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6 }}>
+              メール内のリンクをクリックすると登録が完了します。
+            </p>
+            <div style={{
+              marginTop: 16, padding: "10px 14px", background: C.primaryLight, borderRadius: 8,
+              border: `1px solid ${C.border}`,
+            }}>
+              <p style={{ fontSize: 11, color: C.textSub, margin: 0, lineHeight: 1.6 }}>
+                ⚠️ メールが届かない場合は迷惑メールフォルダをご確認ください。
+              </p>
+            </div>
+            <button
+              onClick={() => switchMode("login")}
+              style={{
+                marginTop: 20, padding: "12px 32px", border: "none",
+                borderRadius: 10, background: C.primary, color: "#fff",
+                fontSize: 14, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              ログイン画面へ
+            </button>
+          </div>
+        ) : mode === "reset" && resetSent ? (
+          /* パスワードリセット完了メッセージ */
           <div style={{ textAlign: "center", padding: "16px 0" }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>📧</div>
             <p style={{ fontSize: 14, color: C.text, fontWeight: 600, marginBottom: 8 }}>
@@ -316,20 +399,38 @@ export default function AuthForm() {
                 />
               </InputField>
 
-              {/* パスワード（リセットモードでは非表示） */}
+              {/* パスワード（リセットモードでは非表示）★ 表示トグル付き */}
               {mode !== "reset" && (
                 <InputField label="パスワード" required={mode === "signup"}>
-                  <input
-                    type="password"
+                  <PasswordInput
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="6文字以上"
                     autoComplete={mode === "login" ? "current-password" : "new-password"}
-                    style={inputBaseStyle}
-                    onFocus={(e) => (e.target.style.borderColor = C.primary)}
-                    onBlur={(e) => (e.target.style.borderColor = C.border)}
+                    onKeyDown={(e) => e.key === "Enter" && mode === "login" && handleSubmit()}
+                  />
+                </InputField>
+              )}
+
+              {/* ★ パスワード確認（新規登録モードのみ） */}
+              {mode === "signup" && (
+                <InputField label="パスワード（確認）" required>
+                  <PasswordInput
+                    value={passwordConfirm}
+                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                    placeholder="もう一度入力してください"
+                    autoComplete="new-password"
                     onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                   />
+                  {/* ★ リアルタイム一致表示 */}
+                  {passwordConfirm.length > 0 && (
+                    <p style={{
+                      fontSize: 11, marginTop: 4,
+                      color: password === passwordConfirm ? C.success : C.danger,
+                    }}>
+                      {password === passwordConfirm ? "✓ パスワードが一致しました" : "✗ パスワードが一致しません"}
+                    </p>
+                  )}
                 </InputField>
               )}
             </div>
@@ -403,7 +504,7 @@ export default function AuthForm() {
               </button>
             </p>
           )}
-          {mode === "signup" && (
+          {(mode === "signup" && !signupSent) && (
             <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>
               アカウントをお持ちの方{" "}
               <button
