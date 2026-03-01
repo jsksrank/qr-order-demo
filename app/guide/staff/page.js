@@ -24,7 +24,7 @@ export default function StaffGuidePage() {
     },
     {
       q: 'タグをどこに付ければいい？',
-      a: '後ろからN本目の商品に付けてください。Nはオーナーが決めた数字です。わからなければオーナーに確認してください。基本は「残り2〜3本目」が多いです。'
+      a: '後ろからN個目の商品に付けてください。Nはオーナーが決めた数字です。わからなければオーナーに確認してください。基本は「残り2〜3個目」が多いです。'
     },
   ];
 
@@ -166,7 +166,7 @@ export default function StaffGuidePage() {
               <div style={styles.tipBox}>
                 <div style={styles.tipIcon}>📌</div>
                 <div style={styles.tipText}>
-                  タグは「後ろからN本目」に付けてください。<br />
+                  タグは「後ろからN個目」に付けてください。<br />
                   位置はオーナーが決めています。
                 </div>
               </div>
