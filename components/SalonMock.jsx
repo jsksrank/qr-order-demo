@@ -9,9 +9,17 @@ import TagManagementScreen from "./TagManagementScreen";
 
 const QrScanner = dynamic(() => import("./QrScanner"), { ssr: false });
 
-// ——— Constants ———
-const CATEGORIES = ["カラー剤", "2剤", "パーマ剤", "トリートメント", "シャンプー", "スタイリング", "その他"];
-const LOCATIONS = ["棚A上段", "棚A中段", "棚A下段", "棚B", "棚C", "ワゴン", "バックヤード"];
+// ——— 美容室デフォルトプリセット ———
+// 初回ロード時にDBが空なら自動挿入される
+// エステ向けなど他業種への横展開時はここに追加
+const BEAUTY_PRESET_CATEGORIES = [
+  "カラー剤", "2剤", "パーマ剤", "トリートメント",
+  "シャンプー", "スタイリング剤", "店販商品", "消耗品", "その他",
+];
+const BEAUTY_PRESET_LOCATIONS = [
+  "棚A上段", "棚A中段", "棚A下段",
+  "棚B", "棚C", "ワゴン", "バックヤード", "カウンター下", "その他",
+];
 
 // ——— Color Tokens ———
 const C = {
@@ -100,7 +108,181 @@ function EmptyState({ icon, message }) {
 }
 
 // ======================================================================
-// ★ S31: TrialGateModal（101人目以降・紹介なし用のブロッキングモーダル）
+// ★ S39: カテゴリー・保管場所マスタ管理モーダル
+// ======================================================================
+function CategoryLocationManager({ storeId, categories, locations, onCategoriesChange, onLocationsChange, onClose }) {
+  const [tab, setTab] = useState("category");
+  const [newName, setNewName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [error, setError] = useState("");
+
+  const isCategoryTab = tab === "category";
+  const items = isCategoryTab ? categories : locations;
+  const tableName = isCategoryTab ? "store_categories" : "store_locations";
+  const onItemsChange = isCategoryTab ? onCategoriesChange : onLocationsChange;
+  const placeholder = isCategoryTab ? "例：カラー剤、シャンプー..." : "例：棚A上段、バックヤード...";
+  const label = isCategoryTab ? "カテゴリー" : "保管場所";
+
+  const handleAdd = async () => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    if (items.some((i) => i.name === trimmed)) {
+      setError("同じ名前が既に存在します");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const { data, error: dbError } = await supabase
+        .from(tableName)
+        .insert({ store_id: storeId, name: trimmed, display_order: items.length })
+        .select("id, name")
+        .single();
+      if (dbError) throw dbError;
+      onItemsChange([...items, { id: data.id, name: data.name }]);
+      setNewName("");
+    } catch (e) {
+      setError("追加に失敗しました");
+      console.error("Add master item error:", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!confirm(`「${name}」を削除しますか？\n※ この${label}を使用中の商品には影響しません`)) return;
+    setDeletingId(id);
+    try {
+      const { error: dbError } = await supabase
+        .from(tableName)
+        .delete()
+        .eq("id", id)
+        .eq("store_id", storeId);
+      if (dbError) throw dbError;
+      onItemsChange(items.filter((i) => i.id !== id));
+    } catch (e) {
+      alert("削除に失敗しました");
+      console.error("Delete master item error:", e);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") handleAdd();
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+      display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200,
+    }} onClick={onClose}>
+      <div style={{
+        width: "100%", maxWidth: 420, background: C.card,
+        borderRadius: "20px 20px 0 0", padding: "20px 20px 32px",
+        maxHeight: "80vh", display: "flex", flexDirection: "column",
+      }} onClick={(e) => e.stopPropagation()}>
+
+        {/* ヘッダー */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>
+            ⚙️ マスタ管理
+          </h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textSub }}>✕</button>
+        </div>
+
+        {/* タブ切替 */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          {[
+            { id: "category", label: "カテゴリー" },
+            { id: "location", label: "保管場所" },
+          ].map((t) => (
+            <button key={t.id} onClick={() => { setTab(t.id); setNewName(""); setError(""); }}
+              style={{
+                flex: 1, padding: "10px", border: `1.5px solid ${tab === t.id ? C.primary : C.border}`,
+                borderRadius: 10, background: tab === t.id ? C.primaryLight : C.card,
+                color: tab === t.id ? C.primary : C.textSub,
+                fontSize: 13, fontWeight: 700, cursor: "pointer",
+              }}>
+              {t.label} ({(t.id === "category" ? categories : locations).length})
+            </button>
+          ))}
+        </div>
+
+        {/* リスト */}
+        <div style={{ flex: 1, overflowY: "auto", marginBottom: 14 }}>
+          {items.length === 0 ? (
+            <div style={{ padding: "20px 0", textAlign: "center", fontSize: 13, color: C.textMuted }}>
+              まだ{label}がありません
+            </div>
+          ) : (
+            items.map((item) => (
+              <div key={item.id} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "11px 14px", background: C.bg, borderRadius: 10, marginBottom: 5,
+                border: `1px solid ${C.border}`,
+              }}>
+                <span style={{ fontSize: 14, color: C.textMuted }}>{isCategoryTab ? "🏷️" : "📍"}</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: C.text }}>{item.name}</span>
+                <button
+                  onClick={() => handleDelete(item.id, item.name)}
+                  disabled={deletingId === item.id}
+                  style={{
+                    width: 30, height: 30, borderRadius: 8, border: "none",
+                    background: C.dangerLight, color: C.danger,
+                    fontSize: 14, cursor: deletingId === item.id ? "default" : "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    opacity: deletingId === item.id ? 0.5 : 1, flexShrink: 0,
+                  }}
+                  title="削除">
+                  🗑️
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* 新規追加 */}
+        <div>
+          {error && (
+            <div style={{ fontSize: 11, color: C.danger, marginBottom: 6, paddingLeft: 4 }}>⚠ {error}</div>
+          )}
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={newName}
+              onChange={(e) => { setNewName(e.target.value); setError(""); }}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              style={{
+                flex: 1, padding: "11px 12px", border: `1.5px solid ${C.border}`,
+                borderRadius: 10, fontSize: 14, outline: "none", background: C.card, color: C.text,
+              }}
+            />
+            <button
+              onClick={handleAdd}
+              disabled={!newName.trim() || saving}
+              style={{
+                padding: "11px 18px", border: "none", borderRadius: 10,
+                background: newName.trim() && !saving ? C.primary : "#d1d5db",
+                color: "#fff", fontSize: 14, fontWeight: 700,
+                cursor: newName.trim() && !saving ? "pointer" : "default",
+                flexShrink: 0,
+              }}>
+              {saving ? "..." : "追加"}
+            </button>
+          </div>
+          <p style={{ fontSize: 11, color: C.textMuted, margin: "8px 0 0", lineHeight: 1.6 }}>
+            ※ 削除しても既存の商品データには影響しません
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ======================================================================
+// TrialGateModal（S31）
 // ======================================================================
 function TrialGateModal({ onStartTrial, loading }) {
   return (
@@ -120,49 +302,28 @@ function TrialGateModal({ onStartTrial, loading }) {
         <p style={{ fontSize: 14, color: C.textSub, lineHeight: 1.7, margin: "0 0 24px" }}>
           30日間無料でお試しいただけます
         </p>
-
-        <div style={{
-          background: C.bg, borderRadius: 14, padding: 16, marginBottom: 20,
-          textAlign: "left",
-        }}>
-          {[
-            "商品30点まで管理",
-            "QRスキャン・発注リスト",
-            "LINEで発注送信",
-            "物理QRタグを郵送",
-          ].map((f, i) => (
+        <div style={{ background: C.bg, borderRadius: 14, padding: 16, marginBottom: 20, textAlign: "left" }}>
+          {["商品30点まで管理", "QRスキャン・発注リスト", "LINEで発注送信", "物理QRタグを郵送"].map((f, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: i < 3 ? 8 : 0 }}>
               <span style={{ color: C.success, fontSize: 14, fontWeight: 700 }}>✓</span>
               <span style={{ fontSize: 13, color: C.text }}>{f}</span>
             </div>
           ))}
         </div>
-
-        <div style={{
-          padding: "12px 16px", background: C.primaryLight, borderRadius: 12,
-          marginBottom: 20, border: `1px solid ${C.primaryBorder}`,
-        }}>
+        <div style={{ padding: "12px 16px", background: C.primaryLight, borderRadius: 12, marginBottom: 20, border: `1px solid ${C.primaryBorder}` }}>
           <div style={{ fontSize: 24, fontWeight: 800, color: C.primary }}>¥0</div>
           <div style={{ fontSize: 12, color: C.textSub }}>30日間無料 → 月額¥500（税込）</div>
         </div>
-
-        <button
-          onClick={onStartTrial}
-          disabled={loading}
-          style={{
-            width: "100%", padding: "16px", border: "none", borderRadius: 14,
-            background: loading ? C.textMuted : C.primary,
-            color: "#fff", fontSize: 16, fontWeight: 700,
-            cursor: loading ? "default" : "pointer",
-            boxShadow: loading ? "none" : "0 4px 16px rgba(37,99,235,0.3)",
-          }}
-        >
+        <button onClick={onStartTrial} disabled={loading} style={{
+          width: "100%", padding: "16px", border: "none", borderRadius: 14,
+          background: loading ? C.textMuted : C.primary, color: "#fff", fontSize: 16, fontWeight: 700,
+          cursor: loading ? "default" : "pointer",
+          boxShadow: loading ? "none" : "0 4px 16px rgba(37,99,235,0.3)",
+        }}>
           {loading ? "処理中..." : "30日間無料で始める"}
         </button>
-
         <p style={{ fontSize: 11, color: C.textMuted, marginTop: 14, lineHeight: 1.6 }}>
-          クレジットカードの登録が必要です。<br/>
-          30日以内に解約すれば料金は発生しません。
+          クレジットカードの登録が必要です。<br/>30日以内に解約すれば料金は発生しません。
         </p>
       </div>
     </div>
@@ -175,27 +336,19 @@ function TrialGateModal({ onStartTrial, loading }) {
 function OverLimitBanner({ activeCount, skuLimit, onUpgrade }) {
   return (
     <div style={{ padding: "0 20px" }}>
-      <div style={{
-        padding: 24, background: C.warnLight, borderRadius: 14,
-        border: `1.5px solid ${C.warnBorder}`, textAlign: "center",
-      }}>
+      <div style={{ padding: 24, background: C.warnLight, borderRadius: 14, border: `1.5px solid ${C.warnBorder}`, textAlign: "center" }}>
         <div style={{ fontSize: 40, marginBottom: 10 }}>⚠️</div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: C.warnDark, marginBottom: 8 }}>
-          プラン上限を超えています
-        </div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.warnDark, marginBottom: 8 }}>プラン上限を超えています</div>
         <div style={{ fontSize: 13, color: C.warnDark, lineHeight: 1.6, marginBottom: 6 }}>
           登録商品 <strong>{activeCount}品</strong> ／ 上限 <strong>{skuLimit}品</strong>
         </div>
         <div style={{ fontSize: 12, color: C.textSub, lineHeight: 1.6, marginBottom: 16 }}>
-          この機能を使うには、商品を削除して上限以下にするか、プランをアップグレードしてください。
+          商品を削除して上限以下にするか、プランをアップグレードしてください。
         </div>
         <button onClick={onUpgrade} style={{
           padding: "14px 32px", border: "none", borderRadius: 12,
-          background: C.primary, color: "#fff",
-          fontSize: 14, fontWeight: 700, cursor: "pointer",
-        }}>
-          プランをアップグレード
-        </button>
+          background: C.primary, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer",
+        }}>プランをアップグレード</button>
       </div>
     </div>
   );
@@ -237,8 +390,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
       <button onClick={() => onNavigate("stockout")} style={{
         width: "100%", marginTop: 16, padding: "14px 18px",
         background: C.card, border: `1.5px solid ${C.danger}30`, borderRadius: 14,
-        cursor: "pointer", textAlign: "left",
-        display: "flex", alignItems: "center", gap: 14,
+        cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 14,
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}>
         <span style={{ fontSize: 28 }}>🚨</span>
@@ -253,8 +405,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
       <button onClick={() => onNavigate("products")} style={{
         width: "100%", marginTop: 10, padding: "14px 18px",
         background: C.card, border: `1px solid ${C.border}`, borderRadius: 14,
-        cursor: "pointer", textAlign: "left",
-        display: "flex", alignItems: "center", gap: 14,
+        cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 14,
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}>
         <span style={{ fontSize: 28 }}>⚙️</span>
@@ -269,8 +420,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
       <button onClick={() => onNavigate("tags")} style={{
         width: "100%", marginTop: 10, padding: "14px 18px",
         background: C.card, border: `1px solid ${C.border}`, borderRadius: 14,
-        cursor: "pointer", textAlign: "left",
-        display: "flex", alignItems: "center", gap: 14,
+        cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 14,
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}>
         <span style={{ fontSize: 28 }}>🏷️</span>
@@ -285,8 +435,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
       <button onClick={() => onNavigate("settings")} style={{
         width: "100%", marginTop: 10, padding: "14px 18px",
         background: C.card, border: `1px solid ${C.border}`, borderRadius: 14,
-        cursor: "pointer", textAlign: "left",
-        display: "flex", alignItems: "center", gap: 14,
+        cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 14,
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}>
         <span style={{ fontSize: 28 }}>👤</span>
@@ -317,7 +466,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
 }
 
 // ======================================================================
-// Scan Screen ★ S37: デモ削除＋スキャン順序を新しいもの上に
+// Scan Screen
 // ======================================================================
 function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit, skuLimit, activeCount, onShowPricing }) {
   const [cameraActive, setCameraActive] = useState(false);
@@ -343,13 +492,11 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
           setTimeout(() => setScanResult(null), 2500);
           return;
         }
-
         const product = products.find((p) => p.id === tag.product_id);
         if (product) {
           await onAddOrderItem(product);
           await supabase.from("qr_tags").update({ status: "removed" }).eq("id", tag.id);
           const time = new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
-          {/* ★ S37: 新しいスキャンを先頭に追加 */}
           setScanned((prev) => [{ name: product.name, category: product.category, location: product.location, time }, ...prev]);
           setScanResult({ type: "success", name: product.name, message: "読み取り完了！" });
           setTimeout(() => setScanResult(null), 2000);
@@ -448,7 +595,7 @@ function ScanScreen({ onNavigate, products, onAddOrderItem, storeId, isOverLimit
 }
 
 // ======================================================================
-// Order Screen ★ S37: 発注取消ボタン追加
+// Order Screen
 // ======================================================================
 function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, onDeleteOrderItem, isOverLimit, skuLimit, activeCount, onShowPricing }) {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -462,23 +609,13 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, onDeleteOrd
   }
 
   const checkedCount = pendingItems.filter((i) => i.checked).length;
+  const toggleCheck = (id) => setPendingItems((prev) => prev.map((i) => i.id === id ? { ...i, checked: !i.checked } : i));
+  const updateQty = (id, qty) => setPendingItems((prev) => prev.map((i) => i.id === id ? { ...i, quantity: qty } : i));
 
-  const toggleCheck = (id) => {
-    setPendingItems((prev) => prev.map((i) => i.id === id ? { ...i, checked: !i.checked } : i));
-  };
-  const updateQty = (id, qty) => {
-    setPendingItems((prev) => prev.map((i) => i.id === id ? { ...i, quantity: qty } : i));
-  };
-
-  {/* ★ S37: 発注取消（order_itemsから削除＋タグを元に戻す） */}
   const handleDelete = async (item) => {
     if (!confirm(`「${item.name}」を発注リストから取り消しますか？`)) return;
     setDeletingId(item.id);
-    try {
-      await onDeleteOrderItem(item);
-    } finally {
-      setDeletingId(null);
-    }
+    try { await onDeleteOrderItem(item); } finally { setDeletingId(null); }
   };
 
   const handleOrder = async () => {
@@ -539,7 +676,6 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, onDeleteOrd
                 <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>{item.category} · {item.location} · {item.scannedAt}</div>
               </div>
               <QuantityStepper value={item.quantity} onChange={(v) => updateQty(item.id, v)} />
-              {/* ★ S37: 取消ボタン */}
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
                 disabled={deletingId === item.id}
@@ -550,8 +686,7 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, onDeleteOrd
                   display: "flex", alignItems: "center", justifyContent: "center",
                   flexShrink: 0, opacity: deletingId === item.id ? 0.5 : 1,
                 }}
-                title="取り消す"
-              >
+                title="取り消す">
                 ✕
               </button>
             </div>
@@ -569,8 +704,7 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, onDeleteOrd
 
       <button onClick={() => setShowLinePopup(true)} style={{
         width: "100%", padding: "14px", border: "none", borderRadius: 12,
-        background: C.line, color: "#fff", fontSize: 14, fontWeight: 700,
-        cursor: "pointer", marginBottom: 20,
+        background: C.line, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 20,
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
       }}>
         <span style={{ fontSize: 18 }}>💬</span>発注リストを送信
@@ -604,11 +738,11 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, onDeleteOrd
               </button>
               <a href={`https://line.me/R/share?text=${encodeURIComponent(generateLineText())}`}
                 target="_blank" rel="noopener noreferrer" style={{
-                flex: 1, padding: "14px", border: "none", borderRadius: 12,
-                background: C.line, color: "#fff", fontSize: 14, fontWeight: 700,
-                cursor: "pointer", textAlign: "center", textDecoration: "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
+                  flex: 1, padding: "14px", border: "none", borderRadius: 12,
+                  background: C.line, color: "#fff", fontSize: 14, fontWeight: 700,
+                  cursor: "pointer", textAlign: "center", textDecoration: "none",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
                 💬 LINEで送る
               </a>
             </div>
@@ -620,7 +754,7 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, onDeleteOrd
 }
 
 // ======================================================================
-// Receive Screen ★ S37: タップで受取＋デモ削除
+// Receive Screen
 // ======================================================================
 function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, products }) {
   const [cameraActive, setCameraActive] = useState(false);
@@ -628,7 +762,7 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
   const [scanError, setScanError] = useState(null);
   const [receivingId, setReceivingId] = useState(null);
 
-  const handleQrScan = useCallback(async (decodedText, format) => {
+  const handleQrScan = useCallback(async (decodedText) => {
     if (supabase && storeId) {
       const { data: tag } = await supabase
         .from("qr_tags").select("id, product_id")
@@ -644,13 +778,11 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
     }
   }, [storeId, orderedItems, onMarkReceived]);
 
-  {/* ★ S37: タップで受取完了（確認ダイアログ付き） */}
   const handleTapReceive = async (item) => {
     if (!confirm(`「${item.name}」を受取完了にしますか？`)) return;
     setReceivingId(item.id);
     try {
       await onMarkReceived(item);
-      {/* タグのステータスも戻す（product_idで検索） */}
       if (supabase && storeId) {
         await supabase.from("qr_tags")
           .update({ status: "attached" })
@@ -699,11 +831,8 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
       <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>
         受取待ち <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{orderedItems.length}件</span>
       </div>
-      {/* ★ S37: タップで受取の説明 */}
       {orderedItems.length > 0 && (
-        <p style={{ fontSize: 11, color: C.textSub, margin: "0 0 10px", lineHeight: 1.5 }}>
-          商品をタップして受取完了にできます
-        </p>
+        <p style={{ fontSize: 11, color: C.textSub, margin: "0 0 10px", lineHeight: 1.5 }}>商品をタップして受取完了にできます</p>
       )}
       {orderedItems.length === 0 ? (
         <EmptyState icon="✅" message="すべて受取済みです" />
@@ -718,8 +847,7 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
               borderRadius: 10, marginBottom: 5,
               border: `1px solid ${receivingId === item.id ? C.successBorder : C.border}`,
               cursor: receivingId === item.id ? "default" : "pointer",
-              textAlign: "left",
-              opacity: receivingId === item.id ? 0.6 : 1,
+              textAlign: "left", opacity: receivingId === item.id ? 0.6 : 1,
             }}>
             <span style={{ fontSize: 18 }}>{receivingId === item.id ? "⏳" : "📦"}</span>
             <div style={{ flex: 1 }}>
@@ -758,13 +886,18 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
 }
 
 // ======================================================================
-// Product Management Screen
+// ★ S39: Product Management Screen（カテゴリー・保管場所管理ボタン追加）
 // ======================================================================
-function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, currentPlan, onShowPricing, tagMap = {} }) {
+function ProductScreen({
+  products, onSaveProduct, onDeleteProduct,
+  skuLimit, currentPlan, onShowPricing, tagMap,
+  categories, locations, onCategoriesChange, onLocationsChange, storeId,
+}) {
   const [view, setView] = useState("list");
   const [editProduct, setEditProduct] = useState(null);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
+  const [showMasterManager, setShowMasterManager] = useState(false);
 
   const activeProducts = products.filter((p) => p.isActive);
   const filtered = activeProducts.filter((p) => {
@@ -783,12 +916,27 @@ function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, cur
         onSave={async (p) => { await onSaveProduct(p, view === "edit"); setView("list"); setEditProduct(null); }}
         onCancel={() => { setView("list"); setEditProduct(null); }}
         onDelete={view === "edit" ? async () => { await onDeleteProduct(editProduct.id); setView("list"); setEditProduct(null); } : null}
+        categories={categories}
+        locations={locations}
       />
     );
   }
 
   return (
     <div style={{ padding: "0 20px" }}>
+      {/* ★ S39: カテゴリー・保管場所管理ボタン */}
+      <button onClick={() => setShowMasterManager(true)} style={{
+        width: "100%", marginBottom: 14, padding: "11px 14px",
+        background: C.bg, border: `1px dashed ${C.primary}`, borderRadius: 10,
+        cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
+      }}>
+        <span style={{ fontSize: 15 }}>⚙️</span>
+        <span style={{ fontSize: 13, color: C.primary, fontWeight: 600 }}>カテゴリー・保管場所を管理</span>
+        <span style={{ fontSize: 11, color: C.textMuted, marginLeft: "auto" }}>
+          {categories.length}カテゴリ · {locations.length}場所
+        </span>
+      </button>
+
       <div style={{ position: "relative", marginBottom: 12 }}>
         <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: C.textMuted }}>🔍</span>
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="商品名・メーカーで検索"
@@ -816,7 +964,7 @@ function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, cur
           background: C.card, borderRadius: 10, marginBottom: 6, border: `1px solid ${C.border}`, cursor: "pointer",
         }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.primary, flexShrink: 0 }}>
-            {p.category.slice(0, 2)}
+            {(p.category || "").slice(0, 2)}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
@@ -842,17 +990,32 @@ function ProductScreen({ products, onSaveProduct, onDeleteProduct, skuLimit, cur
         boxShadow: "0 4px 16px rgba(37,99,235,0.35)",
         display: "flex", alignItems: "center", justifyContent: "center", zIndex: 40,
       }}>+</button>
+
+      {/* ★ S39: マスタ管理モーダル */}
+      {showMasterManager && (
+        <CategoryLocationManager
+          storeId={storeId}
+          categories={categories}
+          locations={locations}
+          onCategoriesChange={onCategoriesChange}
+          onLocationsChange={onLocationsChange}
+          onClose={() => setShowMasterManager(false)}
+        />
+      )}
     </div>
   );
 }
 
 // ======================================================================
-// Product Form ★ S37: デモバーコード削除
+// ★ S39: Product Form（categories / locations を props で受け取る）
 // ======================================================================
-function ProductForm({ product, onSave, onCancel, onDelete }) {
+function ProductForm({ product, onSave, onCancel, onDelete, categories, locations }) {
+  const defaultCategory = categories.length > 0 ? categories[0].name : "";
+  const defaultLocation = locations.length > 0 ? locations[0].name : "";
+
   const [form, setForm] = useState(product || {
-    name: "", category: "カラー剤", location: "棚A上段", manufacturer: "",
-    defaultOrderQty: 1, reorderPoint: null, janCode: "",
+    name: "", category: defaultCategory, location: defaultLocation,
+    manufacturer: "", defaultOrderQty: 1, reorderPoint: null, janCode: "",
   });
   const [barcodeScanActive, setBarcodeScanActive] = useState(false);
   const [barcodeResult, setBarcodeResult] = useState(null);
@@ -861,7 +1024,7 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }));
   const isValid = form.name.trim() !== "";
 
-  const handleBarcodeScan = useCallback((decodedText, format) => {
+  const handleBarcodeScan = useCallback((decodedText) => {
     setBarcodeScanActive(false);
     setBarcodeResult(decodedText);
     setForm((f) => ({ ...f, janCode: decodedText }));
@@ -902,6 +1065,7 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
           )}
         </>
       )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <FormField label="商品名" required>
           <input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="例：イルミナカラー オーシャン 6" style={inputStyle} />
@@ -909,18 +1073,41 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
         <FormField label="メーカー">
           <input value={form.manufacturer} onChange={(e) => update("manufacturer", e.target.value)} placeholder="例：ウエラ" style={inputStyle} />
         </FormField>
+
         <div style={{ display: "flex", gap: 10 }}>
+          {/* ★ S39: DBから取得したカテゴリー一覧を使用 */}
           <FormField label="カテゴリ" style={{ flex: 1 }}>
-            <select value={form.category} onChange={(e) => update("category", e.target.value)} style={{ ...inputStyle, appearance: "auto" }}>
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            <select value={form.category} onChange={(e) => update("category", e.target.value)}
+              style={{ ...inputStyle, appearance: "auto" }}>
+              {categories.length === 0 ? (
+                <option value="">（未設定）</option>
+              ) : (
+                categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)
+              )}
+              {/* 既存商品のカテゴリがリストにない場合のフォールバック */}
+              {product && form.category && !categories.some((c) => c.name === form.category) && (
+                <option value={form.category}>{form.category}（旧）</option>
+              )}
             </select>
           </FormField>
+
+          {/* ★ S39: DBから取得した保管場所一覧を使用 */}
           <FormField label="保管場所" style={{ flex: 1 }}>
-            <select value={form.location} onChange={(e) => update("location", e.target.value)} style={{ ...inputStyle, appearance: "auto" }}>
-              {LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+            <select value={form.location} onChange={(e) => update("location", e.target.value)}
+              style={{ ...inputStyle, appearance: "auto" }}>
+              {locations.length === 0 ? (
+                <option value="">（未設定）</option>
+              ) : (
+                locations.map((l) => <option key={l.id} value={l.name}>{l.name}</option>)
+              )}
+              {/* 既存商品の保管場所がリストにない場合のフォールバック */}
+              {product && form.location && !locations.some((l) => l.name === form.location) && (
+                <option value={form.location}>{form.location}（旧）</option>
+              )}
             </select>
           </FormField>
         </div>
+
         <div style={{ display: "flex", gap: 10 }}>
           <FormField label="デフォルト発注数" style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -935,12 +1122,14 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
             </div>
           </FormField>
         </div>
+
         {form.janCode && (
           <FormField label="JANコード">
             <div style={{ ...inputStyle, background: C.bg, color: C.textSub }}>{form.janCode}</div>
           </FormField>
         )}
       </div>
+
       {!product && (
         <div style={{ marginTop: 20, padding: 12, background: C.primaryLight, borderRadius: 10, border: `1px solid ${C.primaryBorder}` }}>
           <p style={{ fontSize: 12, color: C.primary, margin: 0, lineHeight: 1.6 }}>
@@ -948,6 +1137,7 @@ function ProductForm({ product, onSave, onCancel, onDelete }) {
           </p>
         </div>
       )}
+
       <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
         <button onClick={handleSave} disabled={!isValid || saving} style={{
           width: "100%", padding: "14px", border: "none", borderRadius: 12,
@@ -981,7 +1171,7 @@ const inputStyle = {
 };
 
 // ======================================================================
-// Stockout Screen（変更なし — S35版そのまま）
+// Stockout Screen（S35版から変更なし）
 // ======================================================================
 function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts, onStockoutCountChange }) {
   const [cameraActive, setCameraActive] = useState(false);
@@ -1008,185 +1198,72 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts, onStoc
         .maybeSingle();
       if (!error && data && data.products) {
         const currentPoint = data.products.reorder_point || 1;
-        setReorderProposal({
-          reportId: data.id,
-          productId: data.product_id,
-          productName: data.products.name,
-          currentPoint,
-          newPoint: currentPoint + 1,
-        });
+        setReorderProposal({ reportId: data.id, productId: data.product_id, productName: data.products.name, currentPoint, newPoint: currentPoint + 1 });
       }
-    } catch (e) {
-      console.error("Fetch unacknowledged error:", e);
-    }
+    } catch (e) { console.error("Fetch unacknowledged error:", e); }
   }, [storeId]);
 
-  useEffect(() => {
-    fetchHistory();
-    fetchUnacknowledged();
-  }, [storeId, fetchUnacknowledged]);
+  useEffect(() => { fetchHistory(); fetchUnacknowledged(); }, [storeId, fetchUnacknowledged]);
 
   const fetchHistory = async () => {
-    if (!supabase || !storeId) {
-      setHistoryLoading(false);
-      return;
-    }
+    if (!supabase || !storeId) { setHistoryLoading(false); return; }
     try {
       const { data, error } = await supabase
         .from("stockout_reports")
         .select("id, product_id, reported_at, days_since_order, acknowledged, products(name, category)")
-        .eq("store_id", storeId)
-        .order("reported_at", { ascending: false })
-        .limit(30);
-      if (!error && data) {
-        setHistory(data);
-      }
-    } catch (e) {
-      console.error("Stockout history fetch error:", e);
-    } finally {
-      setHistoryLoading(false);
-    }
+        .eq("store_id", storeId).order("reported_at", { ascending: false }).limit(30);
+      if (!error && data) setHistory(data);
+    } catch (e) { console.error("Stockout history fetch error:", e); }
+    finally { setHistoryLoading(false); }
   };
 
   const acknowledgeReport = async (reportId) => {
     if (!supabase || !storeId || !reportId) return;
     try {
-      await supabase
-        .from("stockout_reports")
-        .update({ acknowledged: true })
-        .eq("id", reportId)
-        .eq("store_id", storeId);
-    } catch (e) {
-      console.error("Acknowledge error:", e);
-    }
+      await supabase.from("stockout_reports").update({ acknowledged: true }).eq("id", reportId).eq("store_id", storeId);
+    } catch (e) { console.error("Acknowledge error:", e); }
   };
 
   const reportStockout = async (productId) => {
     const product = products.find((p) => p.id === productId);
-    if (!product) {
-      setScanResult({ type: "error", message: "商品が見つかりません" });
-      setTimeout(() => setScanResult(null), 3000);
-      return;
-    }
-
+    if (!product) { setScanResult({ type: "error", message: "商品が見つかりません" }); setTimeout(() => setScanResult(null), 3000); return; }
     if (sessionReports.find((r) => r.productId === productId)) {
       setScanResult({ type: "warning", message: `${product.name} は既に報告済みです` });
-      setTimeout(() => setScanResult(null), 2500);
-      return;
+      setTimeout(() => setScanResult(null), 2500); return;
     }
-
     setReporting(true);
     try {
-      let lastOrderedAt = null;
-      let daysSinceOrder = null;
-      let insertedReportId = null;
-
+      let lastOrderedAt = null; let daysSinceOrder = null; let insertedReportId = null;
       if (supabase && storeId) {
-        const { data: lastOrder } = await supabase
-          .from("order_items")
-          .select("ordered_at")
-          .eq("store_id", storeId)
-          .eq("product_id", productId)
-          .not("ordered_at", "is", null)
-          .order("ordered_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
+        const { data: lastOrder } = await supabase.from("order_items").select("ordered_at").eq("store_id", storeId).eq("product_id", productId).not("ordered_at", "is", null).order("ordered_at", { ascending: false }).limit(1).maybeSingle();
         if (lastOrder?.ordered_at) {
           lastOrderedAt = lastOrder.ordered_at;
-          daysSinceOrder = Math.floor(
-            (Date.now() - new Date(lastOrderedAt).getTime()) / (1000 * 60 * 60 * 24)
-          );
+          daysSinceOrder = Math.floor((Date.now() - new Date(lastOrderedAt).getTime()) / (1000 * 60 * 60 * 24));
         }
-
-        const { data: insertedData, error: insertError } = await supabase
-          .from("stockout_reports")
-          .insert({
-            store_id: storeId,
-            product_id: productId,
-            reported_at: new Date().toISOString(),
-            last_ordered_at: lastOrderedAt,
-            days_since_order: daysSinceOrder,
-            acknowledged: false,
-          })
-          .select("id")
-          .single();
-
-        if (insertError) {
-          console.error("Stockout report insert error:", insertError);
-          setScanResult({ type: "error", message: "報告の保存に失敗しました" });
-          setTimeout(() => setScanResult(null), 3000);
-          return;
-        }
-
+        const { data: insertedData, error: insertError } = await supabase.from("stockout_reports").insert({ store_id: storeId, product_id: productId, reported_at: new Date().toISOString(), last_ordered_at: lastOrderedAt, days_since_order: daysSinceOrder, acknowledged: false }).select("id").single();
+        if (insertError) { console.error("Stockout report insert error:", insertError); setScanResult({ type: "error", message: "報告の保存に失敗しました" }); setTimeout(() => setScanResult(null), 3000); return; }
         insertedReportId = insertedData?.id;
       }
-
-      setSessionReports((prev) => [
-        {
-          productId,
-          name: product.name,
-          category: product.category,
-          reportedAt: new Date(),
-          daysSinceOrder,
-        },
-        ...prev,
-      ]);
-
+      setSessionReports((prev) => [{ productId, name: product.name, category: product.category, reportedAt: new Date(), daysSinceOrder }, ...prev]);
       setScanResult({ type: "success", name: product.name, message: "欠品を記録しました" });
       setTimeout(() => setScanResult(null), 2500);
-
       const currentPoint = product.reorderPoint || 1;
-      setReorderProposal({
-        reportId: insertedReportId,
-        productId: product.id,
-        productName: product.name,
-        currentPoint,
-        newPoint: currentPoint + 1,
-      });
-
+      setReorderProposal({ reportId: insertedReportId, productId: product.id, productName: product.name, currentPoint, newPoint: currentPoint + 1 });
       await fetchHistory();
       if (onStockoutCountChange) onStockoutCountChange();
-    } catch (e) {
-      console.error("Stockout report error:", e);
-      setScanResult({ type: "error", message: "エラーが発生しました" });
-      setTimeout(() => setScanResult(null), 3000);
-    } finally {
-      setReporting(false);
-    }
+    } catch (e) { console.error("Stockout report error:", e); setScanResult({ type: "error", message: "エラーが発生しました" }); setTimeout(() => setScanResult(null), 3000); }
+    finally { setReporting(false); }
   };
 
-  const handleQrScan = useCallback(
-    async (decodedText) => {
-      if (!supabase || !storeId) return;
-
-      const { data: tag } = await supabase
-        .from("qr_tags")
-        .select("product_id")
-        .eq("tag_code", decodedText)
-        .eq("store_id", storeId)
-        .maybeSingle();
-
-      if (!tag || !tag.product_id) {
-        setScanResult({ type: "error", message: "未登録のタグです" });
-        setTimeout(() => setScanResult(null), 3000);
-        return;
-      }
-
-      await reportStockout(tag.product_id);
-    },
-    [storeId, products, sessionReports]
-  );
+  const handleQrScan = useCallback(async (decodedText) => {
+    if (!supabase || !storeId) return;
+    const { data: tag } = await supabase.from("qr_tags").select("product_id").eq("tag_code", decodedText).eq("store_id", storeId).maybeSingle();
+    if (!tag || !tag.product_id) { setScanResult({ type: "error", message: "未登録のタグです" }); setTimeout(() => setScanResult(null), 3000); return; }
+    await reportStockout(tag.product_id);
+  }, [storeId, products, sessionReports]);
 
   const activeProducts = products.filter((p) => p.isActive);
-  const searchResults = searchQuery.trim()
-    ? activeProducts.filter(
-        (p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.manufacturer || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.category || "").toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : activeProducts;
+  const searchResults = searchQuery.trim() ? activeProducts.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || (p.manufacturer || "").toLowerCase().includes(searchQuery.toLowerCase()) || (p.category || "").toLowerCase().includes(searchQuery.toLowerCase())) : activeProducts;
 
   const handleAfterProposal = async () => {
     setReorderProposal(null);
@@ -1197,214 +1274,78 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts, onStoc
 
   return (
     <div style={{ padding: "0 20px" }}>
-      <div style={{
-        padding: 14, background: C.dangerLight, borderRadius: 12,
-        border: `1px solid ${C.dangerBorder}`, marginBottom: 16,
-      }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.danger, marginBottom: 4 }}>
-          🚨 在庫切れの商品を報告
-        </div>
-        <div style={{ fontSize: 11, color: C.textSub, lineHeight: 1.6 }}>
-          欠品データをもとに発注点を自動で見直します。
-          タグをスキャンするか、商品を検索して報告してください。
-        </div>
+      <div style={{ padding: 14, background: C.dangerLight, borderRadius: 12, border: `1px solid ${C.dangerBorder}`, marginBottom: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.danger, marginBottom: 4 }}>🚨 在庫切れの商品を報告</div>
+        <div style={{ fontSize: 11, color: C.textSub, lineHeight: 1.6 }}>欠品データをもとに発注点を自動で見直します。タグをスキャンするか、商品を検索して報告してください。</div>
       </div>
 
       {scanResult && (
-        <div style={{
-          padding: "11px 14px", marginBottom: 12, borderRadius: 10,
-          background:
-            scanResult.type === "success" ? "#dcfce7" :
-            scanResult.type === "warning" ? C.warnLight : C.dangerLight,
-          border: `1px solid ${
-            scanResult.type === "success" ? "#86efac" :
-            scanResult.type === "warning" ? C.warnBorder : C.dangerBorder
-          }`,
-          display: "flex", alignItems: "center", gap: 8,
-        }}>
-          <span style={{ fontSize: 18 }}>
-            {scanResult.type === "success" ? "✅" : scanResult.type === "warning" ? "⚠️" : "❌"}
-          </span>
+        <div style={{ padding: "11px 14px", marginBottom: 12, borderRadius: 10, background: scanResult.type === "success" ? "#dcfce7" : scanResult.type === "warning" ? C.warnLight : C.dangerLight, border: `1px solid ${scanResult.type === "success" ? "#86efac" : scanResult.type === "warning" ? C.warnBorder : C.dangerBorder}`, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 18 }}>{scanResult.type === "success" ? "✅" : scanResult.type === "warning" ? "⚠️" : "❌"}</span>
           <div>
-            <div style={{
-              fontSize: 13, fontWeight: 600,
-              color:
-                scanResult.type === "success" ? C.successDark :
-                scanResult.type === "warning" ? C.warnDark : C.danger,
-            }}>
-              {scanResult.message}
-            </div>
-            {scanResult.name && (
-              <div style={{ fontSize: 11, color: C.textSub }}>{scanResult.name}</div>
-            )}
+            <div style={{ fontSize: 13, fontWeight: 600, color: scanResult.type === "success" ? C.successDark : scanResult.type === "warning" ? C.warnDark : C.danger }}>{scanResult.message}</div>
+            {scanResult.name && <div style={{ fontSize: 11, color: C.textSub }}>{scanResult.name}</div>}
           </div>
         </div>
       )}
 
       {reorderProposal && (
-        <div style={{
-          padding: "14px 16px", marginBottom: 12, borderRadius: 12,
-          background: C.primaryLight, border: `1.5px solid ${C.primaryBorder}`,
-        }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.primary, marginBottom: 6 }}>
-            💡 発注点の変更を提案
-          </div>
+        <div style={{ padding: "14px 16px", marginBottom: 12, borderRadius: 12, background: C.primaryLight, border: `1.5px solid ${C.primaryBorder}` }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.primary, marginBottom: 6 }}>💡 発注点の変更を提案</div>
           <div style={{ fontSize: 12, color: C.text, lineHeight: 1.6, marginBottom: 10 }}>
-            <strong>{reorderProposal.productName}</strong> で欠品が発生しました。
-            発注点を <strong style={{ color: C.danger }}>{reorderProposal.currentPoint}本目</strong> →{" "}
-            <strong style={{ color: C.primary }}>{reorderProposal.newPoint}本目</strong> に引き上げますか？
+            <strong>{reorderProposal.productName}</strong> で欠品が発生しました。発注点を <strong style={{ color: C.danger }}>{reorderProposal.currentPoint}本目</strong> → <strong style={{ color: C.primary }}>{reorderProposal.newPoint}本目</strong> に引き上げますか？
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={async () => {
-                setApplyingProposal(true);
-                try {
-                  if (supabase && storeId) {
-                    const { error } = await supabase
-                      .from("products")
-                      .update({ reorder_point: reorderProposal.newPoint })
-                      .eq("id", reorderProposal.productId)
-                      .eq("store_id", storeId);
-                    if (error) {
-                      console.error("Reorder point update error:", error);
-                      alert("更新に失敗しました");
-                      return;
-                    }
-                  }
-                  await acknowledgeReport(reorderProposal.reportId);
-                  setScanResult({
-                    type: "success",
-                    name: reorderProposal.productName,
-                    message: `発注点を${reorderProposal.newPoint}本目に変更しました`,
-                  });
-                  setTimeout(() => setScanResult(null), 3000);
-                  if (onRefreshProducts) await onRefreshProducts();
-                  await handleAfterProposal();
-                } finally {
-                  setApplyingProposal(false);
+            <button onClick={async () => {
+              setApplyingProposal(true);
+              try {
+                if (supabase && storeId) {
+                  const { error } = await supabase.from("products").update({ reorder_point: reorderProposal.newPoint }).eq("id", reorderProposal.productId).eq("store_id", storeId);
+                  if (error) { console.error("Reorder point update error:", error); alert("更新に失敗しました"); return; }
                 }
-              }}
-              disabled={applyingProposal}
-              style={{
-                flex: 1, padding: "10px", border: "none", borderRadius: 10,
-                background: applyingProposal ? C.textMuted : C.primary,
-                color: "#fff", fontSize: 13, fontWeight: 700, cursor: applyingProposal ? "default" : "pointer",
-              }}
-            >
+                await acknowledgeReport(reorderProposal.reportId);
+                setScanResult({ type: "success", name: reorderProposal.productName, message: `発注点を${reorderProposal.newPoint}本目に変更しました` });
+                setTimeout(() => setScanResult(null), 3000);
+                if (onRefreshProducts) await onRefreshProducts();
+                await handleAfterProposal();
+              } finally { setApplyingProposal(false); }
+            }} disabled={applyingProposal} style={{ flex: 1, padding: "10px", border: "none", borderRadius: 10, background: applyingProposal ? C.textMuted : C.primary, color: "#fff", fontSize: 13, fontWeight: 700, cursor: applyingProposal ? "default" : "pointer" }}>
               {applyingProposal ? "更新中..." : `✅ ${reorderProposal.newPoint}本目に変更`}
             </button>
-            <button
-              onClick={async () => {
-                await acknowledgeReport(reorderProposal.reportId);
-                await handleAfterProposal();
-              }}
-              style={{
-                padding: "10px 16px", border: `1px solid ${C.border}`, borderRadius: 10,
-                background: C.card, color: C.textSub, fontSize: 13, fontWeight: 600, cursor: "pointer",
-              }}
-            >
-              スキップ
-            </button>
+            <button onClick={async () => { await acknowledgeReport(reorderProposal.reportId); await handleAfterProposal(); }} style={{ padding: "10px 16px", border: `1px solid ${C.border}`, borderRadius: 10, background: C.card, color: C.textSub, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>スキップ</button>
           </div>
         </div>
       )}
 
-      {cameraActive && (
-        <div style={{ marginBottom: 14 }}>
-          <QrScanner mode="qr" active={cameraActive} onScan={handleQrScan} />
-        </div>
-      )}
+      {cameraActive && <div style={{ marginBottom: 14 }}><QrScanner mode="qr" active={cameraActive} onScan={handleQrScan} /></div>}
 
-      <button
-        onClick={() => { setCameraActive(!cameraActive); setShowSearch(false); }}
-        style={{
-          width: "100%", padding: "14px", border: "none", borderRadius: 12,
-          background: cameraActive ? "#dc2626" : C.danger, color: "#fff",
-          fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 8,
-        }}
-      >
+      <button onClick={() => { setCameraActive(!cameraActive); setShowSearch(false); }} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 12, background: cameraActive ? "#dc2626" : C.danger, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 8 }}>
         {cameraActive ? "⏹ カメラを停止" : "📷 QRタグをスキャンして報告"}
       </button>
-
-      <button
-        onClick={() => { setShowSearch(!showSearch); setCameraActive(false); }}
-        style={{
-          width: "100%", padding: "12px", border: `1.5px solid ${C.border}`,
-          borderRadius: 12, background: showSearch ? C.bg : C.card, color: C.textSub,
-          fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 16,
-        }}
-      >
+      <button onClick={() => { setShowSearch(!showSearch); setCameraActive(false); }} style={{ width: "100%", padding: "12px", border: `1.5px solid ${C.border}`, borderRadius: 12, background: showSearch ? C.bg : C.card, color: C.textSub, fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 16 }}>
         {showSearch ? "✕ 検索を閉じる" : "🔍 タグが手元にない場合 → 商品名で検索"}
       </button>
 
       {showSearch && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ position: "relative", marginBottom: 10 }}>
-            <span style={{
-              position: "absolute", left: 12, top: "50%",
-              transform: "translateY(-50%)", fontSize: 16, color: C.textMuted,
-            }}>
-              🔍
-            </span>
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="商品名・メーカーで検索"
-              autoFocus
-              style={{
-                width: "100%", padding: "11px 12px 11px 38px",
-                border: `1px solid ${C.border}`, borderRadius: 10,
-                fontSize: 13, outline: "none", background: C.card,
-                boxSizing: "border-box",
-              }}
-            />
+            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: C.textMuted }}>🔍</span>
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="商品名・メーカーで検索" autoFocus style={{ width: "100%", padding: "11px 12px 11px 38px", border: `1px solid ${C.border}`, borderRadius: 10, fontSize: 13, outline: "none", background: C.card, boxSizing: "border-box" }} />
           </div>
-
           <div style={{ maxHeight: 260, overflowY: "auto" }}>
             {searchResults.length === 0 ? (
-              <div style={{ padding: 16, textAlign: "center", fontSize: 12, color: C.textSub }}>
-                該当する商品がありません
-              </div>
+              <div style={{ padding: 16, textAlign: "center", fontSize: 12, color: C.textSub }}>該当する商品がありません</div>
             ) : (
               searchResults.slice(0, 20).map((p) => {
                 const alreadyReported = sessionReports.find((r) => r.productId === p.id);
                 return (
-                  <button
-                    key={p.id}
-                    onClick={() => !alreadyReported && !reporting && reportStockout(p.id)}
-                    disabled={!!alreadyReported || reporting}
-                    style={{
-                      width: "100%", display: "flex", alignItems: "center", gap: 10,
-                      padding: "10px 14px", background: alreadyReported ? C.bg : C.card,
-                      borderRadius: 10, marginBottom: 4,
-                      border: `1px solid ${alreadyReported ? C.successBorder : C.border}`,
-                      cursor: alreadyReported || reporting ? "default" : "pointer",
-                      textAlign: "left", opacity: alreadyReported ? 0.5 : 1,
-                    }}
-                  >
-                    <div style={{
-                      width: 32, height: 32, borderRadius: 8, background: C.dangerLight,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 14, flexShrink: 0,
-                    }}>
-                      {alreadyReported ? "✅" : "🚨"}
-                    </div>
+                  <button key={p.id} onClick={() => !alreadyReported && !reporting && reportStockout(p.id)} disabled={!!alreadyReported || reporting} style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: alreadyReported ? C.bg : C.card, borderRadius: 10, marginBottom: 4, border: `1px solid ${alreadyReported ? C.successBorder : C.border}`, cursor: alreadyReported || reporting ? "default" : "pointer", textAlign: "left", opacity: alreadyReported ? 0.5 : 1 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: C.dangerLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{alreadyReported ? "✅" : "🚨"}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontSize: 13, fontWeight: 600, color: C.text,
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      }}>
-                        {p.name}
-                      </div>
-                      <div style={{ fontSize: 10, color: C.textSub, marginTop: 1 }}>
-                        {p.category} · {p.manufacturer}
-                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                      <div style={{ fontSize: 10, color: C.textSub, marginTop: 1 }}>{p.category} · {p.manufacturer}</div>
                     </div>
-                    {alreadyReported ? (
-                      <span style={{ fontSize: 10, color: C.success, fontWeight: 600 }}>報告済</span>
-                    ) : (
-                      <span style={{ fontSize: 11, color: C.danger, fontWeight: 600 }}>報告</span>
-                    )}
+                    {alreadyReported ? <span style={{ fontSize: 10, color: C.success, fontWeight: 600 }}>報告済</span> : <span style={{ fontSize: 11, color: C.danger, fontWeight: 600 }}>報告</span>}
                   </button>
                 );
               })
@@ -1415,104 +1356,62 @@ function StockoutScreen({ products, storeId, isDbMode, onRefreshProducts, onStoc
 
       {sessionReports.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8 }}>
-            今回の報告 <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{sessionReports.length}件</span>
-          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8 }}>今回の報告 <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{sessionReports.length}件</span></div>
           {sessionReports.map((r, i) => (
-            <div key={i} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-              background: C.dangerLight, borderRadius: 10, marginBottom: 4,
-              border: `1px solid ${C.dangerBorder}`,
-            }}>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: C.dangerLight, borderRadius: 10, marginBottom: 4, border: `1px solid ${C.dangerBorder}` }}>
               <span style={{ fontSize: 16 }}>🚨</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{r.name}</div>
-                <div style={{ fontSize: 10, color: C.textSub }}>
-                  {r.category}
-                  {r.daysSinceOrder != null && ` · 前回発注から${r.daysSinceOrder}日`}
-                </div>
+                <div style={{ fontSize: 10, color: C.textSub }}>{r.category}{r.daysSinceOrder != null && ` · 前回発注から${r.daysSinceOrder}日`}</div>
               </div>
-              <div style={{ fontSize: 10, color: C.textSub }}>
-                {r.reportedAt.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}
-              </div>
+              <div style={{ fontSize: 10, color: C.textSub }}>{r.reportedAt.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" })}</div>
             </div>
           ))}
         </div>
       )}
 
       <div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8 }}>
-          過去の欠品報告
-        </div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8 }}>過去の欠品報告</div>
         {historyLoading ? (
-          <div style={{ padding: 20, textAlign: "center", fontSize: 12, color: C.textSub }}>
-            読み込み中...
-          </div>
+          <div style={{ padding: 20, textAlign: "center", fontSize: 12, color: C.textSub }}>読み込み中...</div>
         ) : history.length === 0 ? (
           <EmptyState icon="📊" message="まだ欠品報告はありません。報告が蓄積されると発注点を自動で改善します。" />
         ) : (
           <>
             {history.slice(0, 10).map((h) => (
-              <div key={h.id} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-                background: h.acknowledged === false ? C.warnLight : C.card,
-                borderRadius: 10, marginBottom: 4,
-                border: `1px solid ${h.acknowledged === false ? C.warnBorder : C.border}`,
-              }}>
-                <span style={{ fontSize: 14, color: h.acknowledged === false ? C.warn : C.textMuted }}>
-                  {h.acknowledged === false ? "🔔" : "✅"}
-                </span>
+              <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: h.acknowledged === false ? C.warnLight : C.card, borderRadius: 10, marginBottom: 4, border: `1px solid ${h.acknowledged === false ? C.warnBorder : C.border}` }}>
+                <span style={{ fontSize: 14, color: h.acknowledged === false ? C.warn : C.textMuted }}>{h.acknowledged === false ? "🔔" : "✅"}</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>
                     {h.products?.name || "不明な商品"}
-                    {h.acknowledged === false && (
-                      <span style={{ fontSize: 10, color: C.warn, fontWeight: 700, marginLeft: 6 }}>未対応</span>
-                    )}
+                    {h.acknowledged === false && <span style={{ fontSize: 10, color: C.warn, fontWeight: 700, marginLeft: 6 }}>未対応</span>}
                   </div>
-                  <div style={{ fontSize: 10, color: C.textSub }}>
-                    {h.products?.category || ""}
-                    {h.days_since_order != null && ` · 発注から${h.days_since_order}日で欠品`}
-                  </div>
+                  <div style={{ fontSize: 10, color: C.textSub }}>{h.products?.category || ""}{h.days_since_order != null && ` · 発注から${h.days_since_order}日で欠品`}</div>
                 </div>
-                <div style={{ fontSize: 10, color: C.textSub }}>
-                  {h.reported_at ? formatShortDate(h.reported_at) : ""}
-                </div>
+                <div style={{ fontSize: 10, color: C.textSub }}>{h.reported_at ? formatShortDate(h.reported_at) : ""}</div>
               </div>
             ))}
-            {history.length > 10 && (
-              <div style={{ padding: 8, textAlign: "center", fontSize: 11, color: C.textMuted }}>
-                他 {history.length - 10}件の報告
-              </div>
-            )}
+            {history.length > 10 && <div style={{ padding: 8, textAlign: "center", fontSize: 11, color: C.textMuted }}>他 {history.length - 10}件の報告</div>}
           </>
         )}
       </div>
 
-      <div style={{
-        marginTop: 16, padding: 14, background: C.primaryLight,
-        borderRadius: 12, border: `1px solid ${C.primaryBorder}`,
-      }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, marginBottom: 4 }}>
-          💡 使うほど賢くなる自動補正
-        </div>
-        <div style={{ fontSize: 11, color: C.textSub, lineHeight: 1.6 }}>
-          欠品を報告するたびに、該当商品の発注点（タグを付ける位置）を1つ手前にずらすことを提案します。
-          承認すると次回から早めに発注リストに入るため、同じ欠品を防げます。
-        </div>
+      <div style={{ marginTop: 16, padding: 14, background: C.primaryLight, borderRadius: 12, border: `1px solid ${C.primaryBorder}` }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, marginBottom: 4 }}>💡 使うほど賢くなる自動補正</div>
+        <div style={{ fontSize: 11, color: C.textSub, lineHeight: 1.6 }}>欠品を報告するたびに、該当商品の発注点（タグを付ける位置）を1つ手前にずらすことを提案します。承認すると次回から早めに発注リストに入るため、同じ欠品を防げます。</div>
       </div>
     </div>
   );
 }
 
 // ======================================================================
-// Main App ★ S37: handleDeleteOrderItem 追加
+// Main App ★ S39: categories / locations state 追加
 // ======================================================================
 export default function SalonMock() {
   const {
     storeId, storeName, storePlan, storeMaxSku, storeBonusSku,
     subscriptionStatus, signOut, isAuthenticated, isSupabaseConnected, user,
-    refreshStore,
-    isEarlyBird, storeReferredBy,
+    refreshStore, isEarlyBird, storeReferredBy,
   } = useAuth();
 
   const [screen, setScreen] = useState("top");
@@ -1528,14 +1427,15 @@ export default function SalonMock() {
   const [trialLoading, setTrialLoading] = useState(false);
   const [stockoutCount, setStockoutCount] = useState(0);
 
-  const isDbMode = isSupabaseConnected && isAuthenticated && dbConnected;
+  // ★ S39: カテゴリー・保管場所のstate
+  const [categories, setCategories] = useState([]);
+  const [locations, setLocations] = useState([]);
 
+  const isDbMode = isSupabaseConnected && isAuthenticated && dbConnected;
   const skuLimit = (storeMaxSku || 30) + (storeBonusSku || 0);
   const activeProductCount = products.filter((p) => p.isActive).length;
   const isOverLimit = activeProductCount > skuLimit;
-
   const isFreeAccess = isEarlyBird || !!storeReferredBy;
-
   const needsTrialGate = !isFreeAccess && storePlan === "free" && !subscriptionStatus;
 
   useEffect(() => {
@@ -1543,9 +1443,7 @@ export default function SalonMock() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("checkout") === "success") {
         window.history.replaceState({}, "", window.location.pathname);
-        const timer = setTimeout(() => {
-          if (refreshStore) refreshStore();
-        }, 2000);
+        const timer = setTimeout(() => { if (refreshStore) refreshStore(); }, 2000);
         return () => clearTimeout(timer);
       }
     }
@@ -1559,26 +1457,14 @@ export default function SalonMock() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          priceId: "price_1T4w0SAhbUNgyEJI4FwYN1k7",
-          accessToken: token,
-          trialDays: 30,
-        }),
+        body: JSON.stringify({ priceId: "price_1T4w0SAhbUNgyEJI4FwYN1k7", accessToken: token, trialDays: 30 }),
       });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert(data.error || "エラーが発生しました");
-      }
-    } catch (err) {
-      alert("通信エラーが発生しました");
-    } finally {
-      setTrialLoading(false);
-    }
+      if (data.url) { window.location.href = data.url; } else { alert(data.error || "エラーが発生しました"); }
+    } catch (err) { alert("通信エラーが発生しました"); }
+    finally { setTrialLoading(false); }
   };
 
-  // ——— Fetch products from Supabase ———
   const fetchProducts = useCallback(async () => {
     if (!supabase || !storeId) return;
     try {
@@ -1591,9 +1477,7 @@ export default function SalonMock() {
   const fetchOrderItems = useCallback(async () => {
     if (!supabase || !storeId) return;
     try {
-      const { data, error } = await supabase.from("order_items")
-        .select(`*, products (name, category, location, manufacturer)`)
-        .eq("store_id", storeId).order("scanned_at", { ascending: false });
+      const { data, error } = await supabase.from("order_items").select(`*, products (name, category, location, manufacturer)`).eq("store_id", storeId).order("scanned_at", { ascending: false });
       if (error) throw error;
       if (data) {
         const items = data.map(orderItemFromDb);
@@ -1617,20 +1501,67 @@ export default function SalonMock() {
   const fetchStockoutCount = useCallback(async () => {
     if (!supabase || !storeId) return;
     try {
-      const { count, error } = await supabase
-        .from("stockout_reports")
-        .select("*", { count: "exact", head: true })
-        .eq("store_id", storeId)
-        .eq("acknowledged", false);
+      const { count, error } = await supabase.from("stockout_reports").select("*", { count: "exact", head: true }).eq("store_id", storeId).eq("acknowledged", false);
       if (!error) setStockoutCount(count || 0);
-    } catch (e) {
-      console.error("Stockout count fetch error:", e);
-    }
+    } catch (e) { console.error("Stockout count fetch error:", e); }
+  }, [storeId]);
+
+  // ★ S39: カテゴリー取得（空の場合は美容室プリセットを自動挿入）
+  const fetchCategories = useCallback(async () => {
+    if (!supabase || !storeId) return;
+    try {
+      const { data, error } = await supabase
+        .from("store_categories")
+        .select("id, name")
+        .eq("store_id", storeId)
+        .order("display_order")
+        .order("created_at");
+      if (error) throw error;
+      if (data !== null) {
+        if (data.length === 0) {
+          const rows = BEAUTY_PRESET_CATEGORIES.map((name, i) => ({ store_id: storeId, name, display_order: i }));
+          const { data: inserted } = await supabase.from("store_categories").insert(rows).select("id, name");
+          if (inserted) setCategories(inserted);
+        } else {
+          setCategories(data);
+        }
+      }
+    } catch (e) { console.error("Categories fetch error:", e); }
+  }, [storeId]);
+
+  // ★ S39: 保管場所取得（空の場合は美容室プリセットを自動挿入）
+  const fetchLocations = useCallback(async () => {
+    if (!supabase || !storeId) return;
+    try {
+      const { data, error } = await supabase
+        .from("store_locations")
+        .select("id, name")
+        .eq("store_id", storeId)
+        .order("display_order")
+        .order("created_at");
+      if (error) throw error;
+      if (data !== null) {
+        if (data.length === 0) {
+          const rows = BEAUTY_PRESET_LOCATIONS.map((name, i) => ({ store_id: storeId, name, display_order: i }));
+          const { data: inserted } = await supabase.from("store_locations").insert(rows).select("id, name");
+          if (inserted) setLocations(inserted);
+        } else {
+          setLocations(data);
+        }
+      }
+    } catch (e) { console.error("Locations fetch error:", e); }
   }, [storeId]);
 
   useEffect(() => {
-    if (storeId) { fetchProducts(); fetchOrderItems(); fetchTagCount(); fetchStockoutCount(); }
-  }, [storeId, fetchProducts, fetchOrderItems, fetchTagCount, fetchStockoutCount]);
+    if (storeId) {
+      fetchProducts();
+      fetchOrderItems();
+      fetchTagCount();
+      fetchStockoutCount();
+      fetchCategories();
+      fetchLocations();
+    }
+  }, [storeId, fetchProducts, fetchOrderItems, fetchTagCount, fetchStockoutCount, fetchCategories, fetchLocations]);
 
   // ——— Product CRUD ———
   const handleSaveProduct = async (formData, isEdit) => {
@@ -1643,12 +1574,8 @@ export default function SalonMock() {
         const { data: newProduct, error } = await supabase.from("products").insert(jsToDb(formData, storeId)).select("id").single();
         if (error) throw error;
         if (newProduct) {
-          const { data: freeTag } = await supabase.from("qr_tags").select("id, tag_code")
-            .eq("store_id", storeId).eq("status", "unassigned").is("product_id", null)
-            .order("tag_code", { ascending: true }).limit(1).maybeSingle();
-          if (freeTag) {
-            await supabase.from("qr_tags").update({ product_id: newProduct.id, status: "attached" }).eq("id", freeTag.id);
-          }
+          const { data: freeTag } = await supabase.from("qr_tags").select("id, tag_code").eq("store_id", storeId).eq("status", "unassigned").is("product_id", null).order("tag_code", { ascending: true }).limit(1).maybeSingle();
+          if (freeTag) { await supabase.from("qr_tags").update({ product_id: newProduct.id, status: "attached" }).eq("id", freeTag.id); }
         }
       }
       await fetchProducts();
@@ -1667,7 +1594,6 @@ export default function SalonMock() {
     } catch (e) { console.error("Product delete error:", e); alert("削除に失敗しました: " + e.message); }
   };
 
-  // ——— Order Item operations ———
   const handleAddOrderItem = async (product) => {
     if (!supabase || !storeId) return;
     try {
@@ -1697,43 +1623,24 @@ export default function SalonMock() {
     } catch (e) { console.error("Mark received error:", e); }
   };
 
-  // ★ S37: 発注取消（order_itemsから削除＋タグをattachedに戻す）
   const handleDeleteOrderItem = async (item) => {
     if (!supabase || !storeId) return;
     try {
-      // order_itemsから削除
-      const { error } = await supabase
-        .from("order_items")
-        .delete()
-        .eq("id", item.id)
-        .eq("store_id", storeId);
+      const { error } = await supabase.from("order_items").delete().eq("id", item.id).eq("store_id", storeId);
       if (error) throw error;
-
-      // タグのステータスを attached に戻す（removedのものを復元）
       if (item.productId) {
-        await supabase
-          .from("qr_tags")
-          .update({ status: "attached" })
-          .eq("store_id", storeId)
-          .eq("product_id", item.productId)
-          .eq("status", "removed");
+        await supabase.from("qr_tags").update({ status: "attached" }).eq("store_id", storeId).eq("product_id", item.productId).eq("status", "removed");
       }
-
       await fetchOrderItems();
-    } catch (e) {
-      console.error("Delete order item error:", e);
-      alert("取消に失敗しました");
-    }
+    } catch (e) { console.error("Delete order item error:", e); alert("取消に失敗しました"); }
   };
 
   const pendingCount = pendingItems.length;
   const waitingCount = orderedItems.length;
-  const activeProducts = activeProductCount;
 
   const screenTitle = {
     top: null, scan: "QRスキャン", order: "発注リスト", receive: "受取待ち",
-    products: "商品管理", tags: "タグ管理", settings: "設定",
-    stockout: "欠品報告",
+    products: "商品管理", tags: "タグ管理", settings: "設定", stockout: "欠品報告",
   };
 
   if (needsTrialGate && isDbMode) {
@@ -1759,12 +1666,7 @@ export default function SalonMock() {
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 18 }}>🏷️</span>
               <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>在庫番</span>
-              <span style={{
-                fontSize: 9, color: isDbMode ? C.success : C.textSub,
-                background: isDbMode ? C.successLight : "#f3f4f6",
-                padding: "2px 8px", borderRadius: 10, fontWeight: 600,
-                border: isDbMode ? `1px solid ${C.successBorder}` : "none",
-              }}>
+              <span style={{ fontSize: 9, color: isDbMode ? C.success : C.textSub, background: isDbMode ? C.successLight : "#f3f4f6", padding: "2px 8px", borderRadius: 10, fontWeight: 600, border: isDbMode ? `1px solid ${C.successBorder}` : "none" }}>
                 {isDbMode ? "DB接続中" : "未接続"}
               </span>
             </div>
@@ -1774,35 +1676,20 @@ export default function SalonMock() {
         </div>
         {screen === "top" && (
           <div style={{ position: "relative" }}>
-            <button onClick={() => setShowMenu(!showMenu)} style={{
-              background: "none", border: "none", cursor: "pointer", padding: "4px 8px",
-              fontSize: 11, color: C.textSub, display: "flex", alignItems: "center", gap: 4,
-            }}>
+            <button onClick={() => setShowMenu(!showMenu)} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px", fontSize: 11, color: C.textSub, display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{ fontSize: 14 }}>👤</span>
-              <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {storeName || "メニュー"}
-              </span>
+              <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{storeName || "メニュー"}</span>
             </button>
             {showMenu && (
               <>
                 <div style={{ position: "fixed", inset: 0, zIndex: 60 }} onClick={() => setShowMenu(false)} />
-                <div style={{
-                  position: "absolute", right: 0, top: "100%", marginTop: 4,
-                  background: C.card, borderRadius: 10, border: `1px solid ${C.border}`,
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 180, zIndex: 70, overflow: "hidden",
-                }}>
+                <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 4, background: C.card, borderRadius: 10, border: `1px solid ${C.border}`, boxShadow: "0 4px 16px rgba(0,0,0,0.1)", minWidth: 180, zIndex: 70, overflow: "hidden" }}>
                   <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{storeName || "マイサロン"}</div>
                     <div style={{ fontSize: 10, color: C.textSub, marginTop: 2 }}>{isDbMode ? "Supabase接続中" : "未接続"}</div>
                   </div>
-                  <button onClick={() => { setScreen("settings"); setShowMenu(false); }} style={{
-                    width: "100%", padding: "12px 16px", border: "none", background: "transparent", textAlign: "left",
-                    fontSize: 13, color: C.text, cursor: "pointer", borderBottom: `1px solid ${C.border}`,
-                  }}>⚙️ 設定</button>
-                  <button onClick={() => { signOut(); setShowMenu(false); }} style={{
-                    width: "100%", padding: "12px 16px", border: "none", background: "transparent", textAlign: "left",
-                    fontSize: 13, color: C.danger, cursor: "pointer",
-                  }}>ログアウト</button>
+                  <button onClick={() => { setScreen("settings"); setShowMenu(false); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "transparent", textAlign: "left", fontSize: 13, color: C.text, cursor: "pointer", borderBottom: `1px solid ${C.border}` }}>⚙️ 設定</button>
+                  <button onClick={() => { signOut(); setShowMenu(false); }} style={{ width: "100%", padding: "12px 16px", border: "none", background: "transparent", textAlign: "left", fontSize: 13, color: C.danger, cursor: "pointer" }}>ログアウト</button>
                 </div>
               </>
             )}
@@ -1812,11 +1699,26 @@ export default function SalonMock() {
 
       {/* Content */}
       <div style={{ paddingTop: 16, paddingBottom: 90 }}>
-        {screen === "top" && <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProducts} tagCount={tagCount} stockoutCount={stockoutCount} />}
+        {screen === "top" && <TopScreen onNavigate={setScreen} orderCount={pendingCount} receiveCount={waitingCount} productCount={activeProductCount} tagCount={tagCount} stockoutCount={stockoutCount} />}
         {screen === "scan" && <ScanScreen onNavigate={setScreen} products={products} onAddOrderItem={handleAddOrderItem} storeId={storeId} isOverLimit={isOverLimit} skuLimit={skuLimit} activeCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />}
         {screen === "order" && <OrderScreen pendingItems={pendingItems} setPendingItems={setPendingItems} onMarkOrdered={handleMarkOrdered} onDeleteOrderItem={handleDeleteOrderItem} isOverLimit={isOverLimit} skuLimit={skuLimit} activeCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />}
         {screen === "receive" && <ReceiveScreen orderedItems={orderedItems} receivedItems={receivedItems} onMarkReceived={handleMarkReceived} storeId={storeId} products={products} />}
-        {screen === "products" && <ProductScreen products={products} onSaveProduct={handleSaveProduct} onDeleteProduct={handleDeleteProduct} skuLimit={skuLimit} currentPlan={storePlan || "free"} onShowPricing={() => setShowPricing(true)} tagMap={tagMap} />}
+        {screen === "products" && (
+          <ProductScreen
+            products={products}
+            onSaveProduct={handleSaveProduct}
+            onDeleteProduct={handleDeleteProduct}
+            skuLimit={skuLimit}
+            currentPlan={storePlan || "free"}
+            onShowPricing={() => setShowPricing(true)}
+            tagMap={tagMap}
+            categories={categories}
+            locations={locations}
+            onCategoriesChange={setCategories}
+            onLocationsChange={setLocations}
+            storeId={storeId}
+          />
+        )}
         {screen === "tags" && <TagManagementScreen products={products} />}
         {screen === "settings" && <SettingsScreen activeProductCount={activeProductCount} onShowPricing={() => setShowPricing(true)} />}
         {screen === "stockout" && <StockoutScreen products={products} storeId={storeId} isDbMode={isDbMode} onRefreshProducts={fetchProducts} onStockoutCountChange={fetchStockoutCount} />}
@@ -1842,13 +1744,7 @@ export default function SalonMock() {
             <span style={{ fontSize: 20 }}>{nav.icon}</span>
             <span style={{ fontSize: 9, fontWeight: 600, color: screen === nav.id ? C.primary : C.textSub }}>{nav.label}</span>
             {nav.badge > 0 && (
-              <span style={{
-                position: "absolute", top: -2, right: 4,
-                minWidth: 16, height: 16, borderRadius: 8,
-                background: C.danger, color: "#fff",
-                fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "0 4px",
-              }}>{nav.badge}</span>
+              <span style={{ position: "absolute", top: -2, right: 4, minWidth: 16, height: 16, borderRadius: 8, background: C.danger, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{nav.badge}</span>
             )}
           </button>
         ))}
