@@ -587,7 +587,7 @@ export default function OwnerGuidePage() {
             <div style={styles.guideCard}>
               <h3 style={styles.dailyTitle}>紹介プログラム</h3>
               <p style={styles.guideText}>
-                設定画面に表示される紹介コード（ZB-XXXXXX）を他のサロンオーナーに共有してください。
+                お知り合いのサロンオーナーをご紹介いただくと、紹介した方もされた方も月額がお得になります。
               </p>
               <div style={styles.referralBox}>
                 <div style={styles.referralItem}>
@@ -600,9 +600,41 @@ export default function OwnerGuidePage() {
                   <div style={styles.referralValue}>全プラン永久 ¥500 OFF</div>
                 </div>
               </div>
-              <p style={{...styles.guideText, marginTop: 12, marginBottom: 0}}>
-                例：6人紹介すればライトプラン（¥2,980）が実質無料になります。
+
+              <h4 style={{...styles.dailyTitle, fontSize: 15, marginTop: 20, marginBottom: 12}}>紹介の方法</h4>
+              <p style={styles.guideText}>
+                設定画面に表示される<strong>紹介リンク</strong>または<strong>紹介コード（ZB-XXXXXX）</strong>を、以下のいずれかの方法で共有してください。
               </p>
+              <div style={styles.referralMethods}>
+                <div style={styles.referralMethod}>
+                  <div style={{...styles.referralMethodIcon, background: '#dcfce7'}}>💬</div>
+                  <div>
+                    <div style={styles.referralMethodTitle}>LINEやメッセージで直接送る</div>
+                    <div style={styles.referralMethodDesc}>設定画面の「リンクをコピー」で紹介URLをコピーし、知り合いのオーナーに送信</div>
+                  </div>
+                </div>
+                <div style={styles.referralMethod}>
+                  <div style={{...styles.referralMethodIcon, background: '#dbeafe'}}>📱</div>
+                  <div>
+                    <div style={styles.referralMethodTitle}>SNSでシェアする</div>
+                    <div style={styles.referralMethodDesc}>Instagram、X（Twitter）、Facebookなどに紹介リンクを投稿してもOKです</div>
+                  </div>
+                </div>
+                <div style={styles.referralMethod}>
+                  <div style={{...styles.referralMethodIcon, background: '#fef3c7'}}>📷</div>
+                  <div>
+                    <div style={styles.referralMethodTitle}>QRコードで招待する</div>
+                    <div style={styles.referralMethodDesc}>設定画面の紹介リンクをQRコード化すれば、対面で見せるだけで招待できます</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={styles.tipBox}>
+                <div style={styles.tipIcon}>🎁</div>
+                <div style={styles.tipText}>
+                  紹介人数に上限はありません。例えば6人紹介すれば、ライトプラン（¥2,980）が実質無料になります。紹介が増えるほど月額が安くなる仕組みです。
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -645,12 +677,19 @@ export default function OwnerGuidePage() {
           <p style={styles.contactText}>
             ご不明な点がございましたら、お気軽にお問い合わせください。
           </p>
-          <div style={styles.contactInfo}>
-            <div style={styles.contactRow}>
-              <span style={styles.contactLabel}>メール</span>
-              <span style={styles.contactValue}>info@zaiko-ban.com</span>
-            </div>
+          <div style={styles.contactButtons}>
+            <a href="https://lin.ee/8F7Efzj" target="_blank" rel="noopener noreferrer" style={styles.contactBtnLine}>
+              <span style={{ fontSize: 18 }}>💬</span>
+              <span>LINEで相談</span>
+            </a>
+            <a href="https://forms.gle/KYf2N99PYUg1c4ke7" target="_blank" rel="noopener noreferrer" style={styles.contactBtnForm}>
+              <span style={{ fontSize: 18 }}>📝</span>
+              <span>お問い合わせフォーム</span>
+            </a>
           </div>
+          <p style={{ fontSize: 12, color: '#888', marginTop: 12 }}>
+            LINEは友だち追加ですぐにチャットで相談できます。フォームは24時間受付、通常1営業日以内にご返信いたします。
+          </p>
         </div>
       </section>
 
@@ -1224,6 +1263,42 @@ const styles = {
     background: '#F0E6C8',
     margin: '12px 0',
   },
+  referralMethods: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    marginBottom: 14,
+  },
+  referralMethod: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: '12px 14px',
+    background: '#FAFAF8',
+    border: '1px solid #e8e8e4',
+    borderRadius: 12,
+  },
+  referralMethodIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 18,
+    flexShrink: 0,
+  },
+  referralMethodTitle: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#1a1a1a',
+    marginBottom: 2,
+  },
+  referralMethodDesc: {
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 1.7,
+  },
 
   // FAQ
   faqSection: {
@@ -1313,6 +1388,37 @@ const styles = {
     color: '#666',
     marginBottom: 16,
     lineHeight: 1.8,
+  },
+  contactButtons: {
+    display: 'flex',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  contactBtnLine: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '12px 24px',
+    background: '#06c755',
+    color: '#fff',
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 700,
+    textDecoration: 'none',
+    transition: 'all 0.2s',
+  },
+  contactBtnForm: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '12px 24px',
+    background: '#2563eb',
+    color: '#fff',
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 700,
+    textDecoration: 'none',
+    transition: 'all 0.2s',
   },
   contactInfo: {},
   contactRow: {
