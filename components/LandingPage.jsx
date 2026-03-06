@@ -571,7 +571,7 @@ export default function LandingPage() {
               <div className="contact-icon" style={{ background: "#dcfce7" }}>💬</div>
               <h3>LINEで相談</h3>
               <p>友だち追加ですぐにチャットで相談できます。お気軽にどうぞ。</p>
-              <a href="#" className="contact-btn btn-line">LINEで友だち追加</a>
+              <a href="https://lin.ee/8F7Efzj" className="contact-btn btn-line">LINEで友だち追加</a>
             </div>
             <div className="contact-card anim" style={{ transitionDelay: "0.1s" }}>
               <div className="contact-icon" style={{ background: "#dbeafe" }}>📝</div>
