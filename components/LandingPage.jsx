@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../app/landing.css";
 
 // ── Scroll Animation Hook ──
@@ -20,6 +20,34 @@ function useScrollReveal() {
   return ref;
 }
 
+// ── Countdown Hook ──
+function useCountdown() {
+  const [days, setDays] = useState(null);
+  useEffect(() => {
+    const deadline = new Date("2026-03-31T23:59:59+09:00");
+    const calc = () => {
+      const now = new Date();
+      const diff = deadline - now;
+      if (diff <= 0) return 0;
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    };
+    setDays(calc());
+    const timer = setInterval(() => setDays(calc()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+  return days;
+}
+
+// ── DM Detection Hook ──
+function useFromDM() {
+  const [fromDM, setFromDM] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("from") === "dm") setFromDM(true);
+  }, []);
+  return fromDM;
+}
+
 // ── FAQ Item ──
 function FaqItem({ q, a }) {
   const handleClick = (e) => {
@@ -36,9 +64,27 @@ function FaqItem({ q, a }) {
   );
 }
 
+// ── Photo Placeholder ──
+function PhotoPlaceholder({ label, aspect, className }) {
+  return (
+    <div className={`photo-placeholder ${className || ""}`} style={{ aspectRatio: aspect || "4/3" }}>
+      <div className="photo-placeholder-inner">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+        <span className="photo-placeholder-label">{label || "写真準備中"}</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ──
 export default function LandingPage() {
   const rootRef = useScrollReveal();
+  const daysLeft = useCountdown();
+  const fromDM = useFromDM();
 
   useEffect(() => {
     const onScroll = () => {
@@ -61,6 +107,16 @@ export default function LandingPage() {
 
   return (
     <div ref={rootRef}>
+
+      {/* ═══ DM Welcome Banner ═══ */}
+      {fromDM && (
+        <div className="dm-banner">
+          <div className="dm-banner-inner">
+            <span className="dm-banner-icon">📮</span>
+            <span className="dm-banner-text">DMをお読みいただきありがとうございます！このページから無料でお試しいただけます。</span>
+          </div>
+        </div>
+      )}
 
       {/* ═══ Navigation ═══ */}
       <nav className="lp-nav" id="lp-nav">
@@ -108,7 +164,13 @@ export default function LandingPage() {
               <a href={APP_URL} className="btn-primary">無料で始める →</a>
               <a href="#how" className="btn-secondary">仕組みを見る</a>
             </div>
-            <p className="hero-note">※ クレジットカード不要・3/31まで限定で完全無料</p>
+            {daysLeft !== null && daysLeft > 0 ? (
+              <p className="hero-note hero-note-countdown">
+                ※ クレジットカード不要 ·<span className="countdown-highlight"> 無料キャンペーン終了まであと{daysLeft}日</span>
+              </p>
+            ) : (
+              <p className="hero-note">※ クレジットカード不要・3/31まで限定で完全無料</p>
+            )}
           </div>
           <div className="hero-visual">
             <div className="hero-phone">
@@ -143,6 +205,45 @@ export default function LandingPage() {
             <div className="hero-float-tag">
               <span className="tag-icon">🏷️</span>
               <span className="tag-text">タグを商品にかけるだけ！</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ Social Proof ═══ */}
+      <section className="section social-proof">
+        <div className="container">
+          <div className="proof-card anim">
+            <div className="proof-content">
+              <div className="proof-badge-row">
+                <span className="proof-badge">✅ 開発者自身が毎日使っています</span>
+              </div>
+              <h2 className="proof-title">167商品で実運用中</h2>
+              <p className="proof-desc">
+                在庫番の開発者は、自身が経営する横浜のカフェで167商品のQRタグ在庫管理を毎日運用しています。
+                現場で実際に使いながら改善を続けているからこそ、美容室・エステサロンの業務に自信を持ってお届けできます。
+              </p>
+              <div className="proof-stats">
+                <div className="proof-stat">
+                  <span className="proof-stat-num">167</span>
+                  <span className="proof-stat-label">管理中の商品数</span>
+                </div>
+                <div className="proof-stat">
+                  <span className="proof-stat-num">6年</span>
+                  <span className="proof-stat-label">カフェ経営の実績</span>
+                </div>
+                <div className="proof-stat">
+                  <span className="proof-stat-num">0件</span>
+                  <span className="proof-stat-label">導入後の欠品</span>
+                </div>
+              </div>
+            </div>
+            <div className="proof-photos">
+              <PhotoPlaceholder label="カフェでのタグ運用風景" aspect="4/3" className="proof-photo-main" />
+              <div className="proof-photos-sub">
+                <PhotoPlaceholder label="棚のタグ" aspect="1/1" />
+                <PhotoPlaceholder label="スキャン中" aspect="1/1" />
+              </div>
             </div>
           </div>
         </div>
@@ -194,6 +295,12 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+          {/* ★ How it works — photo placeholders */}
+          <div className="how-photos anim">
+            <PhotoPlaceholder label="① タグをゴム紐で商品に付ける" aspect="16/10" />
+            <PhotoPlaceholder label="② タグを外してカゴに集める" aspect="16/10" />
+            <PhotoPlaceholder label="③ スマホでまとめてスキャン" aspect="16/10" />
+          </div>
         </div>
       </section>
 
@@ -222,6 +329,28 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ Tag Close-up ═══ */}
+      <section className="section tag-closeup">
+        <div className="container">
+          <div className="tag-closeup-inner anim">
+            <div className="tag-closeup-text">
+              <span className="section-label">QRタグ</span>
+              <h2 className="section-title">小さなタグが、在庫管理を変える</h2>
+              <p className="section-desc">耐水性のユポ紙（3cm×5.5cm）にQRコードを印刷。ゴム紐付きで、どんな形状のボトルやチューブにも取り付けられます。</p>
+              <ul className="tag-specs">
+                <li><span className="tag-spec-icon">💧</span>耐水性ユポ紙（選挙投票用紙と同素材）</li>
+                <li><span className="tag-spec-icon">📐</span>3cm × 5.5cm のコンパクトサイズ</li>
+                <li><span className="tag-spec-icon">🔗</span>ゴム紐付き — ボトルにかけるだけ</li>
+                <li><span className="tag-spec-icon">📦</span>登録プランに応じた枚数を郵送</li>
+              </ul>
+            </div>
+            <div className="tag-closeup-photo">
+              <PhotoPlaceholder label="QRタグの実物写真" aspect="4/3" />
+            </div>
           </div>
         </div>
       </section>
@@ -300,10 +429,14 @@ export default function LandingPage() {
             <span className="section-label">料金プラン</span>
             <h2 className="section-title">まずは無料で、試してみてください</h2>
             <p className="section-desc">3/31までの登録でクレジットカード不要、30商品まで無料でお使いいただけます。商品数が増えたらアプリ内でいつでもアップグレードできます。</p>
-            {/* ★ 3/31期間限定バッジ（完全静的 = ハイドレーションエラーなし） */}
+            {/* ★ Countdown badge */}
             <div className="campaign-badge">
               <span className="campaign-badge-dot" />
-              <span className="campaign-badge-text">🎉 3/31までの登録で、エントリープランがずっと無料！</span>
+              {daysLeft !== null && daysLeft > 0 ? (
+                <span className="campaign-badge-text">🎉 無料キャンペーン終了まであと<strong className="countdown-days">{daysLeft}日</strong>！エントリープランがずっと無料</span>
+              ) : (
+                <span className="campaign-badge-text">🎉 3/31までの登録で、エントリープランがずっと無料！</span>
+              )}
             </div>
           </div>
 
@@ -410,7 +543,11 @@ export default function LandingPage() {
         <div className="container">
           <div className="anim">
             <h2 className="cta-title">棚卸しのない日常を、<br />今日から始めよう</h2>
-            <p className="cta-desc">3/31までの登録でエントリープラン（30商品）が無料。クレジットカードの登録も不要です。</p>
+            {daysLeft !== null && daysLeft > 0 ? (
+              <p className="cta-desc">無料キャンペーン終了まであと<strong>{daysLeft}日</strong>。エントリープラン（30商品）が永久無料。クレジットカードの登録も不要です。</p>
+            ) : (
+              <p className="cta-desc">3/31までの登録でエントリープラン（30商品）が無料。クレジットカードの登録も不要です。</p>
+            )}
             <a href={APP_URL} className="btn-cta-white">無料アカウントを作成 →</a>
             <p className="cta-sub">※ 30秒で登録完了。いつでも解約可能。</p>
           </div>
@@ -455,6 +592,7 @@ export default function LandingPage() {
             <li><a href="#faq">FAQ</a></li>
             <li><a href="#contact">お問い合わせ</a></li>
             <li><a href="/legal">運営者情報</a></li>
+            <li><a href="/guide">ご利用ガイド</a></li>
           </ul>
           <div className="footer-trademark">※ QRコードは株式会社デンソーウェーブの登録商標です。</div>
           <div className="footer-copy">© 2026 株式会社コクシ・ムソー / 在庫番（zaiko-ban.com）</div>
