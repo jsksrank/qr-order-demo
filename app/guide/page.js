@@ -156,15 +156,15 @@ export default function OwnerGuidePage() {
               <p>QRタグが届いたら、以下の手順でセットアップしてください。所要時間は商品数によりますが、20商品で約15〜20分です。</p>
             </div>
 
-            {/* Step 1 */}
+            {/* Step 1 — 届いたものを確認 */}
             <div style={styles.guideCard}>
               <div style={styles.guideStep}>
                 <div style={styles.guideStepNum}>1</div>
-                <h3 style={styles.guideStepTitle}>箱の中身を確認</h3>
+                <h3 style={styles.guideStepTitle}>届いたものを確認</h3>
               </div>
               <div style={styles.guideBody}>
                 <p style={styles.guideText}>
-                  お届けする箱には以下が入っています。
+                  お届けするセットには以下が含まれています。
                 </p>
                 <div style={styles.checkList}>
                   <div style={styles.checkItem}>
@@ -183,10 +183,41 @@ export default function OwnerGuidePage() {
               </div>
             </div>
 
-            {/* Step 2 */}
+            {/* Step 2 — カゴを2つ用意する */}
             <div style={styles.guideCard}>
               <div style={styles.guideStep}>
                 <div style={styles.guideStepNum}>2</div>
+                <h3 style={styles.guideStepTitle}>カゴを2つ用意する</h3>
+              </div>
+              <div style={styles.guideBody}>
+                <p style={styles.guideText}>
+                  在庫番の運用には、タグを一時的に保管するカゴが2つ必要です。小さなカゴや箱で構いません。
+                </p>
+                <div style={styles.basketGrid}>
+                  <div style={styles.basketCard}>
+                    <div style={{...styles.basketIcon, background: '#E3F2FD'}}>🧺</div>
+                    <div style={styles.basketName}>読み取り待ちカゴ</div>
+                    <div style={styles.basketDesc}>商品開封時に外したタグを入れる場所。スマホでスキャンするまでここに貯めます。</div>
+                  </div>
+                  <div style={styles.basketCard}>
+                    <div style={{...styles.basketIcon, background: '#FFF3E0'}}>📦</div>
+                    <div style={styles.basketName}>受取待ちカゴ</div>
+                    <div style={styles.basketDesc}>スキャン後のタグを移す場所。注文した商品が届いたら、ここからタグを取り出して商品に付け直します。</div>
+                  </div>
+                </div>
+                <div style={styles.tipBox}>
+                  <div style={styles.tipIcon}>💡</div>
+                  <div style={styles.tipText}>
+                    2つのカゴは、スタッフ全員が分かる場所に置いてください。「読み取り待ち」「受取待ち」とラベルを貼っておくとスムーズです。
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3 — アカウント登録 */}
+            <div style={styles.guideCard}>
+              <div style={styles.guideStep}>
+                <div style={styles.guideStepNum}>3</div>
                 <h3 style={styles.guideStepTitle}>アカウント登録（まだの方）</h3>
               </div>
               <div style={styles.guideBody}>
@@ -196,10 +227,10 @@ export default function OwnerGuidePage() {
               </div>
             </div>
 
-            {/* Step 3 */}
+            {/* Step 4 — 商品を登録する */}
             <div style={styles.guideCard}>
               <div style={styles.guideStep}>
-                <div style={styles.guideStepNum}>3</div>
+                <div style={styles.guideStepNum}>4</div>
                 <h3 style={styles.guideStepTitle}>商品を登録する</h3>
               </div>
               <div style={styles.guideBody}>
@@ -215,18 +246,60 @@ export default function OwnerGuidePage() {
                     全商品を一度に登録する必要はありません。よく発注するものだけ先に登録して、慣れてきたら追加していくのがおすすめです。
                   </div>
                 </div>
+                <div style={{...styles.highlightBox, marginTop: 14}}>
+                  <div style={styles.highlightIcon}>📋</div>
+                  <div>
+                    <p style={styles.highlightTitle}>無料プラン（エントリー）の上限について</p>
+                    <p style={styles.highlightText}>
+                      エントリープランでは<strong>30商品まで</strong>無料で登録できます。30商品を超えて管理したい場合は、アプリ内の設定画面から有料プランにアップグレードしてください。
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Step 4 */}
+            {/* Step 5 — タグに商品名を書き込む */}
             <div style={styles.guideCard}>
               <div style={styles.guideStep}>
-                <div style={styles.guideStepNum}>4</div>
+                <div style={styles.guideStepNum}>5</div>
+                <h3 style={styles.guideStepTitle}>タグに商品名を書き込む</h3>
+              </div>
+              <div style={styles.guideBody}>
+                <p style={styles.guideText}>
+                  商品を登録すると、QRタグが自動で紐付けられます。どのタグがどの商品に紐付いているかを確認し、タグに商品名を書き込みましょう。
+                </p>
+                <div style={styles.writeSteps}>
+                  <div style={styles.writeStep}>
+                    <div style={styles.writeStepNum}>①</div>
+                    <div style={styles.writeStepText}>ホーム画面の「タグ管理」を開き、紐付け済みタブを確認</div>
+                  </div>
+                  <div style={styles.writeStep}>
+                    <div style={styles.writeStepNum}>②</div>
+                    <div style={styles.writeStepText}>各タグ（QRO-001, QRO-002…）に紐付いている商品名を確認</div>
+                  </div>
+                  <div style={styles.writeStep}>
+                    <div style={styles.writeStepNum}>③</div>
+                    <div style={styles.writeStepText}><strong>油性ペン</strong>でQRタグの余白に商品名を記入</div>
+                  </div>
+                </div>
+                <div style={styles.tipBox}>
+                  <div style={styles.tipIcon}>✏️</div>
+                  <div style={styles.tipText}>
+                    QRタグはユポ紙（耐水素材）です。油性ペンで書き込めますが、ボールペンや鉛筆はインクが弾かれるため使えません。
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 6 — タグを商品に取り付ける */}
+            <div style={styles.guideCard}>
+              <div style={styles.guideStep}>
+                <div style={styles.guideStepNum}>6</div>
                 <h3 style={styles.guideStepTitle}>タグを商品に取り付ける</h3>
               </div>
               <div style={styles.guideBody}>
                 <p style={styles.guideText}>
-                  QRタグを商品の「後ろからN個目」に取り付けます。ゴム紐はタグに結ばれた状態でお届けしますので、そのまま商品に掛けてください。
+                  商品名を書き込んだQRタグを、商品の「後ろからN個目」に取り付けます。ゴム紐はタグに結ばれた状態でお届けしますので、そのまま商品に掛けてください。
                 </p>
                 <div style={styles.highlightBox}>
                   <div style={styles.highlightIcon}>💡</div>
@@ -258,10 +331,10 @@ export default function OwnerGuidePage() {
               </div>
             </div>
 
-            {/* Step 5 */}
+            {/* Step 7 — スタッフに使い方を共有 */}
             <div style={styles.guideCard}>
               <div style={styles.guideStep}>
-                <div style={styles.guideStepNum}>5</div>
+                <div style={styles.guideStepNum}>7</div>
                 <h3 style={styles.guideStepTitle}>スタッフに使い方を共有</h3>
               </div>
               <div style={styles.guideBody}>
@@ -272,7 +345,7 @@ export default function OwnerGuidePage() {
                   <div style={styles.shareUrl}>zaiko-ban.com/guide/staff</div>
                 </div>
                 <p style={{...styles.guideText, marginTop: 12, marginBottom: 0}}>
-                  あわせて、アプリのログイン情報（メールアドレスとパスワード）もスタッフに共有してください。
+                  あわせて、アプリのログイン情報（メールアドレスとパスワード）と、2つのカゴの場所をスタッフに伝えてください。
                 </p>
               </div>
             </div>
@@ -293,23 +366,54 @@ export default function OwnerGuidePage() {
                 <div style={styles.dailyStep}>
                   <div style={{...styles.dailyNum, background: '#E8F5E9', color: '#2E7D32'}}>1</div>
                   <div>
-                    <p style={styles.dailyStepTitle}>タグ付き商品を開封 → タグをカゴへ</p>
+                    <p style={styles.dailyStepTitle}>タグ付き商品を開封 → タグを「読み取り待ち」カゴへ</p>
                     <p style={styles.dailyStepSub}>施術中にスマホを触る必要はありません</p>
                   </div>
                 </div>
                 <div style={styles.dailyStep}>
                   <div style={{...styles.dailyNum, background: '#E3F2FD', color: '#1565C0'}}>2</div>
                   <div>
-                    <p style={styles.dailyStepTitle}>手が空いたら → カゴのタグをまとめてスキャン</p>
+                    <p style={styles.dailyStepTitle}>手が空いたら → カゴのタグをまとめてスキャン → 「受取待ち」カゴへ移動</p>
                     <p style={styles.dailyStepSub}>スキャンした商品が自動で発注リストに追加されます</p>
                   </div>
                 </div>
                 <div style={styles.dailyStep}>
                   <div style={{...styles.dailyNum, background: '#FFF3E0', color: '#E65100'}}>3</div>
                   <div>
-                    <p style={styles.dailyStepTitle}>商品が届いたら → タップで受取 → タグ付け直し</p>
+                    <p style={styles.dailyStepTitle}>商品が届いたら → 「受取待ち」カゴからタグを取出し → タップで受取 → タグ付け直し</p>
                     <p style={styles.dailyStepSub}>受取画面で商品をタップし、タグを新在庫のN個目に移動</p>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Basket Flow Visual */}
+            <div style={styles.guideCard}>
+              <h3 style={styles.dailyTitle}>タグの流れ</h3>
+              <div style={styles.basketFlow}>
+                <div style={styles.basketFlowItem}>
+                  <div style={{...styles.basketFlowIcon, background: '#E8F5E9'}}>🏷️</div>
+                  <div style={styles.basketFlowLabel}>商品に付いている</div>
+                </div>
+                <div style={styles.basketFlowArrow}>→</div>
+                <div style={styles.basketFlowItem}>
+                  <div style={{...styles.basketFlowIcon, background: '#E3F2FD'}}>🧺</div>
+                  <div style={styles.basketFlowLabel}>読み取り待ち</div>
+                </div>
+                <div style={styles.basketFlowArrow}>→</div>
+                <div style={styles.basketFlowItem}>
+                  <div style={{...styles.basketFlowIcon, background: '#E3F2FD'}}>📱</div>
+                  <div style={styles.basketFlowLabel}>スキャン</div>
+                </div>
+                <div style={styles.basketFlowArrow}>→</div>
+                <div style={styles.basketFlowItem}>
+                  <div style={{...styles.basketFlowIcon, background: '#FFF3E0'}}>📦</div>
+                  <div style={styles.basketFlowLabel}>受取待ち</div>
+                </div>
+                <div style={styles.basketFlowArrow}>→</div>
+                <div style={styles.basketFlowItem}>
+                  <div style={{...styles.basketFlowIcon, background: '#E8F5E9'}}>🏷️</div>
+                  <div style={styles.basketFlowLabel}>商品に付け直し</div>
                 </div>
               </div>
             </div>
@@ -401,7 +505,7 @@ export default function OwnerGuidePage() {
             <div style={styles.guideCard}>
               <h3 style={styles.dailyTitle}>料金プランの変更</h3>
               <p style={styles.guideText}>
-                設定画面の「プラン変更」から変更できます。管理する商品数（SKU数）に応じて最適なプランをお選びください。
+                設定画面の「プラン変更」から変更できます。管理する商品数に応じて最適なプランをお選びください。
               </p>
               <div style={styles.planTable}>
                 <div style={styles.planRow}>
@@ -421,6 +525,9 @@ export default function OwnerGuidePage() {
                   <div style={styles.planDetail}>〜500商品 / ¥9,800/月</div>
                 </div>
               </div>
+              <p style={{...styles.guideText, marginTop: 12, marginBottom: 0, fontSize: 13, color: '#666'}}>
+                500商品を超える場合は、別途お見積りいたします。お気軽にお問い合わせください。
+              </p>
             </div>
 
             {/* Referral */}
@@ -759,31 +866,110 @@ const styles = {
     flexShrink: 0,
   },
 
-  // Method box
-  methodBox: {
+  // Basket grid (Step 2)
+  basketGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 12,
+    marginBottom: 14,
+  },
+  basketCard: {
+    background: '#FAFAF8',
+    border: '1px solid #e8e8e4',
+    borderRadius: 12,
+    padding: '16px 14px',
+    textAlign: 'center',
+  },
+  basketIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 22,
+    margin: '0 auto 10px',
+  },
+  basketName: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#1a1a1a',
+    marginBottom: 6,
+  },
+  basketDesc: {
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 1.7,
+  },
+
+  // Write steps (Step 5)
+  writeSteps: {
     display: 'flex',
     flexDirection: 'column',
     gap: 10,
+    marginBottom: 14,
+    padding: '14px 16px',
+    background: '#FAFAF8',
+    borderRadius: 12,
+    border: '1px solid #e8e8e4',
   },
-  methodItem: {
+  writeStep: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: 10,
   },
-  methodBadge: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: '#1565C0',
-    background: '#E3F2FD',
-    padding: '2px 10px',
-    borderRadius: 20,
+  writeStepNum: {
+    fontSize: 14,
+    fontWeight: 900,
+    color: '#2E7D32',
     flexShrink: 0,
-    marginTop: 2,
+    lineHeight: 1.7,
   },
-  methodText: {
+  writeStepText: {
     fontSize: 13,
     color: '#444',
     lineHeight: 1.7,
+  },
+
+  // Basket flow (Daily tab)
+  basketFlow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: '6px 4px',
+    padding: '20px 12px',
+    background: '#FAFAF8',
+    borderRadius: 12,
+    border: '1px solid #e8e8e4',
+  },
+  basketFlowItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 6,
+    minWidth: 56,
+  },
+  basketFlowIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 18,
+  },
+  basketFlowLabel: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 1.4,
+  },
+  basketFlowArrow: {
+    fontSize: 14,
+    color: '#bbb',
+    fontWeight: 300,
   },
 
   // Highlight box
