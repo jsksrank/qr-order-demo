@@ -216,27 +216,30 @@ export default function LandingPage() {
           <div className="proof-card anim">
             <div className="proof-content">
               <div className="proof-badge-row">
-                <span className="proof-badge">✅ 開発者自身が毎日使っています</span>
+                <span className="proof-badge">✅ 飲食店の在庫管理から生まれたシステム</span>
               </div>
-              <h2 className="proof-title">167商品で実運用中</h2>
+              <h2 className="proof-title">実店舗で毎日、稼働中</h2>
               <p className="proof-desc">
-                在庫番の開発者は、自身が経営する横浜のカフェで167商品のQRタグ在庫管理を毎日運用しています。
-                現場で実際に使いながら改善を続けているからこそ、美容室・エステサロンの業務に自信を持ってお届けできます。
+                在庫番は、飲食店の在庫管理から生まれたシステムです。
+                実際に利用中のカフェ・バーでは、200種類のメニューに必要な167商品をQRタグで管理。
+                以前は毎日行っていた在庫確認作業が、今ではゼロになりました。
+                この運用実績をもとに、美容室・エステサロン向けに最適化してお届けしています。
               </p>
               <div className="proof-stats">
                 <div className="proof-stat">
-                  <span className="proof-stat-num">167</span>
+                  <span className="proof-stat-num">200<span className="proof-stat-unit">種類</span></span>
+                  <span className="proof-stat-label">提供メニュー数</span>
+                </div>
+                <div className="proof-stat">
+                  <span className="proof-stat-num">167<span className="proof-stat-unit">商品</span></span>
                   <span className="proof-stat-label">管理中の商品数</span>
                 </div>
                 <div className="proof-stat">
-                  <span className="proof-stat-num">6年</span>
-                  <span className="proof-stat-label">カフェ経営の実績</span>
-                </div>
-                <div className="proof-stat">
-                  <span className="proof-stat-num">0件</span>
-                  <span className="proof-stat-label">導入後の欠品</span>
+                  <span className="proof-stat-num">0<span className="proof-stat-unit">件</span></span>
+                  <span className="proof-stat-label">導入後の欠品 <span className="proof-stat-note">*</span></span>
                 </div>
               </div>
+              <p className="proof-footnote">* 発注点の意図的な調整による欠品を除く</p>
             </div>
             <div className="proof-photos">
               <PhotoPlaceholder label="カフェでのタグ運用風景" aspect="4/3" className="proof-photo-main" />
