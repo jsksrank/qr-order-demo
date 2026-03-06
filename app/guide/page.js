@@ -376,6 +376,46 @@ export default function OwnerGuidePage() {
                     タグは棚に固定するものではなく、商品間を移動する「着脱式」です。商品を受け取ったら、新しい在庫のN個目の位置に付け直してください。
                   </div>
                 </div>
+
+                {/* ★S40追加：応用パターン（色分け運用） */}
+                <div style={{...styles.highlightBox, marginTop: 14, background: '#F3F8FF', borderColor: '#D0E2F7'}}>
+                  <div style={styles.highlightIcon}>🎨</div>
+                  <div>
+                    <p style={styles.highlightTitle}>応用パターン：色分けでいろんな商品に対応</p>
+                    <p style={styles.highlightText}>
+                      タグの縁に油性ペンで色を付けることで、「いつタグを外すか」を商品タイプごとに区別できます。
+                    </p>
+                    <div style={styles.colorTable}>
+                      <div style={styles.colorRow}>
+                        <div style={{...styles.colorDot, background: '#e8e8e4', border: '2px solid #bbb'}}></div>
+                        <div style={styles.colorInfo}>
+                          <span style={styles.colorName}>色なし（標準）</span>
+                          <span style={styles.colorRule}>後ろからN個目を開封したら外す</span>
+                        </div>
+                        <div style={styles.colorExample}>カラー剤、2剤など</div>
+                      </div>
+                      <div style={styles.colorRow}>
+                        <div style={{...styles.colorDot, background: '#EF5350'}}></div>
+                        <div style={styles.colorInfo}>
+                          <span style={styles.colorName}>赤</span>
+                          <span style={styles.colorRule}>中身がなくなったら外す</span>
+                        </div>
+                        <div style={styles.colorExample}>オイル、クリームなどボトル1本</div>
+                      </div>
+                      <div style={styles.colorRow}>
+                        <div style={{...styles.colorDot, background: '#1E88E5'}}></div>
+                        <div style={styles.colorInfo}>
+                          <span style={styles.colorName}>青</span>
+                          <span style={styles.colorRule}>残り3割になったら外す</span>
+                        </div>
+                        <div style={styles.colorExample}>コットン大袋、ペーパー類</div>
+                      </div>
+                    </div>
+                    <p style={{...styles.highlightText, marginTop: 10}}>
+                      独自ルールを追加したい場合は、緑や黒など好きな色で自由に拡張できます。色が増えすぎるとスタッフが迷うので、<strong>2〜3色</strong>がおすすめです。
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1023,6 +1063,53 @@ const styles = {
     lineHeight: 1.7,
   },
 
+  // ★S40追加：色分けテーブル
+  colorTable: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0,
+    marginTop: 12,
+    borderRadius: 10,
+    overflow: 'hidden',
+    border: '1px solid #D0E2F7',
+  },
+  colorRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '10px 14px',
+    background: '#fff',
+    borderBottom: '1px solid #EBF2FA',
+  },
+  colorDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    flexShrink: 0,
+  },
+  colorInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 1,
+    flex: 1,
+    minWidth: 0,
+  },
+  colorName: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: '#1a1a1a',
+  },
+  colorRule: {
+    fontSize: 12,
+    color: '#555',
+  },
+  colorExample: {
+    fontSize: 11,
+    color: '#888',
+    textAlign: 'right',
+    flexShrink: 0,
+  },
+
   // Basket flow (Daily tab)
   basketFlow: {
     display: 'flex',
@@ -1419,23 +1506,6 @@ const styles = {
     fontWeight: 700,
     textDecoration: 'none',
     transition: 'all 0.2s',
-  },
-  contactInfo: {},
-  contactRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: 12,
-    alignItems: 'center',
-  },
-  contactLabel: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#888',
-  },
-  contactValue: {
-    fontSize: 14,
-    color: '#1a1a1a',
-    fontFamily: 'monospace',
   },
 
   // CTA
