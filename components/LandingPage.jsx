@@ -479,6 +479,7 @@ export default function LandingPage() {
             ))}
           </div>
           <p className="pricing-upgrade-note anim">アップグレード・ダウングレードはアプリ内からいつでも変更できます。</p>
+          <p className="pricing-enterprise-note anim">500商品を超える場合は、別途お見積りいたします。お気軽に<a href="#contact">お問い合わせ</a>ください。</p>
         </div>
       </section>
 
