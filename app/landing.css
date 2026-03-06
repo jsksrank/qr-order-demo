@@ -432,6 +432,9 @@ html { scroll-behavior: smooth; }
 .btn-pricing-cta:hover { background: #0f766e; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(13,148,136,0.4); }
 .pricing-cta-note { font-size: 12px; color: #94a3b8; margin-top: 12px; }
 .pricing-upgrade-note { text-align: center; font-size: 13px; color: #94a3b8; margin-top: 24px; }
+.pricing-enterprise-note { text-align: center; font-size: 13px; color: #475569; margin-top: 8px; }
+.pricing-enterprise-note a { color: #0d9488; font-weight: 700; text-decoration: none; }
+.pricing-enterprise-note a:hover { text-decoration: underline; }
 
 .pricing-grid-4 {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start;
