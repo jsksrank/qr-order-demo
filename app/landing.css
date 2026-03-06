@@ -1,6 +1,7 @@
 /* ══════════════════════════════════════════
    Landing Page CSS — app/landing.css
    ※ LandingPage.jsxの<style>{lpStyles}</style>から外部化
+   S39更新：社会的証明・写真PH・カウントダウン・DM導線・タグ紹介セクション追加
    ══════════════════════════════════════════ */
 
 /* ── Reset ── */
@@ -43,6 +44,23 @@ html { scroll-behavior: smooth; }
   transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1);
 }
 .anim.visible { opacity: 1; transform: translateY(0); }
+
+/* ── DM Welcome Banner ── */
+.dm-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  padding: 10px 0;
+  animation: slideDown 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+.dm-banner-inner {
+  max-width: 1080px; margin: 0 auto; padding: 0 24px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.dm-banner-icon { font-size: 18px; }
+.dm-banner-text { font-size: 13px; font-weight: 700; color: #ffffff; }
+.dm-banner ~ .lp-nav { top: 42px; }
+.dm-banner ~ .lp-nav ~ .hero { padding-top: 182px; }
 
 /* ── Nav ── */
 .lp-nav {
@@ -146,6 +164,8 @@ html { scroll-behavior: smooth; }
 }
 .btn-secondary:hover { border-color: #0d9488; color: #0d9488; transform: translateY(-1px); }
 .hero-note { margin-top: 16px; font-size: 12px; color: #94a3b8; }
+.hero-note-countdown { color: #475569; }
+.countdown-highlight { color: #e11d48; font-weight: 800; }
 
 .hero-visual { animation: fadeUp 0.8s 0.2s cubic-bezier(0.22,1,0.36,1) both; position: relative; }
 .hero-phone {
@@ -182,6 +202,70 @@ html { scroll-behavior: smooth; }
   .hero-phone { width: 240px; }
   .hero-float-tag { right: 10%; top: 10%; }
   .hero-sub-line { padding-left: 0; }
+}
+
+/* ── Social Proof ── */
+.social-proof {
+  padding: 72px 0;
+  background: linear-gradient(180deg, #f0fdfa 0%, #fafbfd 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+.proof-card {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+  padding: 48px 40px; border-radius: 24px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  box-shadow: 0 4px 24px rgba(15,23,42,0.06);
+}
+.proof-badge-row { margin-bottom: 16px; }
+.proof-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 16px; background: #dcfce7; color: #166534;
+  border-radius: 99px; font-size: 13px; font-weight: 700;
+}
+.proof-title {
+  font-family: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
+  font-size: clamp(22px, 3.5vw, 32px); font-weight: 900; line-height: 1.3;
+  color: #0f172a; margin-bottom: 16px;
+}
+.proof-desc { font-size: 14px; color: #475569; line-height: 1.9; margin-bottom: 28px; }
+.proof-stats { display: flex; gap: 24px; }
+.proof-stat {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 16px 20px; background: #fafbfd; border-radius: 14px;
+  border: 1px solid #e2e8f0; flex: 1; text-align: center;
+}
+.proof-stat-num {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 28px; font-weight: 900; color: #0d9488; line-height: 1.2;
+}
+.proof-stat-label { font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 4px; }
+.proof-photos { display: flex; flex-direction: column; gap: 12px; }
+.proof-photo-main { border-radius: 16px; overflow: hidden; }
+.proof-photos-sub { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 768px) {
+  .proof-card { grid-template-columns: 1fr; padding: 28px 24px; gap: 32px; }
+  .proof-stats { gap: 12px; }
+  .proof-stat { padding: 12px 10px; }
+  .proof-stat-num { font-size: 22px; }
+}
+
+/* ── Photo Placeholder ── */
+.photo-placeholder {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border: 2px dashed #cbd5e1;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 120px;
+  transition: border-color 0.2s;
+}
+.photo-placeholder:hover { border-color: #94a3b8; }
+.photo-placeholder-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px;
+}
+.photo-placeholder-label {
+  font-size: 12px; font-weight: 600; color: #94a3b8;
+  text-align: center; line-height: 1.5;
 }
 
 /* ── Pain ── */
@@ -238,6 +322,13 @@ html { scroll-behavior: smooth; }
 @media (max-width: 768px) { .how-steps { grid-template-columns: 1fr 1fr; gap: 32px 20px; } .how-steps::before { display: none; } }
 @media (max-width: 480px) { .how-steps { grid-template-columns: 1fr; } }
 
+/* How — Photo Strip */
+.how-photos {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  margin-top: 48px;
+}
+@media (max-width: 640px) { .how-photos { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; } }
+
 /* ── Features ── */
 .features { background: #ffffff; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
 .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
@@ -253,6 +344,28 @@ html { scroll-behavior: smooth; }
 .feature-card h3 { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 15px; font-weight: 800; margin-bottom: 6px; }
 .feature-card p { font-size: 13px; color: #475569; line-height: 1.7; }
 @media (max-width: 768px) { .features-grid { grid-template-columns: 1fr; } }
+
+/* ── Tag Close-up ── */
+.tag-closeup {
+  background: #fafbfd;
+  border-bottom: 1px solid #e2e8f0;
+}
+.tag-closeup-inner {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+}
+.tag-closeup-text .section-title { margin-bottom: 12px; }
+.tag-closeup-text .section-desc { margin-bottom: 28px; }
+.tag-specs { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.tag-specs li {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 14px; color: #475569; font-weight: 500;
+}
+.tag-spec-icon { font-size: 18px; flex-shrink: 0; }
+.tag-closeup-photo { border-radius: 20px; overflow: hidden; }
+@media (max-width: 768px) {
+  .tag-closeup-inner { grid-template-columns: 1fr; gap: 32px; }
+  .tag-closeup-photo { order: -1; }
+}
 
 /* ── Comparison ── */
 .comparison-table-wrap {
@@ -355,7 +468,7 @@ html { scroll-behavior: smooth; }
 @media (max-width: 900px) { .pricing-grid-4 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .pricing-grid-4 { grid-template-columns: 1fr; max-width: 340px; margin: 0 auto; } }
 
-/* ── 期間限定バッジ ── */
+/* ── 期間限定バッジ（カウントダウン対応） ── */
 .campaign-badge {
   margin-top: 20px;
   display: inline-flex;
@@ -375,9 +488,14 @@ html { scroll-behavior: smooth; }
   animation: pulse-dot 2s infinite;
 }
 .campaign-badge-text {
-  font-size: 15px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   color: #92400e;
+}
+.countdown-days {
+  color: #e11d48;
+  font-size: 16px;
+  font-weight: 900;
 }
 
 /* ── Referral ── */
@@ -444,6 +562,7 @@ html { scroll-behavior: smooth; }
   font-weight: 900; color: #fff; margin-bottom: 16px;
 }
 .cta-desc { font-size: 15px; color: rgba(255,255,255,0.85); margin-bottom: 36px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.9; }
+.cta-desc strong { color: #fff; }
 .btn-cta-white {
   display: inline-flex; align-items: center; gap: 8px; padding: 18px 40px;
   background: #fff; color: #0f766e; border: none; border-radius: 10px;
@@ -489,7 +608,7 @@ html { scroll-behavior: smooth; }
   display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff;
 }
 .footer-logo-text { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 15px; font-weight: 800; color: #0f172a; }
-.footer-links { display: flex; gap: 24px; list-style: none; }
+.footer-links { display: flex; gap: 24px; list-style: none; flex-wrap: wrap; }
 .footer-links a { font-size: 12px; color: #94a3b8; text-decoration: none; transition: color 0.2s; }
 .footer-links a:hover { color: #0d9488; }
 .footer-trademark {
