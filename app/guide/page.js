@@ -2,6 +2,48 @@
 
 import { useState } from 'react';
 
+// ── Photo Placeholder ──
+function PhotoPlaceholder({ label }) {
+  return (
+    <div style={phStyles.wrapper}>
+      <div style={phStyles.inner}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+        <span style={phStyles.label}>{label}</span>
+      </div>
+    </div>
+  );
+}
+const phStyles = {
+  wrapper: {
+    background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
+    border: '2px dashed #cbd5e1',
+    borderRadius: 12,
+    padding: '24px 16px',
+    marginBottom: 14,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 100,
+  },
+  inner: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 8,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 1.5,
+  },
+};
+
 export default function OwnerGuidePage() {
   const [openFaq, setOpenFaq] = useState(null);
   const [activeTab, setActiveTab] = useState('setup');
@@ -211,6 +253,7 @@ export default function OwnerGuidePage() {
                     2つのカゴは、スタッフ全員が分かる場所に置いてください。「読み取り待ち」「受取待ち」とラベルを貼っておくとスムーズです。
                   </div>
                 </div>
+                <PhotoPlaceholder label="📸 カゴ2つの配置イメージ写真" />
               </div>
             </div>
 
@@ -249,7 +292,7 @@ export default function OwnerGuidePage() {
                 <div style={{...styles.highlightBox, marginTop: 14}}>
                   <div style={styles.highlightIcon}>📋</div>
                   <div>
-                    <p style={styles.highlightTitle}>無料プラン（エントリー）の上限について</p>
+                    <p style={styles.highlightTitle}>エントリープランの上限について</p>
                     <p style={styles.highlightText}>
                       エントリープランでは<strong>30商品まで</strong>無料で登録できます。30商品を超えて管理したい場合は、アプリ内の設定画面から有料プランにアップグレードしてください。
                     </p>
@@ -282,6 +325,10 @@ export default function OwnerGuidePage() {
                     <div style={styles.writeStepText}><strong>油性ペン</strong>でQRタグの余白に商品名を記入</div>
                   </div>
                 </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+                  <PhotoPlaceholder label="📸 タグ管理画面のスクリーンショット" />
+                  <PhotoPlaceholder label="📸 タグに商品名を書き込んでいる写真" />
+                </div>
                 <div style={styles.tipBox}>
                   <div style={styles.tipIcon}>✏️</div>
                   <div style={styles.tipText}>
@@ -301,6 +348,7 @@ export default function OwnerGuidePage() {
                 <p style={styles.guideText}>
                   商品名を書き込んだQRタグを、商品の「後ろからN個目」に取り付けます。ゴム紐はタグに結ばれた状態でお届けしますので、そのまま商品に掛けてください。
                 </p>
+                <PhotoPlaceholder label="📸 QRタグを商品に取り付けている写真（後ろからN個目）" />
                 <div style={styles.highlightBox}>
                   <div style={styles.highlightIcon}>💡</div>
                   <div>
@@ -390,6 +438,11 @@ export default function OwnerGuidePage() {
             {/* Basket Flow Visual */}
             <div style={styles.guideCard}>
               <h3 style={styles.dailyTitle}>タグの流れ</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+                <PhotoPlaceholder label="📸 タグを外してカゴへ" />
+                <PhotoPlaceholder label="📸 スマホでスキャン" />
+                <PhotoPlaceholder label="📸 届いた商品にタグ付け直し" />
+              </div>
               <div style={styles.basketFlow}>
                 <div style={styles.basketFlowItem}>
                   <div style={{...styles.basketFlowIcon, background: '#E8F5E9'}}>🏷️</div>
