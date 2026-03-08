@@ -370,7 +370,7 @@ function TopScreen({ onNavigate, orderCount, receiveCount, productCount, tagCoun
         {[
           { id: "scan", icon: "📷", label: "QRスキャン", desc: "タグを読み取って発注リストに追加", color: C.primary },
           { id: "order", icon: "📋", label: "発注リスト", desc: "未発注の商品を確認・発注処理", color: C.danger, badge: orderCount },
-          { id: "receive", icon: "📦", label: "受取待ち", desc: "届いた商品のタグをスキャンして完了", color: C.success, badge: receiveCount },
+          { id: "receive", icon: "📦", label: "受取待ち", desc: "届いた商品をタップして受取完了", color: C.success, badge: receiveCount },
         ].map((btn) => (
           <button key={btn.id} onClick={() => onNavigate(btn.id)} style={{
             display: "flex", alignItems: "center", gap: 14, padding: "16px 18px",
@@ -754,29 +754,12 @@ function OrderScreen({ pendingItems, setPendingItems, onMarkOrdered, onDeleteOrd
 }
 
 // ======================================================================
-// Receive Screen
+// Receive Screen ★S41: カメラスキャン削除＋受取日時表示＋もっと見る100件
 // ======================================================================
 function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, products }) {
-  const [cameraActive, setCameraActive] = useState(false);
   const [lastReceived, setLastReceived] = useState(null);
-  const [scanError, setScanError] = useState(null);
   const [receivingId, setReceivingId] = useState(null);
-
-  const handleQrScan = useCallback(async (decodedText) => {
-    if (supabase && storeId) {
-      const { data: tag } = await supabase
-        .from("qr_tags").select("id, product_id")
-        .eq("tag_code", decodedText).eq("store_id", storeId).maybeSingle();
-      if (!tag) { setScanError("未登録のタグです"); setTimeout(() => setScanError(null), 3000); return; }
-      const target = orderedItems.find((i) => i.productId === tag.product_id);
-      if (!target) { setScanError("この商品の発注データがありません"); setTimeout(() => setScanError(null), 3000); return; }
-      await onMarkReceived(target);
-      await supabase.from("qr_tags").update({ status: "attached" }).eq("id", tag.id);
-      setScanError(null);
-      setLastReceived(target.name);
-      setTimeout(() => setLastReceived(null), 4000);
-    }
-  }, [storeId, orderedItems, onMarkReceived]);
+  const [showAllReceived, setShowAllReceived] = useState(false);
 
   const handleTapReceive = async (item) => {
     if (!confirm(`「${item.name}」を受取完了にしますか？`)) return;
@@ -797,6 +780,9 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
     }
   };
 
+  const displayedReceived = showAllReceived ? receivedItems.slice(0, 100) : receivedItems.slice(0, 5);
+  const hasMore = receivedItems.length > 5;
+
   return (
     <div style={{ padding: "0 20px" }}>
       {lastReceived && (
@@ -809,24 +795,6 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
           </div>
         </div>
       )}
-      {scanError && (
-        <div style={{ padding: "11px 14px", background: C.dangerLight, borderRadius: 10, border: `1px solid ${C.dangerBorder}`, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 18 }}>❌</span>
-          <span style={{ fontSize: 13, color: C.danger, fontWeight: 600 }}>{scanError}</span>
-        </div>
-      )}
-      {cameraActive && (
-        <div style={{ marginBottom: 14 }}>
-          <QrScanner mode="qr" active={cameraActive} onScan={handleQrScan} />
-        </div>
-      )}
-      <button onClick={() => setCameraActive(!cameraActive)} disabled={orderedItems.length === 0 && !cameraActive}
-        style={{ width: "100%", padding: "14px", border: "none", borderRadius: 12,
-          background: cameraActive ? "#dc2626" : orderedItems.length === 0 ? "#d1d5db" : C.success,
-          color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 18,
-        }}>
-        {cameraActive ? "⏹ カメラを停止" : orderedItems.length === 0 ? "すべて受取済み ✅" : "📷 届いた商品のタグをスキャン"}
-      </button>
 
       <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>
         受取待ち <span style={{ fontSize: 12, color: C.textSub, fontWeight: 400 }}>{orderedItems.length}件</span>
@@ -860,25 +828,47 @@ function ReceiveScreen({ orderedItems, receivedItems, onMarkReceived, storeId, p
           </button>
         ))
       )}
+
+      {(orderedItems.length > 0 || receivedItems.length > 0) && (
+        <div style={{ marginTop: 16, padding: 12, background: C.warnLight, borderRadius: 10, border: `1px solid ${C.warnBorder}` }}>
+          <p style={{ fontSize: 12, color: C.warnDark, margin: 0, lineHeight: 1.6 }}>
+            💡 受取完了したタグは、届いた商品の<strong>後ろからN本目</strong>の位置に付け直してください。
+          </p>
+        </div>
+      )}
+
       {receivedItems.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, marginBottom: 8 }}>受取済み（直近）</div>
-          {receivedItems.slice(0, 5).map((item) => (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub }}>
+              受取済み（直近） <span style={{ fontSize: 11, fontWeight: 400 }}>{receivedItems.length}件</span>
+            </div>
+          </div>
+          {displayedReceived.map((item) => (
             <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: C.successLight, borderRadius: 10, marginBottom: 4, border: `1px solid ${C.successBorder}`, opacity: 0.5 }}>
               <span style={{ fontSize: 16 }}>✅</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: C.textSub, textDecoration: "line-through" }}>{item.name}</div>
               </div>
-              <span style={{ fontSize: 10, color: C.success, fontWeight: 600 }}>受取済</span>
+              <span style={{ fontSize: 10, color: C.textSub }}>
+                {item.receivedAt ? formatDate(item.receivedAt) : "受取済"}
+              </span>
             </div>
           ))}
-        </div>
-      )}
-      {receivedItems.length > 0 && (
-        <div style={{ marginTop: 16, padding: 12, background: C.warnLight, borderRadius: 10, border: `1px solid ${C.warnBorder}` }}>
-          <p style={{ fontSize: 12, color: C.warnDark, margin: 0, lineHeight: 1.6 }}>
-            💡 受取完了したタグは、届いた商品の<strong>後ろからN本目</strong>の位置に付け直してください。
-          </p>
+          {hasMore && (
+            <button
+              onClick={() => setShowAllReceived(!showAllReceived)}
+              style={{
+                width: "100%", padding: "10px", border: `1px solid ${C.border}`,
+                borderRadius: 10, background: C.card, color: C.primary,
+                fontSize: 12, fontWeight: 600, cursor: "pointer", marginTop: 6,
+              }}
+            >
+              {showAllReceived
+                ? "▲ 閉じる"
+                : `▼ もっと見る（全${receivedItems.length}件）`}
+            </button>
+          )}
         </div>
       )}
     </div>
