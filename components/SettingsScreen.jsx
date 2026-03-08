@@ -186,9 +186,8 @@ function LogoutConfirmModal({ onClose, onConfirm }) {
   );
 }
 
-// ★ 紹介プログラムカード
+// ★ 紹介プログラムカード（S41: コードコピー→リンクコピーに変更）
 function ReferralCard({ referralCode, referralCount }) {
-  const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showQr, setShowQr] = useState(false);
 
@@ -202,34 +201,7 @@ function ReferralCard({ referralCode, referralCount }) {
 
   const discount = referralCount * 500;
 
-  const copyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(referralCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      const textArea = document.createElement("textarea");
-      textArea.value = referralCode;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const shareLink = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "在庫番 - 紹介プログラム",
-          text: `在庫番を使ってみませんか？紹介コード「${referralCode}」で有料プランが永久¥500 OFF！`,
-          url: referralUrl,
-        });
-        return;
-      } catch {}
-    }
+  const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(referralUrl);
       setCopiedLink(true);
@@ -246,6 +218,20 @@ function ReferralCard({ referralCode, referralCount }) {
     }
   };
 
+  const shareLink = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "在庫番 - 紹介プログラム",
+          text: `在庫番を使ってみませんか？このリンクから登録すると有料プランが永久¥500 OFF！`,
+          url: referralUrl,
+        });
+        return;
+      } catch {}
+    }
+    await copyLink();
+  };
+
   return (
     <div style={{
       background: C.card, borderRadius: 14, padding: 18,
@@ -255,7 +241,7 @@ function ReferralCard({ referralCode, referralCount }) {
         🎁 紹介プログラム
       </div>
 
-      {/* 紹介コード表示 */}
+      {/* ★S41: 紹介コード表示（コピーボタンはリンクコピーに変更） */}
       <div style={{
         display: "flex", alignItems: "center", gap: 10,
         padding: "12px 14px", background: C.bg, borderRadius: 10,
@@ -268,16 +254,16 @@ function ReferralCard({ referralCode, referralCount }) {
           </div>
         </div>
         <button
-          onClick={copyCode}
+          onClick={copyLink}
           style={{
-            padding: "8px 14px", border: `1px solid ${copied ? C.successBorder : C.primaryBorder}`,
-            borderRadius: 8, background: copied ? C.successLight : C.primaryLight,
-            color: copied ? C.success : C.primary,
+            padding: "8px 14px", border: `1px solid ${copiedLink ? C.successBorder : C.primaryBorder}`,
+            borderRadius: 8, background: copiedLink ? C.successLight : C.primaryLight,
+            color: copiedLink ? C.success : C.primary,
             fontSize: 12, fontWeight: 600, cursor: "pointer",
             whiteSpace: "nowrap",
           }}
         >
-          {copied ? "✅ コピー済" : "コピー"}
+          {copiedLink ? "✅ コピー済" : "🔗 リンクコピー"}
         </button>
       </div>
 
@@ -292,7 +278,7 @@ function ReferralCard({ referralCode, referralCount }) {
             display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}
         >
-          {copiedLink ? "✅ コピー済" : "📤 リンクを共有"}
+          📤 リンクを共有
         </button>
         <button
           onClick={() => setShowQr(!showQr)}
