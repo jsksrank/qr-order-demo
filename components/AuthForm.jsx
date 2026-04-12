@@ -94,7 +94,6 @@ export default function AuthForm() {
       if (refCode) {
         setReferrerCode(refCode.toUpperCase());
         setReferralFromUrl(true);
-        setMode("signup"); // 紹介リンクからの場合は新規登録モードに
       }
     }
   }, []);
@@ -493,17 +492,7 @@ export default function AuthForm() {
           marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.border}`,
           textAlign: "center",
         }}>
-          {mode === "login" && (
-            <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>
-              アカウントをお持ちでない方{" "}
-              <button
-                onClick={() => switchMode("signup")}
-                style={{ background: "none", border: "none", color: C.primary, fontWeight: 700, cursor: "pointer", fontSize: 13 }}
-              >
-                新規登録
-              </button>
-            </p>
-          )}
+          {mode === "login" && null}
           {(mode === "signup" && !signupSent) && (
             <p style={{ fontSize: 13, color: C.textSub, margin: 0 }}>
               アカウントをお持ちの方{" "}
